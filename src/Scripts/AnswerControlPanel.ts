@@ -257,12 +257,17 @@ export const buildAnswerControlPanel = async () => {
         for (let i = 0; i < answers.length; i++) {
             const jAnswer = $(answers[i]);
             const answerId = answerIds[i];
-            if (answerId === undefined) {
+            const postOwnerId = ownerIds[i];
+            // Skip if answer id cannot be found or if post belongs to the current user
+            if (
+                answerId === undefined ||
+                postOwnerId === StackExchange.options.user.userId
+            ) {
                 continue;
             }
             const controlPanel = $('<div class="p8 d-flex fd-row jc-space-between ai-center"></div>');
             buildBaseTimelineButtons(controlPanel, answerId);
-            buildActionsComponent(controlPanel, answerId, ownerIds[i]);
+            buildActionsComponent(controlPanel, answerId, postOwnerId);
             jAnswer.append(controlPanel);
         }
         delayPullSummaryPostInfo(answerIds);
