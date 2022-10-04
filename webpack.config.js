@@ -27,7 +27,8 @@ const UserScriptConfig = {
         '*://stackoverflow.com/users/my-collectives/*',
         '*://stackoverflow.com/users/teams/*',
         '*://stackoverflow.com/users/mylogins/*',
-        '*://stackoverflow.com/users/apps/*'
+        '*://stackoverflow.com/users/apps/*',
+        '*://stackoverflow.com/users/flag-summary/*',
     ],
     'grant': ['GM_getValue', 'GM_setValue', 'GM_deleteValue']
 }
