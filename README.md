@@ -46,6 +46,11 @@ At the top of all profiles (except your own) there is a "Case Manager" button
 
 [![][6]][6]
 
+The button will gain an alert indicator if the user has ever had a post recorded in the system (for any reason).
+
+[![][16]][16]
+
+
 ### Profile Stats and Managing Cases
 Clicking the button will take you to their summary stats page
 
@@ -140,3 +145,4 @@ Clicking on the tab will bring you to the UserScript Settings page. Here you can
  [13]: ./readme-images/Settings/auth%20modal%20entry.png
  [14]: ./readme-images/Settings/User%20Profile%20Settings%20button.png
  [15]: ./readme-images/Settings/Case%20Manager%20Auth%20Settings.png
+ [16]: ./readme-images/UserSummary/user-case-manager-button-with-alert.png
