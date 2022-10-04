@@ -153,12 +153,8 @@ export class CaseManagerControlPanel {
         posts: { isLoaded: boolean; pageData?: CasePostDetailResponse; };
     };
 
-    constructor() {
-        const userPath = window.location.pathname.match(/^\/users\/\d+/g);
-        if (userPath === null || userPath.length !== 1) {
-            throw Error('Something changed in user path!');
-        }
-        this.userId = Number(userPath[0].split('/')[2]);
+    constructor(userId: number) {
+        this.userId = userId;
         this.container = $('<div class="d-flex mb48"></div>');
         this.currentPage = 'summary';
         this.pageLoadMap = {'summary': {isLoaded: false}, 'posts': {isLoaded: false}};

@@ -1,6 +1,6 @@
 import type {StackExchangeAPI,} from './Globals';
 import {
-    accessTokenGmStorageKey,
+    accessTokenGmStorageKey, buildAlertSvg,
     casesTab,
     userAnswerTabProfile,
     userCaseManagerSettingsTabIdentifier,
@@ -12,6 +12,7 @@ import {buildAnswerSummaryIndicator} from './Scripts/ProfileAnswerSummaryIndicat
 import {CaseManagerControlPanel} from './Scripts/CaseManagerControlPanel';
 import {CasesUserList} from './Scripts/CasesList';
 import {buildUserScriptSettingsPanel} from './Scripts/UserScriptSettings';
+import {fetchFromAWS} from './AWSAPI';
 
 declare const StackExchange: StackExchangeAPI;
 
@@ -45,9 +46,23 @@ const UserScript = () => {
             });
         }
     } else if (window.location.pathname.match(/^\/users\/.*/) !== null) {
+        const userPath = window.location.pathname.match(/^\/users\/\d+/g);
+        if (userPath === null || userPath.length !== 1) {
+            throw Error('Something changed in user path!');
+        }
+        const userId = Number(userPath[0].split('/')[2]);
         const navButton = $(`<a href="${window.location.pathname}${userCaseManagerTabIdentifier}" class="s-navigation--item">Case Manager</a>`);
+        void fetchFromAWS(`/case/user/${userId}`)
+            .then(res => res.json())
+            .then((resData: { is_known_user: boolean; }) => {
+                if (resData['is_known_user']) {
+                    navButton.addClass('fc-red-500');
+                    navButton.prepend(buildAlertSvg(16, 20));
+                }
+            });
         const tabContainer = $('.user-show-new .s-navigation:eq(0)');
         tabContainer.append(navButton);
+
 
         if (window.location.search.startsWith(userCaseManagerTabIdentifier)) {
             const selectedClass = 'is-selected';
@@ -56,10 +71,8 @@ const UserScript = () => {
             navButton.addClass(selectedClass);
             // Blank the content to make room for the UserScript
             const mainPanel = $('#main-content');
-            if (mainPanel.length > 0) {// Does not exist on your own profile page????
-                const cmUserControlPanel = new CaseManagerControlPanel();
-                mainPanel.empty().append(cmUserControlPanel.init());
-            }
+            const cmUserControlPanel = new CaseManagerControlPanel(userId);
+            mainPanel.empty().append(cmUserControlPanel.init());
         } else if (window.location.search.startsWith(userAnswerTabProfile)) {
             buildAnswerSummaryIndicator();
         }
