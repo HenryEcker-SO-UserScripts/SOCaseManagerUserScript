@@ -2,7 +2,7 @@
 
 A UserScript to help organise and coordinate plagiarism investigations on Stack Overflow.
 
-Requires GM_getValue, GM_setValue, and GM_deleteValue to store access_tokens. 
+Requires `GM_getValue`, `GM_setValue`, and `GM_deleteValue` to store access_tokens. 
 
 ## Review Posts
 
@@ -101,11 +101,19 @@ Copy the access_token into the modal, then click "Save":
 
 
 ### Managing Existing Credentials
+
+#### General Credential Information
 You can invalidate any specific credential or de-authenticate the application via the Case Manager Settings.
 
 It is preferable to invalidate or de-authenticate via this interface because it will both remove any stored credentials in the system _and_ those on the SE API side.
 
+The SE access token is always valid (unless it is invalidated) and can be used to obtain new access credentials. The access credentials (jwt) will expire after a period of time, but a new token will be automatically be requested when making any Case Manager API request after expiry.
 
+If you invalidate your credentials for a different device, you will need to manually clear out the credentials from your UserScript manager storage as you will start returning 403s for all requests, however, you will not be prompted to re-authenticate because the script will see _a_ token is available. 
+
+Your token is __not__ cleared when receiving a 403 (except for 403s in response to requesting a new token) because a 403 response does not always indicate the token has been invalidated. Sometimes it can be returned for accidental requests to something you do not have access to (like active case status for your own account).
+
+#### Management Console
 On your profile there will be a "Case Manager Settings" button.
 [![][14]][14]
 
