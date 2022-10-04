@@ -41,8 +41,9 @@ const UserScript = () => {
         tabContainer.append(navButton);
         if (window.location.search.startsWith(userCaseManagerSettingsTabIdentifier)) {
             const mainPanel = $('#mainbar-full');
+            mainPanel.empty(); // Empty before request (to indicate immediately indicate the page will render)
             void buildUserScriptSettingsPanel().then(c => {
-                mainPanel.empty().append(c);
+                mainPanel.append(c);
             });
         }
     } else if (window.location.pathname.match(/^\/users\/.*/) !== null) {
