@@ -6,7 +6,6 @@ declare const StackExchange: StackExchangeAPI;
 
 export const buildUserScriptSettingsPanel = async () => {
     const tokens: string[] = await fetchFromAWS('/auth/credentials').then(res => res.json());
-    console.log(tokens);
 
     const container = $('<div></div>');
     container.append('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
