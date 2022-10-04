@@ -51,12 +51,12 @@ const UserScript = () => {
             throw Error('Something changed in user path!');
         }
         const userId = Number(userPath[0].split('/')[2]);
+
         const navButton = $(`<a href="${window.location.pathname}${userCaseManagerTabIdentifier}" class="s-navigation--item">Case Manager</a>`);
         void fetchFromAWS(`/case/user/${userId}`)
             .then(res => res.json())
             .then((resData: { is_known_user: boolean; }) => {
                 if (resData['is_known_user']) {
-                    navButton.addClass('fc-red-500');
                     navButton.prepend(buildAlertSvg(16, 20));
                 }
             });
