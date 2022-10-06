@@ -2,6 +2,7 @@ const path = require('path');
 const userscriptInfo = require('./package.json');
 const TerserPlugin = require('terser-webpack-plugin');
 const {buildTamperMonkeyPreamble} = require('./build_utils');
+const webpack = require('webpack');
 
 
 module.exports = {
@@ -15,6 +16,12 @@ module.exports = {
     resolve: {
         extensions: ['.webpack.js', '.ts', '.tsx', '.js', '.css', '.scss']
     },
+    plugins: [
+        new webpack.BannerPlugin({
+            banner: buildTamperMonkeyPreamble().replace(/^\s+/mg, ''),
+            raw: true
+        })
+    ],
     module: {
         rules: [
             {
@@ -27,13 +34,6 @@ module.exports = {
         ]
     },
     optimization: {
-        minimize: false,
-        minimizer: [new TerserPlugin({
-            terserOptions: {
-                format: {
-                    preamble: buildTamperMonkeyPreamble().replace(/^\s+/mg, '')
-                }
-            }
-        })]
+        minimize: false
     }
 }
