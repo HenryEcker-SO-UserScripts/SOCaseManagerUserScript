@@ -70,9 +70,13 @@ const UserScript = () => {
             // Make nav the only active class
             tabContainer.find('a').removeClass(selectedClass);
             navButton.addClass(selectedClass);
-            // Blank the content to make room for the UserScript
-            const mainPanel = $('#main-content');
+            /***
+             * Mods default to ?tab=activity while everyone else defaults to ?tab=profile
+             * That is why the selector is the last div in #mainbar-full instead of #main-content
+             */
+            const mainPanel = $('#mainbar-full > div:last-child');
             const cmUserControlPanel = new CaseManagerControlPanel(userId);
+            // Blank the content to make room for the UserScript
             mainPanel.empty().append(cmUserControlPanel.init());
         } else if (window.location.search.startsWith(userAnswerTabProfile)) {
             buildAnswerSummaryIndicator();
