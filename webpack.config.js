@@ -4,6 +4,7 @@ const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const {buildTamperMonkeyPreamble} = require('./build_utils');
 
+const fileName = 'SOCaseManager.user.js'
 
 module.exports = {
     entry: './src/Main.ts',
@@ -11,7 +12,7 @@ module.exports = {
     target: 'browserslist',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: './SOCaseManager.user.js'
+        filename: `./${fileName}`
     },
     resolve: {
         extensions: ['.webpack.js', '.ts', '.tsx', '.js', '.css', '.scss']
@@ -58,7 +59,7 @@ module.exports = {
                 module: true,
                 toplevel: true,
                 format: {
-                    preamble: buildTamperMonkeyPreamble().replace(/^\s+/mg, '')
+                    preamble: buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, '')
                 }
             }
         })]

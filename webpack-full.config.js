@@ -5,20 +5,22 @@ const {buildTamperMonkeyPreamble} = require('./build_utils');
 const webpack = require('webpack');
 
 
+const fileName = 'SOCaseManager-full.user.js';
+
 module.exports = {
     entry: './src/Main.ts',
     mode: 'production',
     target: 'browserslist',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: './SOCaseManager-full.user.js'
+        filename:  `./${fileName}`
     },
     resolve: {
         extensions: ['.webpack.js', '.ts', '.tsx', '.js', '.css', '.scss']
     },
     plugins: [
         new webpack.BannerPlugin({
-            banner: buildTamperMonkeyPreamble().replace(/^\s+/mg, ''),
+            banner: buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, ''),
             raw: true
         })
     ],
