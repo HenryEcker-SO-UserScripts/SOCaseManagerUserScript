@@ -77,7 +77,7 @@ const UserScript = () => {
             const mainPanel = $('#mainbar-full > div:last-child');
             const cmUserControlPanel = new CaseManagerControlPanel(userId);
             // Blank the content to make room for the UserScript
-            mainPanel.empty().append(cmUserControlPanel.init());
+            mainPanel.replaceWith(cmUserControlPanel.init());
         } else if (window.location.search.startsWith(userAnswerTabProfile)) {
             buildAnswerSummaryIndicator();
         }
