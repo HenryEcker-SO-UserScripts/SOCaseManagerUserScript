@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.0.10
+// @version     0.0.11
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager-full.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager-full.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -952,7 +952,7 @@ const UserScript = () => {
             navButton.addClass(selectedClass);
             const mainPanel = $('#mainbar-full > div:last-child');
             const cmUserControlPanel = new CaseManagerControlPanel(userId);
-            mainPanel.empty().append(cmUserControlPanel.init());
+            mainPanel.replaceWith(cmUserControlPanel.init());
         }
         else if (window.location.search.startsWith(userAnswerTabProfile)) {
             buildAnswerSummaryIndicator();
