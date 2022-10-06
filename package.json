@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/HenryEcker/SOCaseManagerUserScript",
     "homepage": "https://github.com/HenryEcker/SOCaseManagerUserScript",
-    "dist_url": "https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js"
+    "dist_url": "https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/"
   },
   "scripts": {
     "lint": "eslint src",

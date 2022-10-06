@@ -4,8 +4,8 @@
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
 // @version     0.0.9
-// @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
-// @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
+// @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager-full.user.js
+// @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager-full.user.js
 // @match       *://stackoverflow.com/questions/*
 // @match       *://stackoverflow.com/users/*
 // @match       *://stackoverflow.com/users
