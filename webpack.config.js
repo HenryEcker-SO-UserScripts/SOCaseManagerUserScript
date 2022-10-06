@@ -1,5 +1,4 @@
 const path = require('path');
-const userscriptInfo = require('./package.json');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const {buildTamperMonkeyPreamble} = require('./build_utils');
