@@ -9,6 +9,7 @@
 // @match       *://stackoverflow.com/questions/*
 // @match       *://stackoverflow.com/users/*
 // @match       *://stackoverflow.com/users
+// @match       *://stackoverflow.com/users?*
 // @exclude     *://stackoverflow.com/users/edit/*
 // @exclude     *://stackoverflow.com/users/delete/*
 // @exclude     *://stackoverflow.com/users/email/*

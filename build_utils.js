@@ -14,7 +14,8 @@ module.exports = {
             'match': [
                 '*://stackoverflow.com/questions/*',
                 '*://stackoverflow.com/users/*',
-                '*://stackoverflow.com/users'
+                '*://stackoverflow.com/users',
+                '*://stackoverflow.com/users?*', // needed for TamperMonkey
             ],
             'exclude': [
                 '*://stackoverflow.com/users/edit/*',
