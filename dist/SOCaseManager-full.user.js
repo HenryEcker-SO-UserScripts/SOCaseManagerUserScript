@@ -1,3 +1,32 @@
+// ==UserScript==
+// @name        SO Plagiarism Case Manager
+// @description Help facilitate and track collaborative plagiarism cleanup efforts
+// @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
+// @author      Henry Ecker (https://github.com/HenryEcker)
+// @version     0.0.9
+// @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
+// @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
+// @match       *://stackoverflow.com/questions/*
+// @match       *://stackoverflow.com/users/*
+// @match       *://stackoverflow.com/users
+// @exclude     *://stackoverflow.com/users/edit/*
+// @exclude     *://stackoverflow.com/users/delete/*
+// @exclude     *://stackoverflow.com/users/email/*
+// @exclude     *://stackoverflow.com/users/tag-notifications/*
+// @exclude     *://stackoverflow.com/users/preferences/*
+// @exclude     *://stackoverflow.com/users/hidecommunities/*
+// @exclude     *://stackoverflow.com/users/my-collectives/*
+// @exclude     *://stackoverflow.com/users/teams/*
+// @exclude     *://stackoverflow.com/users/mylogins/*
+// @exclude     *://stackoverflow.com/users/apps/*
+// @exclude     *://stackoverflow.com/users/flag-summary/*
+// @exclude     *://stackoverflow.com/users/message/*
+// @grant       GM_getValue
+// @grant       GM_setValue
+// @grant       GM_deleteValue
+// ==/UserScript==
+/* globals $, StackExchange */
+
 /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 var __webpack_exports__ = {};
