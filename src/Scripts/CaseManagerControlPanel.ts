@@ -238,7 +238,7 @@ export class CaseManagerControlPanel {
         }
 
         section.append(summaryPane);
-        this.container.append(section);
+        return section;
     }
 
 
@@ -271,19 +271,27 @@ export class CaseManagerControlPanel {
             detailPane.append(groupContainer);
         });
         section.append(detailPane);
+        return section;
+    }
+
+    private rebuildContainer(section: JQuery<HTMLElement>) {
+        this.container.empty();
+        this.container.append(this.buildNav());
         this.container.append(section);
     }
 
 
     private render() {
-        this.container.empty();
-
-        this.container.append(this.buildNav());
-
         if (this.currentPage === 'summary') {
-            void this.buildCaseSummaryPage();
+            void this.buildCaseSummaryPage()
+                .then((section) => {
+                    this.rebuildContainer(section);
+                });
         } else if (this.currentPage === 'posts') {
-            void this.buildPostsBreakdownPage();
+            void this.buildPostsBreakdownPage()
+                .then((section) => {
+                    this.rebuildContainer(section);
+                });
         }
     }
 
