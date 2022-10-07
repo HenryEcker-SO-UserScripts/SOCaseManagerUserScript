@@ -1,9 +1,10 @@
 const path = require('path');
-const {CleanWebpackPlugin} = require('clean-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
 const {buildTamperMonkeyPreamble} = require('./build_utils');
+const webpack = require('webpack');
+const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
-const fileName = 'SOCaseManager.user.js'
+
+const fileName = 'SOCaseManager.user.js';
 
 module.exports = {
     entry: './src/Main.ts',
@@ -11,13 +12,17 @@ module.exports = {
     target: 'browserslist',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: `./${fileName}`
+        filename:  `./${fileName}`
     },
     resolve: {
         extensions: ['.webpack.js', '.ts', '.tsx', '.js', '.css', '.scss']
     },
     plugins: [
-        new CleanWebpackPlugin()
+        new CleanWebpackPlugin(),
+        new webpack.BannerPlugin({
+            banner: buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, ''),
+            raw: true
+        })
     ],
     module: {
         rules: [
@@ -25,42 +30,12 @@ module.exports = {
                 test: /\.tsx?$/,
                 include: path.resolve(__dirname, 'src'),
                 use: [
-                    {
-                        loader: 'string-replace-loader',
-                        options: {
-                            multiple: [
-                                // Reduces excess space in elements built with jQuery
-                                {
-                                    search: />\s+</g,
-                                    replace: '><',
-                                },
-                                {
-                                    search: /\s{2,}/g,
-                                    replace: ' ',
-                                },
-                                {
-                                    search: /\n/g,
-                                    replace: '',
-                                }
-                            ]
-                        }
-                    },
                     {loader: 'ts-loader'}
                 ]
             }
         ]
     },
     optimization: {
-        minimize: true,
-        minimizer: [new TerserPlugin({
-            terserOptions: {
-                ecma: 2021,
-                module: true,
-                toplevel: true,
-                format: {
-                    preamble: buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, '')
-                }
-            }
-        })]
+        minimize: false
     }
 }
