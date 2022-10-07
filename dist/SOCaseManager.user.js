@@ -7,24 +7,24 @@
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
-// @match       *://stackoverflow.com/users/*
 // @match       *://stackoverflow.com/users
 // @match       *://stackoverflow.com/users?*
-// @exclude     *://stackoverflow.com/users/edit/*
-// @exclude     *://stackoverflow.com/users/delete/*
-// @exclude     *://stackoverflow.com/users/email/*
-// @exclude     *://stackoverflow.com/users/tag-notifications/*
-// @exclude     *://stackoverflow.com/users/preferences/*
-// @exclude     *://stackoverflow.com/users/hidecommunities/*
-// @exclude     *://stackoverflow.com/users/my-collectives/*
-// @exclude     *://stackoverflow.com/users/teams/*
-// @exclude     *://stackoverflow.com/users/mylogins/*
+// @match       *://stackoverflow.com/users/*
 // @exclude     *://stackoverflow.com/users/apps/*
+// @exclude     *://stackoverflow.com/users/delete/*
+// @exclude     *://stackoverflow.com/users/edit/*
+// @exclude     *://stackoverflow.com/users/email/*
 // @exclude     *://stackoverflow.com/users/flag-summary/*
+// @exclude     *://stackoverflow.com/users/hidecommunities/*
 // @exclude     *://stackoverflow.com/users/message/*
+// @exclude     *://stackoverflow.com/users/my-collectives/*
+// @exclude     *://stackoverflow.com/users/mylogins/*
+// @exclude     *://stackoverflow.com/users/preferences/*
+// @exclude     *://stackoverflow.com/users/tag-notifications/*
+// @exclude     *://stackoverflow.com/users/teams/*
+// @grant       GM_deleteValue
 // @grant       GM_getValue
 // @grant       GM_setValue
-// @grant       GM_deleteValue
 // ==/UserScript==
 /* globals $, StackExchange */
 
