@@ -32,17 +32,17 @@ module.exports = {
                 '*://stackoverflow.com/users/message/*',
             ],
             'grant': ['GM_getValue', 'GM_setValue', 'GM_deleteValue']
-        }
+        };
 
         const globals = ['$', 'StackExchange'];
 
-        let preamble = ['// ==UserScript=='];
+        const preamble = ['// ==UserScript=='];
 
-        let acc = [];
+        const acc = [];
         let maxKeyLength = 0;
         Object.entries(userscript_config).forEach(([key, value]) => {
             if (value instanceof Array) {
-                value.forEach(v => acc.push([key, v]));
+                value.sort((a, b) => a.localeCompare(b)).forEach(v => acc.push([key, v]));
             } else {
                 acc.push([key, value]);
             }
@@ -52,7 +52,7 @@ module.exports = {
         });
         acc.forEach(([key, value]) => {
             preamble.push(`// @${key.padEnd(maxKeyLength)} ${value}`);
-        })
+        });
 
         if (globals.length > 0) {
             preamble.push('// ==/UserScript==');
