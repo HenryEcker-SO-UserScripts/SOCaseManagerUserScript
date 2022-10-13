@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.0.11
+// @version     0.0.12
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -339,35 +339,19 @@ const getAnswerIdsOnPage = () => {
         return Number(e.getAttribute('data-post-id'));
     }).toArray());
 };
-const setDifference = (a, b) => {
-    return new Set([...a].filter(i => !b.has(i)));
-};
 const setIntersection = (a, b) => {
     return new Set([...a].filter(i => b.has(i)));
 };
-const mergeSets = (a, b) => {
-    return new Set([...a, ...b]);
-};
 class SummaryAnnotator {
-    constructor() {
-        this.checkedPostIds = new Set();
-        this.annotatedPosts = new Set();
-    }
-    updateSets() {
+    annotateAnswers() {
         const postIdsOnPage = getAnswerIdsOnPage();
-        const uncheckedIds = [...setDifference(postIdsOnPage, this.checkedPostIds)];
-        if (uncheckedIds.length === 0) {
-            this.render(postIdsOnPage);
-            return;
-        }
-        void getSummaryPostInfoFromIds(uncheckedIds).then(postResults => {
-            this.annotatedPosts = mergeSets(this.annotatedPosts, postResults);
-            this.checkedPostIds = mergeSets(this.checkedPostIds, postIdsOnPage);
-            this.render(postIdsOnPage);
+        void getSummaryPostInfoFromIds([...postIdsOnPage])
+            .then(postResults => {
+            this.render(postIdsOnPage, new Set(postResults));
         });
     }
-    render(postsOnPage) {
-        for (const postId of setIntersection(postsOnPage, this.annotatedPosts)) {
+    render(postsOnPage, annotatedPosts) {
+        for (const postId of setIntersection(postsOnPage, annotatedPosts)) {
             $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`)
                 .before($(`<div title="This post is noted in the Case Manager System" class="s-post-summary--stats-item" style="color: var(--red-600)">${buildCaseSvg()}</div>`));
         }
@@ -375,11 +359,11 @@ class SummaryAnnotator {
 }
 const buildAnswerSummaryIndicator = () => {
     const summaryAnnotator = new SummaryAnnotator();
-    summaryAnnotator.updateSets();
+    summaryAnnotator.annotateAnswers();
     const matchPattern = new RegExp(`users/tab/\\d+\\${userAnswerTabProfile}`, 'gi');
     $(document).on('ajaxComplete', (_0, _1, { url }) => {
         if (url.match(matchPattern)) {
-            summaryAnnotator.updateSets();
+            summaryAnnotator.annotateAnswers();
         }
     });
 };
