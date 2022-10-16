@@ -64,6 +64,7 @@ const handleFormAction = (form: JQuery, answerId: number, ownerId: number) => (e
     submitButton.prop('disabled', true); // disable button (to prevent multiple calls)
     const actions = form.find('input[type="checkbox"]:checked:not(:disabled)');
     if (actions.length === 0) {
+        submitButton.prop('disabled', false); // un-disable button (action is completed)
         return;
     }
     const body: {
