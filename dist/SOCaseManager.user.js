@@ -213,7 +213,7 @@ const getTimelinePopoverId = (answerId) => {
 };
 const buildBaseTimelineButtons = (mountPoint, answerId) => {
     const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
-    const popOver = $(`<div class="s-popover" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
+    const popOver = $(`<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
     mountPoint.append(controlButton);
     mountPoint.append(popOver);
 };
@@ -228,9 +228,9 @@ const buildActiveTimelineButton = (buttonId, answerId) => {
                 .then(timelineEvents => {
                 const eventPane = $('<div class="case-manager-post-timeline-container"></div>');
                 eventPane.append($('<h3>Case Manager Post Timeline</h3>'));
-                const timelineEventContainer = $('<div class="d-flex fd-column gs4"></div>');
+                const timelineEventContainer = $('<div class="d-grid ws-nowrap" style="grid-template-columns: repeat(3, min-content); grid-gap: var(--su8);"></div>');
                 for (const event of timelineEvents) {
-                    timelineEventContainer.append($(`<div class="flex--item d-flex fd-row jc-space-between ai-center"><a href="/users/${event['account_id']}">${event['display_name']}</a><span data-event-type-id="${event['timeline_event_type']}">${event['timeline_event_description']}</span><span>${new Date(event['event_creation_date']).toLocaleString()}</span></div>`));
+                    timelineEventContainer.append($(`<a href="/users/${event['account_id']}">${event['display_name']}</a><span data-event-type-id="${event['timeline_event_type']}">${event['timeline_event_description']}</span><span>${new Date(event['event_creation_date']).toLocaleString()}</span>`));
                 }
                 eventPane.append(timelineEventContainer);
                 $(`#${timelinePopoverId} > .${popoverMountPointClass}`)
