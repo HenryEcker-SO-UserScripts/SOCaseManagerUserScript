@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.0.12
+// @version     0.0.13
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -129,6 +129,7 @@ const handleFormAction = (form, answerId, ownerId) => (ev) => {
     submitButton.prop('disabled', true);
     const actions = form.find('input[type="checkbox"]:checked:not(:disabled)');
     if (actions.length === 0) {
+        submitButton.prop('disabled', false);
         return;
     }
     const body = {};
