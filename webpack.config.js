@@ -1,7 +1,6 @@
 const path = require('path');
 const {buildTamperMonkeyPreamble} = require('./build_utils');
 const webpack = require('webpack');
-const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
 
 const fileName = 'SOCaseManager.user.js';
@@ -12,13 +11,13 @@ module.exports = {
     target: 'browserslist',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename:  `./${fileName}`
+        filename: `./${fileName}`,
+        clean: true
     },
     resolve: {
         extensions: ['.webpack.js', '.ts', '.tsx', '.js', '.css', '.scss']
     },
     plugins: [
-        new CleanWebpackPlugin(),
         new webpack.BannerPlugin({
             banner: buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, ''),
             raw: true
