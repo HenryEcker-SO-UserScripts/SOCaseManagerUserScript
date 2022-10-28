@@ -20,7 +20,12 @@
     "allowSyntheticDefaultImports": true,
     "module": "ES6",
     "moduleResolution": "node",
-    "target": "ES2021",
-    "jsx": "react-jsx"
+    "target": "ESNext",
+    "jsx": "react-jsx",
+    "types": [
+      "node",
+      "jquery",
+      "tampermonkey"
+    ]
   }
 }
