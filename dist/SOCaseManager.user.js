@@ -43,7 +43,8 @@
     userAnswers: "?tab=answers",
     cases: "?tab=case"
   };
-  const authRedirectUri = "https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
+  const awsApiRoute = "https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod";
+  const authRedirectUri = `${awsApiRoute}/auth/se/oauth`;
   const seTokenAuthRoute = `https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=${authRedirectUri}`;
   const requestNewJwt = () => {
     return fetchFromAWS(
@@ -78,7 +79,7 @@
         }
       };
     }
-    return fetch(`https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions).then((res) => {
+    return fetch(`${awsApiRoute}${path}`, newOptions).then((res) => {
       if (res.status === 401) {
         return requestNewJwt().then(() => fetchFromAWS(path, options));
       }

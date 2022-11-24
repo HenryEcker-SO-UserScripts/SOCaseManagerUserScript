@@ -1,4 +1,4 @@
-import {gmStorageKeys} from './Globals';
+import {awsApiRoute, gmStorageKeys} from './Globals';
 
 export type CaseSummaryPostSummary = {
     action_taken: string;
@@ -88,7 +88,7 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
             }
         };
     }
-    return fetch(`https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions).then(res => {
+    return fetch(`${awsApiRoute}${path}`, newOptions).then(res => {
         if (res.status === 401) { // jwt is expired so attempt to automatically retrieve a new one
             return requestNewJwt().then(() => fetchFromAWS(path, options));
         }

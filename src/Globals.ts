@@ -49,6 +49,7 @@ export const tabIdentifiers = {
     cases: '?tab=case'
 };
 
-const authRedirectUri = 'https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth';
+export const awsApiRoute = 'https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod';
+const authRedirectUri = `${awsApiRoute}/auth/se/oauth`;
 export const seTokenAuthRoute = `https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=${authRedirectUri}`;
 
