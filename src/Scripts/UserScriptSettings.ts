@@ -1,5 +1,5 @@
 import {fetchFromAWS} from '../AWSAPI';
-import {accessTokenGmStorageKey, seApiTokenGmStorageKey, seTokenAuthRoute, type StackExchangeAPI} from '../Globals';
+import {gmStorageKeys, seTokenAuthRoute, type StackExchangeAPI} from '../Globals';
 
 
 declare const StackExchange: StackExchangeAPI;
@@ -32,10 +32,10 @@ export const buildUserScriptSettingsPanel = async () => {
                 if (res.status === 200) {
                     // Get rid of the row from the table
                     tokenRow.remove();
-                    if (GM_getValue(seApiTokenGmStorageKey) === token) {
+                    if (GM_getValue(gmStorageKeys.seApiToken) === token) {
                         // If invalidating the local storage key also remove from GM storage
-                        GM_deleteValue(seApiTokenGmStorageKey);
-                        GM_deleteValue(accessTokenGmStorageKey);
+                        GM_deleteValue(gmStorageKeys.seApiToken);
+                        GM_deleteValue(gmStorageKeys.accessToken);
                         window.location.reload();
                     }
                 }
@@ -57,12 +57,12 @@ export const buildUserScriptSettingsPanel = async () => {
             }
         ).then((confirm: boolean) => {
             if (confirm) {
-                void fetchFromAWS(`/auth/credentials/${GM_getValue(seApiTokenGmStorageKey)}/de-authenticate`)
+                void fetchFromAWS(`/auth/credentials/${GM_getValue(gmStorageKeys.seApiToken)}/de-authenticate`)
                     .then((res) => {
                         if (res.status === 200) {
                             // These are all now no longer valid
-                            GM_deleteValue(seApiTokenGmStorageKey);
-                            GM_deleteValue(accessTokenGmStorageKey);
+                            GM_deleteValue(gmStorageKeys.seApiToken);
+                            GM_deleteValue(gmStorageKeys.accessToken);
                             window.location.reload();
                         }
                     });

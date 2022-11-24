@@ -33,12 +33,16 @@
   const buildAlertSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
   const buildCaseSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
   const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
-  const accessTokenGmStorageKey = "access_token";
-  const seApiTokenGmStorageKey = "se_api_token";
-  const userCaseManagerTabIdentifier = "?tab=case-manager";
-  const userCaseManagerSettingsTabIdentifier = "?tab=case-manager-settings";
-  const userAnswerTabProfile = "?tab=answers";
-  const casesTab = "?tab=case";
+  const gmStorageKeys = {
+    accessToken: "access_token",
+    seApiToken: "se_api_token"
+  };
+  const tabIdentifiers = {
+    settings: "?tab=case-manager-settings",
+    userSummary: "?tab=case-manager",
+    userAnswers: "?tab=answers",
+    cases: "?tab=case"
+  };
   const authRedirectUri = "https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
   const seTokenAuthRoute = `https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=${authRedirectUri}`;
   const requestNewJwt = () => {
@@ -49,20 +53,20 @@
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ "se_api_token": GM_getValue(seApiTokenGmStorageKey) })
+        body: JSON.stringify({ "se_api_token": GM_getValue(gmStorageKeys.seApiToken) })
       },
       false
     ).then((res) => res.json()).then((resData) => {
-      GM_setValue(accessTokenGmStorageKey, resData["cm_access_token"]);
+      GM_setValue(gmStorageKeys.accessToken, resData["cm_access_token"]);
     }).catch((err) => {
-      GM_deleteValue(accessTokenGmStorageKey);
+      GM_deleteValue(gmStorageKeys.accessToken);
       console.error(err);
     });
   };
   const fetchFromAWS = (path, options, withCredentials = true) => {
     let newOptions = withCredentials ? {
       "headers": {
-        "access_token": GM_getValue(accessTokenGmStorageKey)
+        "access_token": GM_getValue(gmStorageKeys.accessToken)
       }
     } : {};
     if (options !== void 0) {
@@ -304,7 +308,7 @@
       ev.preventDefault();
       const inputValue = $(`#${authModalId}-input`).val();
       if (inputValue !== void 0 && inputValue.length > 0) {
-        GM_setValue(seApiTokenGmStorageKey, inputValue);
+        GM_setValue(gmStorageKeys.seApiToken, inputValue);
         void requestNewJwt().then(() => {
           window.location.reload();
         });
@@ -337,7 +341,7 @@
   const buildAnswerSummaryIndicator = () => {
     const summaryAnnotator = new SummaryAnnotator();
     summaryAnnotator.annotateAnswers();
-    const matchPattern = new RegExp(`users/tab/\\d+\\${userAnswerTabProfile}`, "gi");
+    const matchPattern = new RegExp(`users/tab/\\d+\\${tabIdentifiers.userAnswers}`, "gi");
     $(document).on("ajaxComplete", (_0, _1, { url }) => {
       if (url.match(matchPattern)) {
         summaryAnnotator.annotateAnswers();
@@ -349,7 +353,7 @@
     const usp = new URLSearchParams(search);
     usp.set("site", "stackoverflow");
     usp.set("key", apiKey);
-    usp.set("access_token", GM_getValue(seApiTokenGmStorageKey));
+    usp.set("access_token", GM_getValue(gmStorageKeys.seApiToken));
     return fetch(`https://api.stackexchange.com/2.3${path}?${usp.toString()}`);
   };
   const buildCaseManagerPane = (userId, isActive) => {
@@ -597,7 +601,7 @@
     }
   }
   const buildUserTile = (account_id, profile_image, display_name, current_state, event_date) => {
-    const link = `/users/${account_id}${userCaseManagerTabIdentifier}`;
+    const link = `/users/${account_id}${tabIdentifiers.userSummary}`;
     return $(`<div class="grid--item user-info">
                     ${profile_image !== null ? `<div class="user-gravatar48">
                         <a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>
@@ -644,7 +648,7 @@
       }
     }
     buildPublicSearchQuery() {
-      return `/users${casesTab}&group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
+      return `/users${tabIdentifiers.cases}&group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
     }
     pullDownData() {
       return fetchFromAWS(`/cases?group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ""}${this.needsTotalPages ? "&total-pages=true" : ""}${this.needsGroupInfo ? "&group-info=true" : ""}`).then((res) => res.json()).then((resData) => {
@@ -695,7 +699,7 @@
     <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=moderators"
        data-nav-xhref="" title="Our current community moderators" data-value="moderators" data-shortcut="">
         Moderators</a>
-    <a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users${casesTab}"
+    <a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users${tabIdentifiers.cases}"
        data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist"
        data-shortcut="">Plagiarists</a>
 </div>`)
@@ -715,7 +719,7 @@
       });
     }
     buildGroupToggleLink(group_id, description) {
-      const href = `/users${casesTab}&group=${group_id}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
+      const href = `/users${tabIdentifiers.cases}&group=${group_id}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
       const a = $(`<a${group_id === this.group ? ' class="youarehere is-selected"' : ""} href="${href}" data-nav-xhref="" data-value="${group_id}" data-shortcut="">${description}</a>`);
       a.on("click", (ev) => {
         ev.preventDefault();
@@ -748,7 +752,7 @@
       });
     }
     buildHrefForNavItem(p) {
-      return `/users${casesTab}&group=${this.group}&page=${p}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
+      return `/users${tabIdentifiers.cases}&group=${this.group}&page=${p}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
     }
     buildNavItem(pageNumber, linkLabel) {
       if (linkLabel === void 0) {
@@ -835,9 +839,9 @@
         void fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res) => {
           if (res.status === 200) {
             tokenRow.remove();
-            if (GM_getValue(seApiTokenGmStorageKey) === token) {
-              GM_deleteValue(seApiTokenGmStorageKey);
-              GM_deleteValue(accessTokenGmStorageKey);
+            if (GM_getValue(gmStorageKeys.seApiToken) === token) {
+              GM_deleteValue(gmStorageKeys.seApiToken);
+              GM_deleteValue(gmStorageKeys.accessToken);
               window.location.reload();
             }
           }
@@ -857,10 +861,10 @@
         }
       ).then((confirm) => {
         if (confirm) {
-          void fetchFromAWS(`/auth/credentials/${GM_getValue(seApiTokenGmStorageKey)}/de-authenticate`).then((res) => {
+          void fetchFromAWS(`/auth/credentials/${GM_getValue(gmStorageKeys.seApiToken)}/de-authenticate`).then((res) => {
             if (res.status === 200) {
-              GM_deleteValue(seApiTokenGmStorageKey);
-              GM_deleteValue(accessTokenGmStorageKey);
+              GM_deleteValue(gmStorageKeys.seApiToken);
+              GM_deleteValue(gmStorageKeys.accessToken);
               window.location.reload();
             }
           });
@@ -875,7 +879,7 @@
     return container;
   };
   const UserScript = () => {
-    if (GM_getValue(accessTokenGmStorageKey, null) === null) {
+    if (GM_getValue(gmStorageKeys.accessToken, null) === null) {
       startAuthFlow();
       return;
     }
@@ -884,17 +888,17 @@
       void buildAnswerControlPanel();
     } else if (window.location.pathname.match(/^\/users$/) !== null) {
       const primaryUsersNav = $(".js-filter-btn");
-      const a = $(`<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users${casesTab}" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>`);
+      const a = $(`<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users${tabIdentifiers.cases}" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>`);
       primaryUsersNav.append(a);
-      if (window.location.search.startsWith(casesTab)) {
+      if (window.location.search.startsWith(tabIdentifiers.cases)) {
         const cmUserCaseSummaryPage = new CasesUserList();
         cmUserCaseSummaryPage.init();
       }
     } else if (window.location.pathname.match(currentUserProfilePattern) !== null) {
-      const navButton = $(`<a href="${window.location.pathname}${userCaseManagerSettingsTabIdentifier}" class="s-navigation--item">Case Manager Settings</a>`);
+      const navButton = $(`<a href="${window.location.pathname}${tabIdentifiers.settings}" class="s-navigation--item">Case Manager Settings</a>`);
       const tabContainer = $(".user-show-new .s-navigation:eq(0)");
       tabContainer.append(navButton);
-      if (window.location.search.startsWith(userCaseManagerSettingsTabIdentifier)) {
+      if (window.location.search.startsWith(tabIdentifiers.settings)) {
         const mainPanel = $("#mainbar-full");
         mainPanel.empty();
         void buildUserScriptSettingsPanel().then((c) => {
@@ -907,7 +911,7 @@
         throw Error("Something changed in user path!");
       }
       const userId = Number(userPath[0].split("/")[2]);
-      const navButton = $(`<a href="${window.location.pathname}${userCaseManagerTabIdentifier}" class="s-navigation--item">Case Manager</a>`);
+      const navButton = $(`<a href="${window.location.pathname}${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
       void fetchFromAWS(`/case/user/${userId}`).then((res) => res.json()).then((resData) => {
         if (resData["is_known_user"]) {
           navButton.prepend(buildAlertSvg(16, 20));
@@ -915,14 +919,14 @@
       });
       const tabContainer = $(".user-show-new .s-navigation:eq(0)");
       tabContainer.append(navButton);
-      if (window.location.search.startsWith(userCaseManagerTabIdentifier)) {
+      if (window.location.search.startsWith(tabIdentifiers.userSummary)) {
         const selectedClass = "is-selected";
         tabContainer.find("a").removeClass(selectedClass);
         navButton.addClass(selectedClass);
         const mainPanel = $("#mainbar-full > div:last-child");
         const cmUserControlPanel = new CaseManagerControlPanel(userId);
         mainPanel.replaceWith(cmUserControlPanel.init());
-      } else if (window.location.search.startsWith(userAnswerTabProfile)) {
+      } else if (window.location.search.startsWith(tabIdentifiers.userAnswers)) {
         buildAnswerSummaryIndicator();
       }
     }

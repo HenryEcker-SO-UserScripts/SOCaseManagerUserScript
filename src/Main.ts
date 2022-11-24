@@ -1,11 +1,5 @@
 import type {StackExchangeAPI,} from './Globals';
-import {
-    accessTokenGmStorageKey, buildAlertSvg,
-    casesTab,
-    userAnswerTabProfile,
-    userCaseManagerSettingsTabIdentifier,
-    userCaseManagerTabIdentifier
-} from './Globals';
+import {buildAlertSvg, gmStorageKeys, tabIdentifiers} from './Globals';
 import {buildAnswerControlPanel} from './Scripts/AnswerControlPanel';
 import {startAuthFlow} from './ClientSideAuthFlow';
 import {buildAnswerSummaryIndicator} from './Scripts/ProfileAnswerSummaryIndicator';
@@ -19,7 +13,7 @@ declare const StackExchange: StackExchangeAPI;
 
 const UserScript = () => {
     // API TOKEN IS REQUIRED
-    if (GM_getValue(accessTokenGmStorageKey, null) === null) {
+    if (GM_getValue(gmStorageKeys.accessToken, null) === null) {
         startAuthFlow();
         return; // Nothing else is allowed to run without valid auth
     }
@@ -29,17 +23,17 @@ const UserScript = () => {
         void buildAnswerControlPanel();
     } else if (window.location.pathname.match(/^\/users$/) !== null) {
         const primaryUsersNav = $('.js-filter-btn');
-        const a = $(`<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users${casesTab}" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>`);
+        const a = $(`<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users${tabIdentifiers.cases}" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>`);
         primaryUsersNav.append(a);
-        if (window.location.search.startsWith(casesTab)) {
+        if (window.location.search.startsWith(tabIdentifiers.cases)) {
             const cmUserCaseSummaryPage = new CasesUserList();
             cmUserCaseSummaryPage.init();
         }
     } else if (window.location.pathname.match(currentUserProfilePattern) !== null) {
-        const navButton = $(`<a href="${window.location.pathname}${userCaseManagerSettingsTabIdentifier}" class="s-navigation--item">Case Manager Settings</a>`);
+        const navButton = $(`<a href="${window.location.pathname}${tabIdentifiers.settings}" class="s-navigation--item">Case Manager Settings</a>`);
         const tabContainer = $('.user-show-new .s-navigation:eq(0)');
         tabContainer.append(navButton);
-        if (window.location.search.startsWith(userCaseManagerSettingsTabIdentifier)) {
+        if (window.location.search.startsWith(tabIdentifiers.settings)) {
             const mainPanel = $('#mainbar-full');
             mainPanel.empty(); // Empty before request (to indicate immediately indicate the page will render)
             void buildUserScriptSettingsPanel().then(c => {
@@ -53,7 +47,7 @@ const UserScript = () => {
         }
         const userId = Number(userPath[0].split('/')[2]);
 
-        const navButton = $(`<a href="${window.location.pathname}${userCaseManagerTabIdentifier}" class="s-navigation--item">Case Manager</a>`);
+        const navButton = $(`<a href="${window.location.pathname}${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
         void fetchFromAWS(`/case/user/${userId}`)
             .then(res => res.json())
             .then((resData: { is_known_user: boolean; }) => {
@@ -65,7 +59,7 @@ const UserScript = () => {
         tabContainer.append(navButton);
 
 
-        if (window.location.search.startsWith(userCaseManagerTabIdentifier)) {
+        if (window.location.search.startsWith(tabIdentifiers.userSummary)) {
             const selectedClass = 'is-selected';
             // Make nav the only active class
             tabContainer.find('a').removeClass(selectedClass);
@@ -78,7 +72,7 @@ const UserScript = () => {
             const cmUserControlPanel = new CaseManagerControlPanel(userId);
             // Blank the content to make room for the UserScript
             mainPanel.replaceWith(cmUserControlPanel.init());
-        } else if (window.location.search.startsWith(userAnswerTabProfile)) {
+        } else if (window.location.search.startsWith(tabIdentifiers.userAnswers)) {
             buildAnswerSummaryIndicator();
         }
     }

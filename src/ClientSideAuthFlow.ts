@@ -1,4 +1,4 @@
-import {seApiTokenGmStorageKey, seTokenAuthRoute} from './Globals';
+import {gmStorageKeys, seTokenAuthRoute} from './Globals';
 import {requestNewJwt} from './AWSAPI';
 
 
@@ -30,7 +30,7 @@ export const startAuthFlow = () => {
         ev.preventDefault();
         const inputValue = $(`#${authModalId}-input`).val() as string | undefined;
         if (inputValue !== undefined && inputValue.length > 0) {
-            GM_setValue(seApiTokenGmStorageKey, inputValue);
+            GM_setValue(gmStorageKeys.seApiToken, inputValue);
             void requestNewJwt().then(() => {
                 window.location.reload(); // refresh page to enable
             });

@@ -1,4 +1,4 @@
-import {seApiTokenGmStorageKey} from './Globals';
+import {gmStorageKeys} from './Globals';
 
 
 const apiKey = 'BkvRpNB*IzKMdjAcikc4jA((';
@@ -15,6 +15,6 @@ export const fetchFromSEAPI = (path: string, search: string): Promise<Response> 
     const usp = new URLSearchParams(search);
     usp.set('site', 'stackoverflow');
     usp.set('key', apiKey);
-    usp.set('access_token', GM_getValue(seApiTokenGmStorageKey));
+    usp.set('access_token', GM_getValue(gmStorageKeys.seApiToken));
     return fetch(`https://api.stackexchange.com/2.3${path}?${usp.toString()}`);
 };
