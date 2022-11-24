@@ -10,6 +10,7 @@ import {
 } from '../AWSAPI';
 import type {StackExchangeAPI} from '../Globals';
 import {fetchFromSEAPI, type SEAPIResponse} from '../SEAPI';
+import {buildCheckmarkSvg} from '../Globals';
 
 declare const StackExchange: StackExchangeAPI;
 
@@ -257,20 +258,41 @@ export class CaseManagerControlPanel {
 
     private async buildPostsBreakdownPage() {
         const section = $(`<section class="flex--item fl-grow1 wmx100"><div class="s-page-title mb24">
-    <h1 class="s-page-title--header m0 baw0 p0">Posts</h1></section>`);
+    <h1 class="s-page-title--header m0 baw0 p0">Post Status Summary</h1></section>`);
         const detailData = await this.getBreakdownData();
-        const detailPane = $('<div class="d-grid grid__2 md:grid__1 g8"></div>');
-        detailData.forEach((group) => {
-
-            const groupContainer = $(`<div class="grid--item p8" data-event-id="${group['id']}"><h3 class="fs-title mb12">${group['timeline_event_description']}</h3></div>`);
-            const linkContainer = $('<div class="d-flex fd-row fw-wrap gs16 hmn1 hmx4 overflow-y-scroll"></div>');
-            group['post_ids'].forEach(post_id => {
-                linkContainer.append($(`<a class="flex--item" href="/a/${post_id}" target="_blank" rel="noreferrer noopener">${post_id}</a>`));
+        const detailTableContainer = $('<div class="s-table-container" style="width:min-content"></div>');
+        const detailTable = $('<table class="s-table"></table>');
+        {
+            const detailTableHead = $('<thead></thead>');
+            const detailTableHeadTr = $('<tr></tr>');
+            detailData['header'].forEach((headerText) => {
+                detailTableHeadTr.append(`<th>${headerText}</th>`);
             });
-            groupContainer.append(linkContainer);
-            detailPane.append(groupContainer);
-        });
-        section.append(detailPane);
+            detailTableHead.append(detailTableHeadTr);
+            detailTable.append(detailTableHead);
+        }
+        {
+            const detailTableBody = $('<tbody></tbody>');
+            detailData['body'].forEach((row) => {
+                const detailTableBodyTr = $('<tr></tr>');
+                row.forEach((elem, idx) => {
+                    if (idx === 0) {
+                        detailTableBodyTr.append(`<td><a class="flex--item" href="/a/${elem}" target="_blank" rel="noreferrer noopener">${elem}</a></td>`);
+                    } else {
+                        if (elem !== null) {
+                            detailTableBodyTr.append(`<td>${buildCheckmarkSvg()}</td>`);
+                        } else {
+                            detailTableBodyTr.append('<td></td>');
+
+                        }
+                    }
+                });
+                detailTableBody.append(detailTableBodyTr);
+            });
+            detailTable.append(detailTableBody);
+        }
+        detailTableContainer.append(detailTable);
+        section.append(detailTableContainer);
         return section;
     }
 
