@@ -1,6 +1,4 @@
-import type {
-    CasePostDetailResponse
-} from '../AWSAPI';
+import type {CasePostDetailResponse} from '../AWSAPI';
 import {
     type CaseStateChangeResponse,
     type CaseSummaryCaseTimeline,
@@ -9,8 +7,8 @@ import {
     fetchFromAWS
 } from '../AWSAPI';
 import type {StackExchangeAPI} from '../Globals';
-import {fetchFromSEAPI, type SEAPIResponse} from '../SEAPI';
 import {buildCheckmarkSvg} from '../Globals';
+import {fetchFromSEAPI, type SEAPIResponse} from '../SEAPI';
 
 declare const StackExchange: StackExchangeAPI;
 

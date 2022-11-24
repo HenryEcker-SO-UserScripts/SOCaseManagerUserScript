@@ -1,4 +1,4 @@
-import {accessTokenGmStorageKey, seApiTokenGmStorageKey} from './Globals';
+import {gmStorageKeys} from './Globals';
 
 export type CaseSummaryPostSummary = {
     action_taken: string;
@@ -56,17 +56,17 @@ export const requestNewJwt = () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({'se_api_token': GM_getValue(seApiTokenGmStorageKey)})
+            body: JSON.stringify({'se_api_token': GM_getValue(gmStorageKeys.seApiToken)})
         },
         false
     )
         .then(res => res.json())
         .then(resData => {
-            GM_setValue(accessTokenGmStorageKey, resData['cm_access_token']);
+            GM_setValue(gmStorageKeys.accessToken, resData['cm_access_token']);
         })
         .catch(err => {
             // Remove current access token on error (maybe not great)
-            GM_deleteValue(accessTokenGmStorageKey);
+            GM_deleteValue(gmStorageKeys.accessToken);
             console.error(err);
         });
 };
@@ -76,7 +76,7 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
     // Always send access_token along
     let newOptions: RequestInit = withCredentials ? {
         'headers': {
-            'access_token': GM_getValue(accessTokenGmStorageKey)
+            'access_token': GM_getValue(gmStorageKeys.accessToken)
         }
     } : {};
     if (options !== undefined) {

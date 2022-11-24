@@ -1,5 +1,5 @@
 import {getSummaryPostInfoFromIds} from '../AWSAPI';
-import {buildCaseSvg, userAnswerTabProfile} from '../Globals';
+import {buildCaseSvg, tabIdentifiers} from '../Globals';
 
 
 const getAnswerIdsOnPage = (): Set<number> => {
@@ -45,7 +45,7 @@ export const buildAnswerSummaryIndicator = () => {
     const summaryAnnotator = new SummaryAnnotator();
     summaryAnnotator.annotateAnswers();
     // The escape \\ is for the ? that comes with the variable
-    const matchPattern = new RegExp(`users/tab/\\d+\\${userAnswerTabProfile}`, 'gi');
+    const matchPattern = new RegExp(`users/tab/\\d+\\${tabIdentifiers.userAnswers}`, 'gi');
     // Handle buttons on tab/page navigation
     $(document).on('ajaxComplete', (_0, _1, {url}) => {
         if (url.match(matchPattern)) {

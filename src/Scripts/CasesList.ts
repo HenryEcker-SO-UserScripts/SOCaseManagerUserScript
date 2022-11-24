@@ -1,10 +1,10 @@
-import {casesTab, userCaseManagerTabIdentifier} from '../Globals';
+import {tabIdentifiers} from '../Globals';
 import type {CaseGroupEntry, OpenCasesSummaryPageResponse, UserCaseSummaryEntry} from '../AWSAPI';
 import {fetchFromAWS} from '../AWSAPI';
 
 
 const buildUserTile = (account_id: number, profile_image: null | string, display_name: string, current_state: string, event_date: string) => {
-    const link = `/users/${account_id}${userCaseManagerTabIdentifier}`;
+    const link = `/users/${account_id}${tabIdentifiers.userSummary}`;
     return $(`<div class="grid--item user-info">
                     ${profile_image !== null ? `<div class="user-gravatar48">
                         <a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>
@@ -56,7 +56,7 @@ export class CasesUserList {
     }
 
     private buildPublicSearchQuery() {
-        return `/users${casesTab}&group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
+        return `/users${tabIdentifiers.cases}&group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
     }
 
     private pullDownData() {
@@ -116,7 +116,7 @@ export class CasesUserList {
     <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=moderators"
        data-nav-xhref="" title="Our current community moderators" data-value="moderators" data-shortcut="">
         Moderators</a>
-    <a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users${casesTab}"
+    <a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users${tabIdentifiers.cases}"
        data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist"
        data-shortcut="">Plagiarists</a>
 </div>`));
@@ -143,7 +143,7 @@ export class CasesUserList {
     }
 
     buildGroupToggleLink(group_id: string, description: string) {
-        const href = `/users${casesTab}&group=${group_id}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
+        const href = `/users${tabIdentifiers.cases}&group=${group_id}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
         const a = $(`<a${group_id === this.group ? ' class="youarehere is-selected"' : ''} href="${href}" data-nav-xhref="" data-value="${group_id}" data-shortcut="">${description}</a>`);
         a.on('click', (ev) => {
             ev.preventDefault();
@@ -180,7 +180,7 @@ export class CasesUserList {
     }
 
     private buildHrefForNavItem(p: number) {
-        return `/users${casesTab}&group=${this.group}&page=${p}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
+        return `/users${tabIdentifiers.cases}&group=${this.group}&page=${p}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
     }
 
     private buildNavItem(pageNumber: number, linkLabel?: string | number) {

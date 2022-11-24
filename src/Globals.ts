@@ -37,12 +37,17 @@ export const buildCaseSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true"
 export const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
 
 
-export const accessTokenGmStorageKey = 'access_token';
-export const seApiTokenGmStorageKey = 'se_api_token';
-export const userCaseManagerTabIdentifier = '?tab=case-manager';
-export const userCaseManagerSettingsTabIdentifier = '?tab=case-manager-settings';
-export const userAnswerTabProfile = '?tab=answers';
-export const casesTab = '?tab=case';
+export const gmStorageKeys = {
+    accessToken: 'access_token',
+    seApiToken: 'se_api_token'
+};
+
+export const tabIdentifiers = {
+    settings: '?tab=case-manager-settings',
+    userSummary: '?tab=case-manager',
+    userAnswers: '?tab=answers',
+    cases: '?tab=case'
+};
 
 const authRedirectUri = 'https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth';
 export const seTokenAuthRoute = `https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=${authRedirectUri}`;
