@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.0
+// @version     0.1.1
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -32,6 +32,7 @@
   "use strict";
   const buildAlertSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
   const buildCaseSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
+  const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
   const accessTokenGmStorageKey = "access_token";
   const seApiTokenGmStorageKey = "se_api_token";
   const userCaseManagerTabIdentifier = "?tab=case-manager";
@@ -542,19 +543,40 @@
     }
     async buildPostsBreakdownPage() {
       const section = $(`<section class="flex--item fl-grow1 wmx100"><div class="s-page-title mb24">
-    <h1 class="s-page-title--header m0 baw0 p0">Posts</h1></section>`);
+    <h1 class="s-page-title--header m0 baw0 p0">Post Status Summary</h1></section>`);
       const detailData = await this.getBreakdownData();
-      const detailPane = $('<div class="d-grid grid__2 md:grid__1 g8"></div>');
-      detailData.forEach((group) => {
-        const groupContainer = $(`<div class="grid--item p8" data-event-id="${group["id"]}"><h3 class="fs-title mb12">${group["timeline_event_description"]}</h3></div>`);
-        const linkContainer = $('<div class="d-flex fd-row fw-wrap gs16 hmn1 hmx4 overflow-y-scroll"></div>');
-        group["post_ids"].forEach((post_id) => {
-          linkContainer.append($(`<a class="flex--item" href="/a/${post_id}" target="_blank" rel="noreferrer noopener">${post_id}</a>`));
+      const detailTableContainer = $('<div class="s-table-container" style="width:min-content"></div>');
+      const detailTable = $('<table class="s-table"></table>');
+      {
+        const detailTableHead = $("<thead></thead>");
+        const detailTableHeadTr = $("<tr></tr>");
+        detailData["header"].forEach((headerText) => {
+          detailTableHeadTr.append(`<th>${headerText}</th>`);
         });
-        groupContainer.append(linkContainer);
-        detailPane.append(groupContainer);
-      });
-      section.append(detailPane);
+        detailTableHead.append(detailTableHeadTr);
+        detailTable.append(detailTableHead);
+      }
+      {
+        const detailTableBody = $("<tbody></tbody>");
+        detailData["body"].forEach((row) => {
+          const detailTableBodyTr = $("<tr></tr>");
+          row.forEach((elem, idx) => {
+            if (idx === 0) {
+              detailTableBodyTr.append(`<td><a class="flex--item" href="/a/${elem}" target="_blank" rel="noreferrer noopener">${elem}</a></td>`);
+            } else {
+              if (elem !== null) {
+                detailTableBodyTr.append(`<td>${buildCheckmarkSvg()}</td>`);
+              } else {
+                detailTableBodyTr.append("<td></td>");
+              }
+            }
+          });
+          detailTableBody.append(detailTableBodyTr);
+        });
+        detailTable.append(detailTableBody);
+      }
+      detailTableContainer.append(detailTable);
+      section.append(detailTableContainer);
       return section;
     }
     rebuildContainer(section) {
