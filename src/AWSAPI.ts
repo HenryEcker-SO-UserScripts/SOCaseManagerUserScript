@@ -25,11 +25,10 @@ export interface CaseStateChangeResponse {
     message: string;
 }
 
-export type CasePostDetailResponse = {
-    id: number;
-    timeline_event_description: string;
-    post_ids: number[];
-}[];
+export interface CasePostDetailResponse {
+    header: string[];
+    body: ((number | null)[])[];
+}
 
 export interface CaseGroupEntry {
     group_id: string;
