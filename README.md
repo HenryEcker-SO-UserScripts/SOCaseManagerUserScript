@@ -72,11 +72,21 @@ Clicking on the Posts tab will give you a table posts recorded in the system. Th
 
 #### Filtering Posts
 
-Clicking any of the headers that have checkboxes next to them will filter the table so only rows with at least that action will be displayed.
+Changing the selection box at the top of each column will affect which rows are displayed.
+
+For each column there are three options:
+- **Any** (Any value is in the specified column is acceptable. Basically does not affect if the row is displayed or not.)
+- **Checked** (The value in the specified column _must_ be a checkmark.)
+- **Unchecked** (The value in the specified column _must_ be empty (without a checkmark).)
 
 [![][17]][17]
 
-Multiple action filters can be selected to limit the display to only posts with a specific combination of actions (_e.g._ Flagged and Deleted).
+Multiple action filters can be selected to limit the display to only posts with a specific combination of actions (_e.g._ Flagged but not Deleted).
+
+[![][18]][18]
+
+At any time the "Clear Filters" button in the first column can be used to clear all filters (reset all columns to "Any").
+
 
 ---
 
@@ -158,3 +168,4 @@ Clicking on the tab will bring you to the UserScript Settings page. Here you can
  [15]: ./readme-images/Settings/Case%20Manager%20Auth%20Settings.png
  [16]: ./readme-images/UserSummary/user-case-manager-button-with-alert.png
  [17]: ./readme-images/UserSummary/user-detail-stats-filtered.png
+ [18]: ./readme-images/UserSummary/user-detail-stats-filtered-multiple.png
