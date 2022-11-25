@@ -111,7 +111,7 @@ const buildActionsComponentFromActions = (answerId: number, ownerId: number, act
         const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
         // Build Check Box
         const checkboxId = getActionCheckboxId(answerId, action['action_id']);
-        const checkbox = $(`<div class="d-flex gs8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action['action_description']}" data-action-id="${action['action_id']}" id="${checkboxId}" ${action['user_acted'] ? 'checked disabled' : ''}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action['action_description']}</label></div>`);
+        const checkbox = $(`<div class="d-flex g8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action['action_description']}" data-action-id="${action['action_id']}" id="${checkboxId}" ${action['user_acted'] ? 'checked disabled' : ''}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action['action_description']}</label></div>`);
         actionRow.append(checkbox);
         // Conditionally Build Clear Button
         if (action['user_acted']) {
