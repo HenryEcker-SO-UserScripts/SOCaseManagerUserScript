@@ -329,7 +329,6 @@ export class CaseManagerControlPanel {
             const detailTableBody = $('<tbody></tbody>');
             detailData['body'].forEach((row) => {
                 if (row.some((elem, index) => {
-                    // Filter requires a value, but the value at the index is missing
                     const value = this.postSummaryColumnFilter[index];
                     if (value === 'any') {
                         return false;
