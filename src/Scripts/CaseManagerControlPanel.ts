@@ -142,6 +142,11 @@ const buildCaseHistoryPane = (caseTimeline: CaseSummaryCaseTimeline) => {
 
 
 type Page = 'summary' | 'posts';
+type FilterType = 'any' | 'checked' | 'unchecked';
+
+const buildSummaryTableFilterOption = (text: string, value: FilterType, activeValue: FilterType): string => {
+    return `<option value="${value}"${activeValue === value ? ' selected' : ''}>${text}</option>`;
+};
 
 export class CaseManagerControlPanel {
     private readonly container: JQuery;
@@ -151,7 +156,7 @@ export class CaseManagerControlPanel {
         summary: { isLoaded: boolean; pageData?: CaseSummaryPageResponse; };
         posts: { isLoaded: boolean; pageData?: CasePostDetailResponse; };
     };
-    private readonly postSummaryColumnFilter: { [columnIndex: number]: boolean; };
+    private readonly postSummaryColumnFilter: { [columnIndex: number]: FilterType; };
 
     constructor(userId: number) {
         this.userId = userId;
@@ -242,6 +247,14 @@ export class CaseManagerControlPanel {
         return section;
     }
 
+    private clearPostSummaryColumnFilters(): void {
+        if (this.pageLoadMap['posts'].isLoaded && this.pageLoadMap['posts'].pageData !== undefined) {
+            this.pageLoadMap['posts'].pageData['header'].forEach((_, index) => {
+                // Default not to filter any column
+                this.postSummaryColumnFilter[index] = 'any';
+            });
+        }
+    }
 
     private async getBreakdownData(): Promise<CasePostDetailResponse> {
         if (this.pageLoadMap['posts'].isLoaded && this.pageLoadMap['posts'].pageData) {
@@ -252,10 +265,7 @@ export class CaseManagerControlPanel {
                 isLoaded: true,
                 pageData: summaryPageData
             };
-            summaryPageData['header'].forEach((_, index) => {
-                // Default not to filter any column
-                this.postSummaryColumnFilter[index] = false;
-            });
+            this.clearPostSummaryColumnFilters();
 
             return summaryPageData;
         }
@@ -270,24 +280,49 @@ export class CaseManagerControlPanel {
         { // thead
             const detailTableHead = $('<thead></thead>');
             const detailTableHeadTr = $('<tr></tr>');
+            const filterTheadTr = $('<tr></tr>');
             detailData['header'].forEach((headerText, index) => {
-                const th = $('<th></th>');
                 const htmlId = `summary-post-col-filter-${index}`;
-                const label = $(`<label class="d-flex g8" for="${htmlId}">${headerText}</label>`);
-                // No checkbox on post id column (always first)
-                if (index > 0) {
-                    const checkbox = $(`<input class="s-checkbox" type="checkbox" name="${headerText}" id="${htmlId}"${this.postSummaryColumnFilter[index] ? ' checked' : ''}/>`);
-                    checkbox.on('click', (ev) => {
-                        ev.preventDefault();
-                        this.postSummaryColumnFilter[index] = (ev.target as HTMLInputElement).checked;
-                        this.render();
-                    });
-                    label.append(checkbox);
+                {
+                    // Thead row 1
+                    const th = $('<th></th>');
+                    const label = $(`<label for="${htmlId}">${headerText}</label>`);
+                    th.append(label);
+                    detailTableHeadTr.append(th);
                 }
-                th.append(label);
-                detailTableHeadTr.append(th);
+                {
+                    // Thead row 2
+                    const th = $('<th></th>');
+                    // No select on post id column (always first)
+                    if (index > 0) {
+                        const div = $('<div class="s-select" style="width:max-content;"></div>');
+                        const select = $(`<select id="${htmlId}">
+            ${buildSummaryTableFilterOption('Any', 'any', this.postSummaryColumnFilter[index])}
+            ${buildSummaryTableFilterOption('Checked', 'checked', this.postSummaryColumnFilter[index])}
+            ${buildSummaryTableFilterOption('Unchecked', 'unchecked', this.postSummaryColumnFilter[index])}
+        </select>`);
+                        select.on('change', (ev) => {
+                            ev.preventDefault();
+                            this.postSummaryColumnFilter[index] = (ev.target as HTMLSelectElement).value as FilterType;
+                            this.render();
+                        });
+                        div.append(select);
+                        th.append(div);
+                    } else {
+                        // Put clear button at beginning of row
+                        const clearButton = $('<button type="button" class="s-btn s-btn__sm s-btn__muted s-btn__outlined">Clear Filters</button>');
+                        clearButton.on('click', (ev) => {
+                            ev.preventDefault();
+                            this.clearPostSummaryColumnFilters();
+                            this.render();
+                        });
+                        th.append(clearButton);
+                    }
+                    filterTheadTr.append(th);
+                }
             });
             detailTableHead.append(detailTableHeadTr);
+            detailTableHead.append(filterTheadTr);
             detailTable.append(detailTableHead);
         }
         { // tbody
@@ -295,7 +330,14 @@ export class CaseManagerControlPanel {
             detailData['body'].forEach((row) => {
                 if (row.some((elem, index) => {
                     // Filter requires a value, but the value at the index is missing
-                    return this.postSummaryColumnFilter[index] && row[index] === null;
+                    const value = this.postSummaryColumnFilter[index];
+                    if (value === 'any') {
+                        return false;
+                    } else if (value === 'checked') {
+                        return row[index] === null;
+                    } else { // if (value === 'unchecked') // Not needed since FilterType can only be 3 values
+                        return row[index] !== null;
+                    }
                 })) {
                     return; // Don't render the row
                 }
