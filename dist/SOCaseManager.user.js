@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.1
+// @version     0.1.2
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -161,7 +161,7 @@
     for (const action of actions) {
       const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
       const checkboxId = getActionCheckboxId(answerId, action["action_id"]);
-      const checkbox = $(`<div class="d-flex gs8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action["action_description"]}" data-action-id="${action["action_id"]}" id="${checkboxId}" ${action["user_acted"] ? "checked disabled" : ""}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action["action_description"]}</label></div>`);
+      const checkbox = $(`<div class="d-flex g8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action["action_description"]}" data-action-id="${action["action_id"]}" id="${checkboxId}" ${action["user_acted"] ? "checked disabled" : ""}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action["action_description"]}</label></div>`);
       actionRow.append(checkbox);
       if (action["user_acted"]) {
         const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
@@ -295,7 +295,7 @@
         </li>
         <li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li>
     </ol>
-    <div class="d-flex gs8 gsx s-modal--footer">
+    <div class="d-flex g8 gsx s-modal--footer">
         <button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button>
         <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
     </div>
@@ -446,7 +446,7 @@
   };
   const buildCaseHistoryPane = (caseTimeline) => {
     const container = $('<div class="grid--item p8"><h3 class="fs-title mb8">Investigation History</h3></div>');
-    const timeline = $('<div class="d-flex fd-column gs4"></div>');
+    const timeline = $('<div class="d-flex fd-column g4"></div>');
     caseTimeline.forEach((entry) => {
       timeline.append(
         $(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry["case_event_id"]}"><a href="/users/${entry["account_id"]}">${entry["display_name"]}</a><span data-event-type-id="${entry["case_event_type_id"]}">${entry["case_event_description"]}</span><span>${new Date(entry["event_creation_date"]).toLocaleString()}</span></div>`)
@@ -460,11 +460,13 @@
     userId;
     currentPage;
     pageLoadMap;
+    postSummaryColumnFilter;
     constructor(userId) {
       this.userId = userId;
       this.container = $('<div class="d-flex mb48"></div>');
       this.currentPage = "summary";
       this.pageLoadMap = { "summary": { isLoaded: false }, "posts": { isLoaded: false } };
+      this.postSummaryColumnFilter = {};
     }
     setCurrentPage() {
       const usp = new URLSearchParams(window.location.search);
@@ -543,6 +545,9 @@
           isLoaded: true,
           pageData: summaryPageData
         };
+        summaryPageData["header"].forEach((_, index) => {
+          this.postSummaryColumnFilter[index] = false;
+        });
         return summaryPageData;
       }
     }
@@ -555,8 +560,21 @@
       {
         const detailTableHead = $("<thead></thead>");
         const detailTableHeadTr = $("<tr></tr>");
-        detailData["header"].forEach((headerText) => {
-          detailTableHeadTr.append(`<th>${headerText}</th>`);
+        detailData["header"].forEach((headerText, index) => {
+          const th = $("<th></th>");
+          const htmlId = `summary-post-col-filter-${index}`;
+          const label = $(`<label class="d-flex g8" for="${htmlId}">${headerText}</label>`);
+          if (index > 0) {
+            const checkbox = $(`<input class="s-checkbox" type="checkbox" name="${headerText}" id="${htmlId}"${this.postSummaryColumnFilter[index] ? " checked" : ""}/>`);
+            checkbox.on("click", (ev) => {
+              ev.preventDefault();
+              this.postSummaryColumnFilter[index] = ev.target.checked;
+              this.render();
+            });
+            label.append(checkbox);
+          }
+          th.append(label);
+          detailTableHeadTr.append(th);
         });
         detailTableHead.append(detailTableHeadTr);
         detailTable.append(detailTableHead);
@@ -564,6 +582,11 @@
       {
         const detailTableBody = $("<tbody></tbody>");
         detailData["body"].forEach((row) => {
+          if (row.some((elem, index) => {
+            return this.postSummaryColumnFilter[index] && row[index] === null;
+          })) {
+            return;
+          }
           const detailTableBodyTr = $("<tr></tr>");
           row.forEach((elem, idx) => {
             if (idx === 0) {
