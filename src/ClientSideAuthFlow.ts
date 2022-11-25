@@ -15,7 +15,7 @@ export const startAuthFlow = () => {
         </li>
         <li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li>
     </ol>
-    <div class="d-flex gs8 gsx s-modal--footer">
+    <div class="d-flex g8 gsx s-modal--footer">
         <button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button>
         <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>
     </div>
