@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.2
+// @version     0.1.3
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -455,6 +455,9 @@
     container.append(timeline);
     return container;
   };
+  const buildSummaryTableFilterOption = (text, value, activeValue) => {
+    return `<option value="${value}"${activeValue === value ? " selected" : ""}>${text}</option>`;
+  };
   class CaseManagerControlPanel {
     container;
     userId;
@@ -536,6 +539,13 @@
       section.append(summaryPane);
       return section;
     }
+    clearPostSummaryColumnFilters() {
+      if (this.pageLoadMap["posts"].isLoaded && this.pageLoadMap["posts"].pageData !== void 0) {
+        this.pageLoadMap["posts"].pageData["header"].forEach((_, index) => {
+          this.postSummaryColumnFilter[index] = "any";
+        });
+      }
+    }
     async getBreakdownData() {
       if (this.pageLoadMap["posts"].isLoaded && this.pageLoadMap["posts"].pageData) {
         return this.pageLoadMap["posts"].pageData;
@@ -545,9 +555,7 @@
           isLoaded: true,
           pageData: summaryPageData
         };
-        summaryPageData["header"].forEach((_, index) => {
-          this.postSummaryColumnFilter[index] = false;
-        });
+        this.clearPostSummaryColumnFilters();
         return summaryPageData;
       }
     }
@@ -560,30 +568,59 @@
       {
         const detailTableHead = $("<thead></thead>");
         const detailTableHeadTr = $("<tr></tr>");
+        const filterTheadTr = $("<tr></tr>");
         detailData["header"].forEach((headerText, index) => {
-          const th = $("<th></th>");
           const htmlId = `summary-post-col-filter-${index}`;
-          const label = $(`<label class="d-flex g8" for="${htmlId}">${headerText}</label>`);
-          if (index > 0) {
-            const checkbox = $(`<input class="s-checkbox" type="checkbox" name="${headerText}" id="${htmlId}"${this.postSummaryColumnFilter[index] ? " checked" : ""}/>`);
-            checkbox.on("click", (ev) => {
-              ev.preventDefault();
-              this.postSummaryColumnFilter[index] = ev.target.checked;
-              this.render();
-            });
-            label.append(checkbox);
+          {
+            const th = $("<th></th>");
+            const label = $(`<label for="${htmlId}">${headerText}</label>`);
+            th.append(label);
+            detailTableHeadTr.append(th);
           }
-          th.append(label);
-          detailTableHeadTr.append(th);
+          {
+            const th = $("<th></th>");
+            if (index > 0) {
+              const div = $('<div class="s-select" style="width:max-content;"></div>');
+              const select = $(`<select id="${htmlId}">
+            ${buildSummaryTableFilterOption("Any", "any", this.postSummaryColumnFilter[index])}
+            ${buildSummaryTableFilterOption("Checked", "checked", this.postSummaryColumnFilter[index])}
+            ${buildSummaryTableFilterOption("Unchecked", "unchecked", this.postSummaryColumnFilter[index])}
+        </select>`);
+              select.on("change", (ev) => {
+                ev.preventDefault();
+                this.postSummaryColumnFilter[index] = ev.target.value;
+                this.render();
+              });
+              div.append(select);
+              th.append(div);
+            } else {
+              const clearButton = $('<button type="button" class="s-btn s-btn__sm s-btn__muted s-btn__outlined">Clear Filters</button>');
+              clearButton.on("click", (ev) => {
+                ev.preventDefault();
+                this.clearPostSummaryColumnFilters();
+                this.render();
+              });
+              th.append(clearButton);
+            }
+            filterTheadTr.append(th);
+          }
         });
         detailTableHead.append(detailTableHeadTr);
+        detailTableHead.append(filterTheadTr);
         detailTable.append(detailTableHead);
       }
       {
         const detailTableBody = $("<tbody></tbody>");
         detailData["body"].forEach((row) => {
           if (row.some((elem, index) => {
-            return this.postSummaryColumnFilter[index] && row[index] === null;
+            const value = this.postSummaryColumnFilter[index];
+            if (value === "any") {
+              return false;
+            } else if (value === "checked") {
+              return row[index] === null;
+            } else {
+              return row[index] !== null;
+            }
           })) {
             return;
           }
