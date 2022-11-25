@@ -1,4 +1,4 @@
-import type {StackExchangeAPI,} from './Globals';
+import {type StackExchangeAPI} from './SEAPI';
 import {buildAlertSvg, gmStorageKeys, tabIdentifiers} from './Globals';
 import {buildAnswerControlPanel} from './Scripts/AnswerControlPanel';
 import {startAuthFlow} from './ClientSideAuthFlow';

@@ -1,5 +1,6 @@
 import {fetchFromAWS} from '../AWSAPI';
-import {gmStorageKeys, seTokenAuthRoute, type StackExchangeAPI} from '../Globals';
+import {type StackExchangeAPI} from '../SEAPI';
+import {gmStorageKeys, seTokenAuthRoute} from '../Globals';
 
 
 declare const StackExchange: StackExchangeAPI;

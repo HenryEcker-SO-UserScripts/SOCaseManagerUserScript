@@ -1,6 +1,10 @@
 import {tabIdentifiers} from '../Globals';
-import type {CaseGroupEntry, OpenCasesSummaryPageResponse, UserCaseSummaryEntry} from '../AWSAPI';
-import {fetchFromAWS} from '../AWSAPI';
+import {
+    type CaseGroupEntry,
+    fetchFromAWS,
+    type OpenCasesSummaryPageResponse,
+    type UserCaseSummaryEntry
+} from '../AWSAPI';
 
 
 const buildUserTile = (account_id: number, profile_image: null | string, display_name: string, current_state: string, event_date: string) => {
