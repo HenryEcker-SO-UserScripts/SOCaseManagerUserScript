@@ -62,10 +62,21 @@ For users that are currently being investigated, you can also close a case from 
 
 
 ### Links to Specific Posts
-Clicking on the Posts tab will give you a list of links to the posts associated with each action.
+
+#### Table Info
+Clicking on the Posts tab will give you a table posts recorded in the system. The first column is a link to the post. The remaining columns represent the available actions. A checkmark indicates which action has been taken.
+
+**Note**: Every row will have at least one checkmark as only posts which have an action on them will be logged in this table.
 
 [![][8]][8]
 
+#### Filtering Posts
+
+Clicking any of the headers that have checkboxes next to them will filter the table so only rows with at least that action will be displayed.
+
+[![][17]][17]
+
+Multiple action filters can be selected to limit the display to only posts with a specific combination of actions (_e.g._ Flagged and Deleted).
 
 ---
 
@@ -146,3 +157,4 @@ Clicking on the tab will bring you to the UserScript Settings page. Here you can
  [14]: ./readme-images/Settings/User%20Profile%20Settings%20button.png
  [15]: ./readme-images/Settings/Case%20Manager%20Auth%20Settings.png
  [16]: ./readme-images/UserSummary/user-case-manager-button-with-alert.png
+ [17]: ./readme-images/UserSummary/user-detail-stats-filtered.png
