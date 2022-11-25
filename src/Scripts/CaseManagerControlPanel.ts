@@ -130,7 +130,7 @@ const buildActionsSummaryPane = (postSummary: CaseSummaryPostSummary) => {
 
 const buildCaseHistoryPane = (caseTimeline: CaseSummaryCaseTimeline) => {
     const container = $('<div class="grid--item p8"><h3 class="fs-title mb8">Investigation History</h3></div>');
-    const timeline = $('<div class="d-flex fd-column gs4"></div>');
+    const timeline = $('<div class="d-flex fd-column g4"></div>');
     caseTimeline.forEach(entry => {
         timeline.append(
             $(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry['case_event_id']}"><a href="/users/${entry['account_id']}">${entry['display_name']}</a><span data-event-type-id="${entry['case_event_type_id']}">${entry['case_event_description']}</span><span>${new Date(entry['event_creation_date']).toLocaleString()}</span></div>`)
@@ -151,12 +151,14 @@ export class CaseManagerControlPanel {
         summary: { isLoaded: boolean; pageData?: CaseSummaryPageResponse; };
         posts: { isLoaded: boolean; pageData?: CasePostDetailResponse; };
     };
+    private readonly postSummaryColumnFilter: { [columnIndex: number]: boolean; };
 
     constructor(userId: number) {
         this.userId = userId;
         this.container = $('<div class="d-flex mb48"></div>');
         this.currentPage = 'summary';
         this.pageLoadMap = {'summary': {isLoaded: false}, 'posts': {isLoaded: false}};
+        this.postSummaryColumnFilter = {};
     }
 
     private setCurrentPage() {
@@ -245,11 +247,16 @@ export class CaseManagerControlPanel {
         if (this.pageLoadMap['posts'].isLoaded && this.pageLoadMap['posts'].pageData) {
             return this.pageLoadMap['posts'].pageData;
         } else {
-            const summaryPageData = await fetchFromAWS(`/case/posts/${this.userId}`).then(res => res.json());
+            const summaryPageData: CasePostDetailResponse = await fetchFromAWS(`/case/posts/${this.userId}`).then(res => res.json());
             this.pageLoadMap['posts'] = {
                 isLoaded: true,
                 pageData: summaryPageData
             };
+            summaryPageData['header'].forEach((_, index) => {
+                // Default not to filter any column
+                this.postSummaryColumnFilter[index] = false;
+            });
+
             return summaryPageData;
         }
     }
@@ -260,19 +267,41 @@ export class CaseManagerControlPanel {
         const detailData = await this.getBreakdownData();
         const detailTableContainer = $('<div class="s-table-container" style="width:min-content"></div>');
         const detailTable = $('<table class="s-table"></table>');
-        {
+        { // thead
             const detailTableHead = $('<thead></thead>');
             const detailTableHeadTr = $('<tr></tr>');
-            detailData['header'].forEach((headerText) => {
-                detailTableHeadTr.append(`<th>${headerText}</th>`);
+            detailData['header'].forEach((headerText, index) => {
+                const th = $('<th></th>');
+                const htmlId = `summary-post-col-filter-${index}`;
+                const label = $(`<label class="d-flex g8" for="${htmlId}">${headerText}</label>`);
+                // No checkbox on post id column (always first)
+                if (index > 0) {
+                    const checkbox = $(`<input class="s-checkbox" type="checkbox" name="${headerText}" id="${htmlId}"${this.postSummaryColumnFilter[index] ? ' checked' : ''}/>`);
+                    checkbox.on('click', (ev) => {
+                        ev.preventDefault();
+                        this.postSummaryColumnFilter[index] = (ev.target as HTMLInputElement).checked;
+                        this.render();
+                    });
+                    label.append(checkbox);
+                }
+                th.append(label);
+                detailTableHeadTr.append(th);
             });
             detailTableHead.append(detailTableHeadTr);
             detailTable.append(detailTableHead);
         }
-        {
+        { // tbody
             const detailTableBody = $('<tbody></tbody>');
             detailData['body'].forEach((row) => {
+                if (row.some((elem, index) => {
+                    // Filter requires a value, but the value at the index is missing
+                    return this.postSummaryColumnFilter[index] && row[index] === null;
+                })) {
+                    return; // Don't render the row
+                }
+
                 const detailTableBodyTr = $('<tr></tr>');
+
                 row.forEach((elem, idx) => {
                     if (idx === 0) {
                         detailTableBodyTr.append(`<td><a class="flex--item" href="/a/${elem}" target="_blank" rel="noreferrer noopener">${elem}</a></td>`);
@@ -294,7 +323,7 @@ export class CaseManagerControlPanel {
         return section;
     }
 
-    private rebuildContainer(section: JQuery<HTMLElement>) {
+    private rebuildContainer(section: JQuery) {
         this.container.empty();
         this.container.append(this.buildNav());
         this.container.append(section);
