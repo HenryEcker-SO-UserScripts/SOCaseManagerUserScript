@@ -1,4 +1,4 @@
-import type {StackExchangeAPI} from '../Globals';
+import {type StackExchangeAPI} from '../SEAPI';
 import {buildAlertSvg} from '../Globals';
 import {fetchFromAWS, getSummaryPostInfoFromIds} from '../AWSAPI';
 
