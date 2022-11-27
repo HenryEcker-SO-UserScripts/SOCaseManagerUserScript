@@ -144,7 +144,7 @@
             }
             actionsForm.append(actionRow);
         }
-        actionsForm.append($('\n<div class="d-flex fd-row jc-start">\n    <button class="s-btn s-btn__primary" type="submit">Save</button>\n    <button class="s-btn" type="reset">Reset</button>\n</div>\n'));
+        actionsForm.append($('<div class="d-flex fd-row jc-start"><button class="s-btn s-btn__primary" type="submit">Save</button><button class="s-btn" type="reset">Reset</button></div>'));
         actionsForm.on("submit", handleFormAction(actionsForm, answerId, ownerId));
         popOverInnerContainer.append(actionsForm);
         $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
@@ -174,7 +174,7 @@
     };
     const buildActiveTimelineButton = (buttonId, answerId) => {
         const timelinePopoverId = getTimelinePopoverId(answerId);
-        const timelineButton = $(`<button title="Click to view a record of actions taken on this post." id="${buttonId}" class="flex--item s-btn s-btn__danger s-btn__icon ws-nowrap s-btn__dropdown"  role="button" aria-controls="${timelinePopoverId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-start" data-s-popover-toggle-class="is-selected">${buildAlertSvg()}<span class="px8">Post Timeline</span></button>`);
+        const timelineButton = $(`<button title="Click to view a record of actions taken on this post." id="${buttonId}" class="flex--item s-btn s-btn__danger s-btn__icon ws-nowrap s-btn__dropdown" role="button" aria-controls="${timelinePopoverId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-start" data-s-popover-toggle-class="is-selected">${buildAlertSvg()}<span class="px8">Post Timeline</span></button>`);
         timelineButton.on("click", (ev => {
             ev.preventDefault();
             if ("true" !== timelineButton.attr("timeline-loaded")) {
@@ -244,7 +244,7 @@
     const startAuthFlow = () => {
         const authModalId = "case-manager-client-auth-modal";
         const modal = $(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`);
-        const modalBody = $(`<div class="s-modal--dialog" role="document">\n    <h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1>\n    <p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p>\n    <ol>\n        <li>\n            <a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a>\n        </li>\n        <li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li>\n    </ol>\n    <div class="d-flex g8 gsx s-modal--footer">\n        <button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button>\n        <button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>\n    </div>\n    <button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide">\n        <svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14">\n            <path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path>\n        </svg>\n    </button>\n</div>`);
+        const modalBody = $(`<div class="s-modal--dialog" role="document"><h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1><p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p><ol><li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li><li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li></ol><div class="d-flex g8 gsx s-modal--footer"><button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button><button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button></div><button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div>`);
         modalBody.find(`#${authModalId}-save`).on("click", (ev => {
             ev.preventDefault();
             const inputValue = $(`#${authModalId}-input`).val();
@@ -496,7 +496,7 @@
             }
         }
         async buildPostsBreakdownPage() {
-            const section = $('<section class="flex--item fl-grow1 wmx100"><div class="s-page-title mb24">\n    <h1 class="s-page-title--header m0 baw0 p0">Post Status Summary</h1></section>');
+            const section = $('<section class="flex--item fl-grow1 wmx100"><div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Post Status Summary</h1></section>');
             const detailData = await this.getBreakdownData();
             const detailTableContainer = $('<div class="s-table-container" style="width:min-content"></div>');
             const detailTable = $('<table class="s-table"></table>');
@@ -516,7 +516,7 @@
                         const th = $("<th></th>");
                         if (index > 0) {
                             const div = $('<div class="s-select" style="width:max-content;"></div>');
-                            const select = $(`<select id="${htmlId}">\n            ${buildSummaryTableFilterOption("Any", "any", this.postSummaryColumnFilter[index])}\n            ${buildSummaryTableFilterOption("Checked", "checked", this.postSummaryColumnFilter[index])}\n            ${buildSummaryTableFilterOption("Unchecked", "unchecked", this.postSummaryColumnFilter[index])}\n        </select>`);
+                            const select = $(`<select id="${htmlId}"> ${buildSummaryTableFilterOption("Any", "any", this.postSummaryColumnFilter[index])} ${buildSummaryTableFilterOption("Checked", "checked", this.postSummaryColumnFilter[index])} ${buildSummaryTableFilterOption("Unchecked", "unchecked", this.postSummaryColumnFilter[index])} </select>`);
                             select.on("change", (ev => {
                                 ev.preventDefault();
                                 this.postSummaryColumnFilter[index] = ev.target.value;
@@ -592,7 +592,7 @@
     }
     const buildUserTile = (account_id, profile_image, display_name, current_state, event_date) => {
         const link = `/users/${account_id}?tab=case-manager`;
-        return $(`<div class="grid--item user-info">\n                    ${null !== profile_image ? `<div class="user-gravatar48">\n                        <a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>\n                    </div>` : ""}\n                    <div class="user-details">\n                        <a href="${link}">${display_name}</a>\n                        <div class="d-flex fd-column mt6">\n                            <span>Case ${current_state} on</span>\n                            <span>${new Date(event_date).toLocaleString()}</span>\n                        </div>\n                    </div>\n                </div>`);
+        return $(`<div class="grid--item user-info"> ${null !== profile_image ? `<div class="user-gravatar48"><a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a></div>` : ""} <div class="user-details"><a href="${link}">${display_name}</a><div class="d-flex fd-column mt6"><span>Case ${current_state} on</span><span>${new Date(event_date).toLocaleString()}</span></div></div></div>`);
     };
     class CasesUserList {
         needsTotalPages;
@@ -663,7 +663,7 @@
                 }
             }));
             searchToggleBar.append($('<div class="flex--item mb12 ps-relative"></div>').append(searchInput).append($('<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="18" height="18" viewBox="0 0 18 18"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>')));
-            searchToggleBar.append($('<div class="flex--item ml-auto mb12 h100 d-flex s-btn-group js-filter-btn">\n    <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=reputation"\n       data-nav-xhref="" title="Users with the highest reputation scores" data-value="reputation" data-shortcut=""\n       aria-current="page"> Reputation</a>\n    <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=newusers"\n       data-nav-xhref="" title="Users who joined in the last 30 days" data-value="newusers" data-shortcut=""> New\n        users</a>\n    <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=voters"\n       data-nav-xhref="" title="Users who voted more than 10 times" data-value="voters" data-shortcut=""> Voters</a>\n    <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=editors"\n       data-nav-xhref="" title="Users who edited at least 5 posts" data-value="editors" data-shortcut=""> Editors</a>\n    <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=moderators"\n       data-nav-xhref="" title="Our current community moderators" data-value="moderators" data-shortcut="">\n        Moderators</a>\n    <a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=case"\n       data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist"\n       data-shortcut="">Plagiarists</a>\n</div>'));
+            searchToggleBar.append($('<div class="flex--item ml-auto mb12 h100 d-flex s-btn-group js-filter-btn"><a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=reputation" data-nav-xhref="" title="Users with the highest reputation scores" data-value="reputation" data-shortcut="" aria-current="page"> Reputation</a><a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=newusers" data-nav-xhref="" title="Users who joined in the last 30 days" data-value="newusers" data-shortcut=""> New users</a><a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=voters" data-nav-xhref="" title="Users who voted more than 10 times" data-value="voters" data-shortcut=""> Voters</a><a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=editors" data-nav-xhref="" title="Users who edited at least 5 posts" data-value="editors" data-shortcut=""> Editors</a><a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=moderators" data-nav-xhref="" title="Our current community moderators" data-value="moderators" data-shortcut=""> Moderators</a><a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=case" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a></div>'));
             main.append(searchToggleBar);
             main.append($('<div class="fs-body2 mt8 mb12"><div class="d-flex jc-space-between"><div class="flex--item ml-auto md:ml0"><div id="tabs-interval" class="subtabs d-flex"></div></div></div></div>'));
             main.append($('<div id="user-browser" class="d-grid grid__4 lg:grid__3 md:grid__2 sm:grid__1 g12"></div>'));

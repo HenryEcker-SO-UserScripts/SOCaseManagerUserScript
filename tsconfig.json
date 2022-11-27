@@ -10,6 +10,7 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "alwaysStrict": true,
+    "strictPropertyInitialization": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
