@@ -1,5 +1,5 @@
 import {type StackExchangeAPI} from '../SEAPI';
-import {buildAlertSvg} from '../Globals';
+import {buildAlertSvg} from '../SVGBuilders';
 import {fetchFromAWS, getSummaryPostInfoFromIds} from '../AWSAPI';
 
 declare const StackExchange: StackExchangeAPI;

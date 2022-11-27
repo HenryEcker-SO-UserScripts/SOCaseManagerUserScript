@@ -1,6 +1,6 @@
-import {fetchFromAWS} from '../AWSAPI';
+import {fetchFromAWS, seTokenAuthRoute} from '../AWSAPI';
 import {type StackExchangeAPI} from '../SEAPI';
-import {gmStorageKeys, seTokenAuthRoute} from '../Globals';
+import {accessToken, seApiToken} from '../gmAPI';
 
 
 declare const StackExchange: StackExchangeAPI;
@@ -33,10 +33,10 @@ export const buildUserScriptSettingsPanel = async () => {
                 if (res.status === 200) {
                     // Get rid of the row from the table
                     tokenRow.remove();
-                    if (GM_getValue(gmStorageKeys.seApiToken) === token) {
+                    if (GM_getValue(seApiToken) === token) {
                         // If invalidating the local storage key also remove from GM storage
-                        GM_deleteValue(gmStorageKeys.seApiToken);
-                        GM_deleteValue(gmStorageKeys.accessToken);
+                        GM_deleteValue(seApiToken);
+                        GM_deleteValue(accessToken);
                         window.location.reload();
                     }
                 }
@@ -58,12 +58,12 @@ export const buildUserScriptSettingsPanel = async () => {
             }
         ).then((confirm: boolean) => {
             if (confirm) {
-                void fetchFromAWS(`/auth/credentials/${GM_getValue(gmStorageKeys.seApiToken)}/de-authenticate`)
+                void fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`)
                     .then((res) => {
                         if (res.status === 200) {
                             // These are all now no longer valid
-                            GM_deleteValue(gmStorageKeys.seApiToken);
-                            GM_deleteValue(gmStorageKeys.accessToken);
+                            GM_deleteValue(seApiToken);
+                            GM_deleteValue(accessToken);
                             window.location.reload();
                         }
                     });

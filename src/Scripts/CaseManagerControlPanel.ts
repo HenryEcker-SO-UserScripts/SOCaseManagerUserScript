@@ -7,7 +7,7 @@ import {
     fetchFromAWS
 } from '../AWSAPI';
 import {fetchFromSEAPI, type SEAPIResponse, type StackExchangeAPI} from '../SEAPI';
-import {buildCheckmarkSvg} from '../Globals';
+import {buildCheckmarkSvg} from '../SVGBuilders';
 
 declare const StackExchange: StackExchangeAPI;
 

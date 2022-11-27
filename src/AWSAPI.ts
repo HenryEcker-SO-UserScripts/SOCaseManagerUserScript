@@ -1,4 +1,4 @@
-import {awsApiRoute, gmStorageKeys} from './Globals';
+import {accessToken, seApiToken} from './gmAPI';
 
 export type CaseSummaryPostSummary = {
     action_taken: string;
@@ -56,17 +56,17 @@ export const requestNewJwt = () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({'se_api_token': GM_getValue(gmStorageKeys.seApiToken)})
+            body: JSON.stringify({'se_api_token': GM_getValue(seApiToken)})
         },
         false
     )
         .then(res => res.json())
         .then(resData => {
-            GM_setValue(gmStorageKeys.accessToken, resData['cm_access_token']);
+            GM_setValue(accessToken, resData['cm_access_token']);
         })
         .catch(err => {
             // Remove current access token on error (maybe not great)
-            GM_deleteValue(gmStorageKeys.accessToken);
+            GM_deleteValue(accessToken);
             console.error(err);
         });
 };
@@ -76,7 +76,7 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
     // Always send access_token along
     let newOptions: RequestInit = withCredentials ? {
         'headers': {
-            'access_token': GM_getValue(gmStorageKeys.accessToken)
+            'access_token': GM_getValue(accessToken)
         }
     } : {};
     if (options !== undefined) {
@@ -88,7 +88,7 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
             }
         };
     }
-    return fetch(`${awsApiRoute}${path}`, newOptions).then(res => {
+    return fetch(`${awsApiDefs.awsApiBase}${path}`, newOptions).then(res => {
         if (res.status === 401) { // jwt is expired so attempt to automatically retrieve a new one
             return requestNewJwt().then(() => fetchFromAWS(path, options));
         }
@@ -98,10 +98,11 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
 
 
 export const getSummaryPostInfoFromIds = (ids: { join: (s: string) => string; }): Promise<Set<number>> => {
-    // return Promise.resolve(new Set([72950666]));
     return fetchFromAWS(`/summary/posts/${ids.join(';')}`)
         .then(res => res.json() as Promise<number[]>)
         .then(postIds => {
             return Promise.resolve(new Set(postIds));
         });
 };
+
+export const seTokenAuthRoute = awsApiDefs.seTokenAuth;

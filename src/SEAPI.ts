@@ -1,4 +1,5 @@
-import {gmStorageKeys} from './Globals';
+import {seApiToken} from './gmAPI';
+
 /**
  * Modal Options can have:
  *   - title OR titleHtml but not both [required]
@@ -33,7 +34,6 @@ export interface StackExchangeAPI {
     ready: (onReady: () => void) => void;
 }
 
-const apiKey = 'BkvRpNB*IzKMdjAcikc4jA((';
 
 export interface SEAPIResponse<T> {
     has_more: boolean;
@@ -46,7 +46,7 @@ export interface SEAPIResponse<T> {
 export const fetchFromSEAPI = (path: string, search: string): Promise<Response> => {
     const usp = new URLSearchParams(search);
     usp.set('site', 'stackoverflow');
-    usp.set('key', apiKey);
-    usp.set('access_token', GM_getValue(gmStorageKeys.seApiToken));
-    return fetch(`https://api.stackexchange.com/2.3${path}?${usp.toString()}`);
+    usp.set('key', seApiDefs.apiKey);
+    usp.set('access_token', GM_getValue(seApiToken));
+    return fetch(`${seApiDefs.seAPIBase}${path}?${usp.toString()}`);
 };
