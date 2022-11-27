@@ -1,4 +1,3 @@
-import {tabIdentifiers} from '../Globals';
 import {
     type CaseGroupEntry,
     fetchFromAWS,

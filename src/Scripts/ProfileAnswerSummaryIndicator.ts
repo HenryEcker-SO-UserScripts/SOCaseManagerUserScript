@@ -1,5 +1,5 @@
 import {getSummaryPostInfoFromIds} from '../AWSAPI';
-import {buildCaseSvg, tabIdentifiers} from '../Globals';
+import {buildCaseSvg} from '../SVGBuilders';
 
 
 const getAnswerIdsOnPage = (): Set<number> => {

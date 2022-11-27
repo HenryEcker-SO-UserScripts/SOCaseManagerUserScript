@@ -1,5 +1,5 @@
 import {type StackExchangeAPI} from './SEAPI';
-import {buildAlertSvg, gmStorageKeys, tabIdentifiers} from './Globals';
+import {buildAlertSvg} from './SVGBuilders';
 import {buildAnswerControlPanel} from './Scripts/AnswerControlPanel';
 import {startAuthFlow} from './ClientSideAuthFlow';
 import {buildAnswerSummaryIndicator} from './Scripts/ProfileAnswerSummaryIndicator';
@@ -7,13 +7,14 @@ import {CaseManagerControlPanel} from './Scripts/CaseManagerControlPanel';
 import {CasesUserList} from './Scripts/CasesList';
 import {buildUserScriptSettingsPanel} from './Scripts/UserScriptSettings';
 import {fetchFromAWS} from './AWSAPI';
+import {accessToken} from './gmAPI';
 
 declare const StackExchange: StackExchangeAPI;
 
 
 const UserScript = () => {
     // API TOKEN IS REQUIRED
-    if (GM_getValue(gmStorageKeys.accessToken, null) === null) {
+    if (GM_getValue(accessToken, null) === null) {
         startAuthFlow();
         return; // Nothing else is allowed to run without valid auth
     }
