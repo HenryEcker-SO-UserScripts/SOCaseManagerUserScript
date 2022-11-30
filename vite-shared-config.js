@@ -22,6 +22,10 @@ const defObj = {
     seApiDefs: {
         seAPIBase: 'https://api.stackexchange.com/2.3',
         apiKey: 'BkvRpNB*IzKMdjAcikc4jA(('
+    },
+    caseManagerControlPanelSearchKey: {
+        pageKey: 'page',
+        tableFilterKey: 'table-filter'
     }
 };
 
