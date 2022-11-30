@@ -640,10 +640,10 @@
                 this.search = usp.get("search");
             }
         }
-        buildPublicSearchQuery() {
+        buildUsersURLWithParams(p) {
             const usp = new URLSearchParams("?tab=case");
             usp.set("group", this.group);
-            usp.set("page", this.currentPage.toString());
+            usp.set("page", (void 0 === p ? this.currentPage : p).toString());
             if (this.search.length > 0) {
                 usp.set("search", this.search);
             }
@@ -689,7 +689,7 @@
                     this.searchTimeout = setTimeout((() => {
                         this.currentPage = 1;
                         this.needsTotalPages = true;
-                        window.history.pushState("search_paging", "", this.buildPublicSearchQuery());
+                        window.history.pushState("search_paging", "", this.buildUsersURLWithParams());
                         this.pullDownAndRender();
                     }), 450);
                 }
@@ -711,7 +711,12 @@
             }));
         }
         buildGroupToggleLink(group_id, description) {
-            const href = `/users?tab=case&group=${group_id}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
+            const usp = new URLSearchParams("?tab=case");
+            usp.set("group", group_id);
+            if (this.search.length > 0) {
+                usp.set("search", this.search);
+            }
+            const href = `/users${usp.toString()}`;
             const a = $(`<a${group_id === this.group ? ' class="youarehere is-selected"' : ""} href="${href}" data-nav-xhref="" data-value="${group_id}" data-shortcut="">${description}</a>`);
             a.on("click", (ev => {
                 ev.preventDefault();
@@ -737,14 +742,11 @@
                 mountPoint.append(buildUserTile(userData.investigated_user_id, userData.profile_image, userData.display_name, userData.current_state, userData.event_creation_date));
             }));
         }
-        buildHrefForNavItem(p) {
-            return `/users?tab=case&group=${this.group}&page=${p}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
-        }
         buildNavItem(pageNumber, linkLabel) {
             if (void 0 === linkLabel) {
                 linkLabel = pageNumber;
             }
-            const href = this.buildHrefForNavItem(pageNumber);
+            const href = this.buildUsersURLWithParams(pageNumber);
             const a = $(`<a class="s-pagination--item" href="${href}">${linkLabel}</a>`);
             a.on("click", (ev => {
                 ev.preventDefault();
