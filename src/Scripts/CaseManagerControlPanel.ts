@@ -143,6 +143,10 @@ const buildCaseHistoryPane = (caseTimeline: CaseSummaryCaseTimeline) => {
 type Page = 'summary' | 'posts';
 type FilterType = 'any' | 'checked' | 'unchecked';
 
+interface ColumnFilterConfig {
+    [columnIndex: number]: FilterType;
+}
+
 const buildSummaryTableFilterOption = (text: string, value: FilterType, activeValue: FilterType): string => {
     return `<option value="${value}"${activeValue === value ? ' selected' : ''}>${text}</option>`;
 };
@@ -155,7 +159,7 @@ export class CaseManagerControlPanel {
         summary: { isLoaded: boolean; pageData?: CaseSummaryPageResponse; };
         posts: { isLoaded: boolean; pageData?: CasePostDetailResponse; };
     };
-    private readonly postSummaryColumnFilter: { [columnIndex: number]: FilterType; };
+    private postSummaryColumnFilter: ColumnFilterConfig;
 
     constructor(userId: number) {
         this.userId = userId;
@@ -165,20 +169,24 @@ export class CaseManagerControlPanel {
         this.postSummaryColumnFilter = {};
     }
 
-    private setCurrentPage() {
+    private getConfigFromUrl() {
         const usp = new URLSearchParams(window.location.search);
-        if (!usp.has('page') || usp.get('page') === 'summary') {
+        if (!usp.has(caseManagerControlPanelSearchKey.pageKey) || usp.get(caseManagerControlPanelSearchKey.pageKey) === 'summary') {
             this.currentPage = 'summary';
-        } else if (usp.get('page') === 'posts') {
+        } else if (usp.get(caseManagerControlPanelSearchKey.pageKey) === 'posts') {
             this.currentPage = 'posts';
+        }
+
+        if (usp.has(caseManagerControlPanelSearchKey.tableFilterKey)) {
+            this.postSummaryColumnFilter = JSON.parse(usp.get(caseManagerControlPanelSearchKey.tableFilterKey) as string) as ColumnFilterConfig;
         }
     }
 
 
     init() {
-        this.setCurrentPage();
+        this.getConfigFromUrl();
         window.addEventListener('popstate', () => {
-            this.setCurrentPage();
+            this.getConfigFromUrl();
             this.render();
         });
         this.render();
@@ -193,7 +201,7 @@ export class CaseManagerControlPanel {
             ev.preventDefault();
             this.currentPage = pageName;
             if (!active) {
-                window.history.pushState({'cmcPageName': pageName}, '', href);
+                window.history.pushState({'cmcPageName': pageName}, '', decodeURIComponent(href));
                 this.render();
             }
         });
@@ -207,10 +215,10 @@ export class CaseManagerControlPanel {
 
         const pathName = window.location.pathname;
         const usp = new URLSearchParams(window.location.search);
-        usp.set('page', 'summary');
+        usp.set(caseManagerControlPanelSearchKey.pageKey, 'summary');
         ul.append(this.buildNavLi('Summary', `${pathName}?${usp.toString()}`, 'summary'));
 
-        usp.set('page', 'posts');
+        usp.set(caseManagerControlPanelSearchKey.pageKey, 'posts');
         ul.append(this.buildNavLi('Posts', `${pathName}?${usp.toString()}`, 'posts'));
 
         nav.append(ul);
@@ -246,12 +254,17 @@ export class CaseManagerControlPanel {
         return section;
     }
 
-    private clearPostSummaryColumnFilters(): void {
+    private cleanInitPostColumnFilters(): void {
         if (this.pageLoadMap['posts'].isLoaded && this.pageLoadMap['posts'].pageData !== undefined) {
             this.pageLoadMap['posts'].pageData['header'].forEach((_, index) => {
                 // Default not to filter any column
                 this.postSummaryColumnFilter[index] = 'any';
             });
+            // Remove table filters on clear
+            const usp = new URLSearchParams(window.location.search);
+            usp.delete(caseManagerControlPanelSearchKey.tableFilterKey);
+            // Every filter change getting pushed to history is just too much
+            window.history.replaceState({}, '', decodeURIComponent(`${window.location.pathname}?${usp.toString()}`));
         }
     }
 
@@ -264,10 +277,20 @@ export class CaseManagerControlPanel {
                 isLoaded: true,
                 pageData: summaryPageData
             };
-            this.clearPostSummaryColumnFilters();
-
+            if (Object.keys(this.postSummaryColumnFilter).length === 0) {
+                this.cleanInitPostColumnFilters();
+            }
             return summaryPageData;
         }
+    }
+
+    private updateFilter(index: number, filterType: FilterType) {
+        this.postSummaryColumnFilter[index] = filterType;
+        // Encode filter params in URI
+        const usp = new URLSearchParams(window.location.search);
+        usp.set(caseManagerControlPanelSearchKey.tableFilterKey, JSON.stringify(this.postSummaryColumnFilter));
+        // Every filter change getting pushed to history is just too much
+        window.history.replaceState({}, '', decodeURIComponent(`${window.location.pathname}?${usp.toString()}`));
     }
 
     private async buildPostsBreakdownPage() {
@@ -302,7 +325,8 @@ export class CaseManagerControlPanel {
         </select>`);
                         select.on('change', (ev) => {
                             ev.preventDefault();
-                            this.postSummaryColumnFilter[index] = (ev.target as HTMLSelectElement).value as FilterType;
+
+                            this.updateFilter(index, (ev.target as HTMLSelectElement).value as FilterType);
                             this.render();
                         });
                         div.append(select);
@@ -312,7 +336,7 @@ export class CaseManagerControlPanel {
                         const clearButton = $('<button type="button" class="s-btn s-btn__sm s-btn__muted s-btn__outlined">Clear Filters</button>');
                         clearButton.on('click', (ev) => {
                             ev.preventDefault();
-                            this.clearPostSummaryColumnFilters();
+                            this.cleanInitPostColumnFilters();
                             this.render();
                         });
                         th.append(clearButton);
