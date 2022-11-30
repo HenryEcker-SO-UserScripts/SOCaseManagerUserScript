@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.5
+// @version     0.1.6
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -716,7 +716,7 @@
             if (this.search.length > 0) {
                 usp.set("search", this.search);
             }
-            const href = `/users${usp.toString()}`;
+            const href = `/users?${usp.toString()}`;
             const a = $(`<a${group_id === this.group ? ' class="youarehere is-selected"' : ""} href="${href}" data-nav-xhref="" data-value="${group_id}" data-shortcut="">${description}</a>`);
             a.on("click", (ev => {
                 ev.preventDefault();
