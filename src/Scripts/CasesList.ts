@@ -171,7 +171,7 @@ export class CasesUserList {
         if (this.search.length > 0) {
             usp.set(searchParamKeys.search, this.search);
         }
-        const href = `/users${usp.toString()}`;
+        const href = `/users?${usp.toString()}`;
         const a = $(`<a${group_id === this.group ? ' class="youarehere is-selected"' : ''} href="${href}" data-nav-xhref="" data-value="${group_id}" data-shortcut="">${description}</a>`);
         a.on('click', (ev) => {
             ev.preventDefault();
