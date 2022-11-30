@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.4
+// @version     0.1.5
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -405,18 +405,21 @@
             };
             this.postSummaryColumnFilter = {};
         }
-        setCurrentPage() {
+        getConfigFromUrl() {
             const usp = new URLSearchParams(window.location.search);
             if (!usp.has("page") || "summary" === usp.get("page")) {
                 this.currentPage = "summary";
             } else if ("posts" === usp.get("page")) {
                 this.currentPage = "posts";
             }
+            if (usp.has("table-filter")) {
+                this.postSummaryColumnFilter = JSON.parse(usp.get("table-filter"));
+            }
         }
         init() {
-            this.setCurrentPage();
+            this.getConfigFromUrl();
             window.addEventListener("popstate", (() => {
-                this.setCurrentPage();
+                this.getConfigFromUrl();
                 this.render();
             }));
             this.render();
@@ -475,11 +478,14 @@
             section.append(summaryPane);
             return section;
         }
-        clearPostSummaryColumnFilters() {
+        cleanInitPostColumnFilters() {
             if (this.pageLoadMap.posts.isLoaded && void 0 !== this.pageLoadMap.posts.pageData) {
                 this.pageLoadMap.posts.pageData.header.forEach(((_, index) => {
                     this.postSummaryColumnFilter[index] = "any";
                 }));
+                const usp = new URLSearchParams(window.location.search);
+                usp.delete("table-filter");
+                window.history.replaceState({}, "", `${window.location.pathname}?${usp.toString()}`);
             }
         }
         async getBreakdownData() {
@@ -491,9 +497,17 @@
                     isLoaded: true,
                     pageData: summaryPageData
                 };
-                this.clearPostSummaryColumnFilters();
+                if (0 === Object.keys(this.postSummaryColumnFilter).length) {
+                    this.cleanInitPostColumnFilters();
+                }
                 return summaryPageData;
             }
+        }
+        updateFilter(index, filterType) {
+            this.postSummaryColumnFilter[index] = filterType;
+            const usp = new URLSearchParams(window.location.search);
+            usp.set("table-filter", JSON.stringify(this.postSummaryColumnFilter));
+            window.history.replaceState({}, "", `${window.location.pathname}?${usp.toString()}`);
         }
         async buildPostsBreakdownPage() {
             const section = $('<section class="flex--item fl-grow1 wmx100"><div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Post Status Summary</h1></section>');
@@ -519,7 +533,7 @@
                             const select = $(`<select id="${htmlId}"> ${buildSummaryTableFilterOption("Any", "any", this.postSummaryColumnFilter[index])} ${buildSummaryTableFilterOption("Checked", "checked", this.postSummaryColumnFilter[index])} ${buildSummaryTableFilterOption("Unchecked", "unchecked", this.postSummaryColumnFilter[index])} </select>`);
                             select.on("change", (ev => {
                                 ev.preventDefault();
-                                this.postSummaryColumnFilter[index] = ev.target.value;
+                                this.updateFilter(index, ev.target.value);
                                 this.render();
                             }));
                             div.append(select);
@@ -528,7 +542,7 @@
                             const clearButton = $('<button type="button" class="s-btn s-btn__sm s-btn__muted s-btn__outlined">Clear Filters</button>');
                             clearButton.on("click", (ev => {
                                 ev.preventDefault();
-                                this.clearPostSummaryColumnFilters();
+                                this.cleanInitPostColumnFilters();
                                 this.render();
                             }));
                             th.append(clearButton);
@@ -627,10 +641,28 @@
             }
         }
         buildPublicSearchQuery() {
-            return `/users?tab=case&group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ""}`;
+            const usp = new URLSearchParams("?tab=case");
+            usp.set("group", this.group);
+            usp.set("page", this.currentPage.toString());
+            if (this.search.length > 0) {
+                usp.set("search", this.search);
+            }
+            return `/users?${usp.toString()}`;
         }
         pullDownData() {
-            return fetchFromAWS(`/cases?group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ""}${this.needsTotalPages ? "&total-pages=true" : ""}${this.needsGroupInfo ? "&group-info=true" : ""}`).then((res => res.json())).then((resData => {
+            const usp = new URLSearchParams;
+            usp.set("group", this.group);
+            usp.set("page", this.currentPage.toString());
+            if (this.search.length > 0) {
+                usp.set("search", this.search);
+            }
+            if (this.needsTotalPages) {
+                usp.set("total-pages", "true");
+            }
+            if (this.needsGroupInfo) {
+                usp.set("group-info", "true");
+            }
+            return fetchFromAWS(`/cases?${usp.toString()}`).then((res => res.json())).then((resData => {
                 this.totalPages = resData.totalPages || this.totalPages;
                 this.groupInfo = resData.groupInfo || this.groupInfo;
                 this.userData = resData.cases;
