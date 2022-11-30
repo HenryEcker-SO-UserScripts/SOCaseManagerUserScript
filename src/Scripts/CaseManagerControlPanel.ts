@@ -171,14 +171,14 @@ export class CaseManagerControlPanel {
 
     private getConfigFromUrl() {
         const usp = new URLSearchParams(window.location.search);
-        if (!usp.has(caseManagerControlPanelSearchKey.pageKey) || usp.get(caseManagerControlPanelSearchKey.pageKey) === 'summary') {
+        if (!usp.has(searchParamKeys.page) || usp.get(searchParamKeys.page) === 'summary') {
             this.currentPage = 'summary';
-        } else if (usp.get(caseManagerControlPanelSearchKey.pageKey) === 'posts') {
+        } else if (usp.get(searchParamKeys.page) === 'posts') {
             this.currentPage = 'posts';
         }
 
-        if (usp.has(caseManagerControlPanelSearchKey.tableFilterKey)) {
-            this.postSummaryColumnFilter = JSON.parse(usp.get(caseManagerControlPanelSearchKey.tableFilterKey) as string) as ColumnFilterConfig;
+        if (usp.has(searchParamKeys.tableFilter)) {
+            this.postSummaryColumnFilter = JSON.parse(usp.get(searchParamKeys.tableFilter) as string) as ColumnFilterConfig;
         }
     }
 
@@ -201,7 +201,7 @@ export class CaseManagerControlPanel {
             ev.preventDefault();
             this.currentPage = pageName;
             if (!active) {
-                window.history.pushState({'cmcPageName': pageName}, '', decodeURIComponent(href));
+                window.history.pushState({'cmcPageName': pageName}, '', href);
                 this.render();
             }
         });
@@ -215,10 +215,10 @@ export class CaseManagerControlPanel {
 
         const pathName = window.location.pathname;
         const usp = new URLSearchParams(window.location.search);
-        usp.set(caseManagerControlPanelSearchKey.pageKey, 'summary');
+        usp.set(searchParamKeys.page, 'summary');
         ul.append(this.buildNavLi('Summary', `${pathName}?${usp.toString()}`, 'summary'));
 
-        usp.set(caseManagerControlPanelSearchKey.pageKey, 'posts');
+        usp.set(searchParamKeys.page, 'posts');
         ul.append(this.buildNavLi('Posts', `${pathName}?${usp.toString()}`, 'posts'));
 
         nav.append(ul);
@@ -262,9 +262,9 @@ export class CaseManagerControlPanel {
             });
             // Remove table filters on clear
             const usp = new URLSearchParams(window.location.search);
-            usp.delete(caseManagerControlPanelSearchKey.tableFilterKey);
+            usp.delete(searchParamKeys.tableFilter);
             // Every filter change getting pushed to history is just too much
-            window.history.replaceState({}, '', decodeURIComponent(`${window.location.pathname}?${usp.toString()}`));
+            window.history.replaceState({}, '', `${window.location.pathname}?${usp.toString()}`);
         }
     }
 
@@ -288,9 +288,9 @@ export class CaseManagerControlPanel {
         this.postSummaryColumnFilter[index] = filterType;
         // Encode filter params in URI
         const usp = new URLSearchParams(window.location.search);
-        usp.set(caseManagerControlPanelSearchKey.tableFilterKey, JSON.stringify(this.postSummaryColumnFilter));
+        usp.set(searchParamKeys.tableFilter, JSON.stringify(this.postSummaryColumnFilter));
         // Every filter change getting pushed to history is just too much
-        window.history.replaceState({}, '', decodeURIComponent(`${window.location.pathname}?${usp.toString()}`));
+        window.history.replaceState({}, '', `${window.location.pathname}?${usp.toString()}`);
     }
 
     private async buildPostsBreakdownPage() {

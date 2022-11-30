@@ -16,7 +16,10 @@ declare const seApiDefs: {
     apiKey: string;
 };
 
-declare const caseManagerControlPanelSearchKey: {
-    pageKey: string;
-    tableFilterKey: string;
+declare const searchParamKeys: {
+    page: string;
+    group: string;
+    search: string;
+    tableFilter: string;
+    tab: string;
 };

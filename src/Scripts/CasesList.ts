@@ -47,23 +47,43 @@ export class CasesUserList {
 
     private setCurrentPage() {
         const usp = new URLSearchParams(window.location.search);
-        if (usp.has('page')) {
-            this.currentPage = Number(usp.get('page'));
+        if (usp.has(searchParamKeys.page)) {
+            this.currentPage = Number(usp.get(searchParamKeys.page));
         }
-        if (usp.has('group')) {
-            this.group = usp.get('group') as string;
+        if (usp.has(searchParamKeys.group)) {
+            this.group = usp.get(searchParamKeys.group) as string;
         }
-        if (usp.has('search')) {
-            this.search = usp.get('search') as string;
+        if (usp.has(searchParamKeys.search)) {
+            this.search = usp.get(searchParamKeys.search) as string;
         }
     }
 
     private buildPublicSearchQuery() {
-        return `/users${tabIdentifiers.cases}&group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ''}`;
+        const usp = new URLSearchParams(tabIdentifiers.cases);
+        usp.set(searchParamKeys.group, this.group);
+        usp.set(searchParamKeys.page, this.currentPage.toString());
+        if (this.search.length > 0) {
+            usp.set(searchParamKeys.search, this.search);
+        }
+        return `/users?${usp.toString()}`;
     }
 
     private pullDownData() {
-        return fetchFromAWS(`/cases?group=${this.group}&page=${this.currentPage}${this.search.length > 0 ? `&search=${this.search}` : ''}${this.needsTotalPages ? '&total-pages=true' : ''}${this.needsGroupInfo ? '&group-info=true' : ''}`)
+        // Can't use searchParamKeys here since these are defined on the API side
+        // Changes to values here will be based on the API not local changes in the script
+        const usp = new URLSearchParams();
+        usp.set('group', this.group);
+        usp.set('page', this.currentPage.toString());
+        if (this.search.length > 0) {
+            usp.set('search', this.search);
+        }
+        if (this.needsTotalPages) {
+            usp.set('total-pages', 'true');
+        }
+        if (this.needsGroupInfo) {
+            usp.set('group-info', 'true');
+        }
+        return fetchFromAWS(`/cases?${usp.toString()}`)
             .then(res => res.json())
             .then((resData: OpenCasesSummaryPageResponse) => {
                 this.totalPages = resData.totalPages || this.totalPages;
