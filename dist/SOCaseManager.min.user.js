@@ -3,13 +3,14 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.6
+// @version     0.1.7
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js
 // @match       *://stackoverflow.com/questions/*
 // @match       *://stackoverflow.com/users
 // @match       *://stackoverflow.com/users?*
 // @match       *://stackoverflow.com/users/*
+// @exclude     *://stackoverflow.com/users/account-info/*
 // @exclude     *://stackoverflow.com/users/apps/*
 // @exclude     *://stackoverflow.com/users/delete/*
 // @exclude     *://stackoverflow.com/users/edit/*

@@ -30,6 +30,7 @@ module.exports = {
                 '*://stackoverflow.com/users/apps/*',
                 '*://stackoverflow.com/users/flag-summary/*',
                 '*://stackoverflow.com/users/message/*',
+                '*://stackoverflow.com/users/account-info/*',
             ],
             'grant': ['GM_getValue', 'GM_setValue', 'GM_deleteValue']
         };
