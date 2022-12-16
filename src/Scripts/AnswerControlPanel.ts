@@ -281,15 +281,23 @@ const nukePostAsPlagiarism = async (message: string | undefined, answerId: numbe
 const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number, postOwnerId: number) => {
     const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${getModMenuPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
     const popOver = $(
-        `<div class="s-popover" id="${getModMenuPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/></div>`
+        `<div class="s-popover" id="${getModMenuPopoverId(answerId)}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`
     );
-    const container = $('<div class="d-grid g8 ai-center" style="grid-template-columns: min-content 1fr"></div>');
-    const label = $(`<label class="s-label" for="${getModMenuPopoverId(answerId)}-input">Source:</label>`);
-    const input: JQuery<HTMLInputElement> = $(`<input id="${getModMenuPopoverId(answerId)}-input"/>`);
-    input.val('Copied without attribution from ');
+    const container = $('<div class="d-grid g8 ai-center grid__1 ws4"></div>');
+    const label = $(`<label class="s-label" for="${getModMenuPopoverId(answerId)}-ta">Source:</label>`);
+    const input: JQuery<HTMLInputElement> = $(`<textarea id="${getModMenuPopoverId(answerId)}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
     container.append(label);
     container.append(input);
 
+    const baseText = 'Copied without attribution from ';
+    input.val(baseText);
+    const lengthSpan = $(`<span>${baseText.length}</span>`);
+    {
+        const wrapper = $('<div></div>');
+        wrapper.append('<span>Characters: </span>');
+        wrapper.append(lengthSpan);
+        container.append(wrapper);
+    }
     const submitButton = $('<button title="Deletes the post, adds a comment, and logs in Case Manager on AWS" class="s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
     submitButton.on('click', (ev) => {
         ev.preventDefault();
@@ -299,6 +307,7 @@ const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number,
     // Comment Max Length Enforced
     input.on('input', (ev) => {
         ev.preventDefault();
+        lengthSpan.text(ev.target.value.length);
         if (ev.target.value.length > 600) {
             submitButton.prop('disabled', true);
         } else {
