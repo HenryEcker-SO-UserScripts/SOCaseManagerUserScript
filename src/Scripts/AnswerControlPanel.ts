@@ -354,7 +354,7 @@ export const buildAnswerControlPanel = async () => {
             ) {
                 continue;
             }
-            const controlPanel = $('<div class="p8 d-flex fd-row jc-space-between ai-center"></div>');
+            const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
             buildBaseTimelineButtons(controlPanel, answerId);
             if (StackExchange.options.user.isModerator) {
                 buildModTools(controlPanel, isDeleted, answerId, postOwnerId);
