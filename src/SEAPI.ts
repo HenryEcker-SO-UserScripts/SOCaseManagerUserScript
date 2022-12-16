@@ -25,6 +25,7 @@ export interface StackExchangeAPI {
         user: {
             fkey: string;
             userId: number;
+            isModerator: boolean;
         };
     };
     helpers: {
@@ -32,6 +33,19 @@ export interface StackExchangeAPI {
         showToast: (message: string, options?: showToastOptions) => void;
     };
     ready: (onReady: () => void) => void;
+}
+
+export interface PostDeleteResponse {
+    Success: boolean;
+    Reason: number;
+    Warning: boolean;
+    NewScore: number;
+    Message: string;
+    CanOverrideMessageWithResearchPrompt: boolean;
+    Refresh: boolean;
+    Transient: boolean;
+    Info: boolean;
+    HasAcceptedByModRights: boolean;
 }
 
 

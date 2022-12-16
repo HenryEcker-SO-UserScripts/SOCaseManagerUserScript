@@ -1,3 +1,4 @@
+import type {PostDeleteResponse} from '../SEAPI';
 import {type StackExchangeAPI} from '../SEAPI';
 import {buildAlertSvg} from '../SVGBuilders';
 import {fetchFromAWS, getSummaryPostInfoFromIds} from '../AWSAPI';
@@ -20,6 +21,10 @@ const getActionsPopoverId = (answerId: number): string => {
 
 const getActionCheckboxId = (answerId: number, action_id: number): string => {
     return `checkbox-${answerId}-${action_id}`;
+};
+
+const getModMenuPopoverId = (answerId: number): string => {
+    return `case-manager-mod-menu-popover-${answerId}`;
 };
 
 
@@ -234,6 +239,79 @@ const delayPullSummaryPostInfo = (answerIds: number[]) => {
 };
 
 
+const nukePostAsPlagiarism = async (message: string | undefined, answerId: number, ownerId: number) => {
+    if (message === undefined) {
+        return;
+    }
+
+    const noComment = message.length === 0;
+    const deleteFd = new FormData();
+    deleteFd.set('fkey', StackExchange.options.user.fkey);
+    const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
+        body: deleteFd,
+        method: 'POST'
+    }).then(res => res.json());
+    if (deleteFetch.Success) {
+        if (!noComment) { // Only comment if there is a link
+            const commentFd = new FormData();
+            commentFd.set('fkey', StackExchange.options.user.fkey);
+            commentFd.set('comment', message);
+            await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
+        }
+        const body: {
+            postOwnerId?: number;
+            actionIds?: number[];
+        } = {};
+        if (ownerId !== -1) {
+            body['postOwnerId'] = ownerId;
+        }
+        body['actionIds'] = [3, 4]; // Plagiarised and Deleted
+        void fetchFromAWS(`/handle/post/${answerId}`, {
+            'method': 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+};
+
+const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number, postOwnerId: number) => {
+    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${getModMenuPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+    const popOver = $(
+        `<div class="s-popover" id="${getModMenuPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/></div>`
+    );
+    const container = $('<div class="d-grid g8 ai-center" style="grid-template-columns: min-content 1fr"></div>');
+    const label = $(`<label class="s-label" for="${getModMenuPopoverId(answerId)}-input">Source:</label>`);
+    const input: JQuery<HTMLInputElement> = $(`<input id="${getModMenuPopoverId(answerId)}-input"/>`);
+    input.val('Copied without attribution from ');
+    container.append(label);
+    container.append(input);
+
+    const submitButton = $('<button title="Deletes the post, adds a comment, and logs in Case Manager on AWS" class="s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+    submitButton.on('click', (ev) => {
+        ev.preventDefault();
+        void nukePostAsPlagiarism(input.val() as string | undefined, answerId, postOwnerId);
+    });
+
+    // Comment Max Length Enforced
+    input.on('input', (ev) => {
+        ev.preventDefault();
+        if (ev.target.value.length > 600) {
+            submitButton.prop('disabled', true);
+        } else {
+            submitButton.removeProp('disabled');
+        }
+    });
+    container.append(submitButton);
+    popOver.append(container);
+    mountPoint.append(button);
+    mountPoint.append(popOver);
+};
+
+
 export const buildAnswerControlPanel = async () => {
     const answers = $('div.answer');
     const answerIds = answers.map((i, e) => Number($(e).attr('data-answerid'))).toArray();
@@ -257,6 +335,7 @@ export const buildAnswerControlPanel = async () => {
     if (answers.length > 0) {
         for (let i = 0; i < answers.length; i++) {
             const jAnswer = $(answers[i]);
+            const isDeleted = jAnswer.hasClass('deleted-answer');
             const answerId = answerIds[i];
             const postOwnerId = ownerIds[i];
             // Skip if answer id cannot be found or if post belongs to the current user
@@ -268,6 +347,9 @@ export const buildAnswerControlPanel = async () => {
             }
             const controlPanel = $('<div class="p8 d-flex fd-row jc-space-between ai-center"></div>');
             buildBaseTimelineButtons(controlPanel, answerId);
+            if (StackExchange.options.user.isModerator) {
+                buildModTools(controlPanel, isDeleted, answerId, postOwnerId);
+            }
             buildActionsComponent(controlPanel, answerId, postOwnerId);
             jAnswer.append(controlPanel);
         }
