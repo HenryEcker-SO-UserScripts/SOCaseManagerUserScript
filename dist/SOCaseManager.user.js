@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.8
+// @version     0.1.9
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -208,42 +208,56 @@
             console.error(err);
         }));
     };
-    const nukePostAsPlagiarism = async (message, answerId, ownerId) => {
+    const nukePostAsPlagiarism = async (message, answerId, ownerId, flagPost = false) => {
         if (void 0 === message) {
             return;
         }
         const noComment = 0 === message.length;
+        if (flagPost && !noComment) {
+            const flagFd = new FormData;
+            flagFd.set("fkey", StackExchange.options.user.fkey);
+            flagFd.set("otherText", message);
+            const flagFetch = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
+                body: flagFd,
+                method: "POST"
+            }).then((res => res.json()));
+            if (!flagFetch.Success) {
+                StackExchange.helpers.showToast(flagFetch.Message);
+                return;
+            }
+        }
         const deleteFd = new FormData;
         deleteFd.set("fkey", StackExchange.options.user.fkey);
         const deleteFetch = await fetch(`/posts/${answerId}/vote/10`, {
             body: deleteFd,
             method: "POST"
         }).then((res => res.json()));
-        if (deleteFetch.Success) {
-            if (!noComment) {
-                const commentFd = new FormData;
-                commentFd.set("fkey", StackExchange.options.user.fkey);
-                commentFd.set("comment", message);
-                await void fetch(`/posts/${answerId}/comments`, {
-                    body: commentFd,
-                    method: "POST"
-                });
-            }
-            const body = {};
-            if (-1 !== ownerId) {
-                body.postOwnerId = ownerId;
-            }
-            body.actionIds = [ 3, 4 ];
-            fetchFromAWS(`/handle/post/${answerId}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-            }).then((() => {
-                window.location.reload();
-            }));
+        if (!deleteFetch.Success) {
+            return;
         }
+        if (!noComment) {
+            const commentFd = new FormData;
+            commentFd.set("fkey", StackExchange.options.user.fkey);
+            commentFd.set("comment", message);
+            await void fetch(`/posts/${answerId}/comments`, {
+                body: commentFd,
+                method: "POST"
+            });
+        }
+        const body = {};
+        if (-1 !== ownerId) {
+            body.postOwnerId = ownerId;
+        }
+        body.actionIds = [ 3, 4 ];
+        fetchFromAWS(`/handle/post/${answerId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        }).then((() => {
+            window.location.reload();
+        }));
     };
     const buildModTools = (mountPoint, isDeleted, answerId, postOwnerId) => {
         const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${getModMenuPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
@@ -262,21 +276,36 @@
             wrapper.append(lengthSpan);
             container.append(wrapper);
         }
-        const submitButton = $('<button title="Deletes the post, adds a comment, and logs in Case Manager on AWS" class="s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-        submitButton.on("click", (ev => {
-            ev.preventDefault();
-            nukePostAsPlagiarism(input.val(), answerId, postOwnerId);
-        }));
-        input.on("input", (ev => {
-            ev.preventDefault();
-            lengthSpan.text(ev.target.value.length);
-            if (ev.target.value.length > 600) {
-                submitButton.prop("disabled", true);
-            } else {
-                submitButton.removeProp("disabled");
-            }
-        }));
-        container.append(submitButton);
+        {
+            const flagContainer = $('<div class="d-flex fd-row flex__fl-equal g8"></div>');
+            const flagAndNukeButton = $('<button title="Flags post, deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item s-btn s-btn__danger s-btn__outlined s-btn__xs">Flag and Nuke</button>');
+            flagAndNukeButton.on("click", (ev => {
+                ev.preventDefault();
+                nukePostAsPlagiarism(input.val(), answerId, postOwnerId, true);
+            }));
+            const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+            nukeButton.on("click", (ev => {
+                ev.preventDefault();
+                nukePostAsPlagiarism(input.val(), answerId, postOwnerId);
+            }));
+            input.on("input", (ev => {
+                ev.preventDefault();
+                lengthSpan.text(ev.target.value.length);
+                if (ev.target.value.length > 500) {
+                    flagAndNukeButton.prop("disabled", true);
+                } else {
+                    flagAndNukeButton.removeProp("disabled");
+                }
+                if (ev.target.value.length > 600) {
+                    nukeButton.prop("disabled", true);
+                } else {
+                    nukeButton.removeProp("disabled");
+                }
+            }));
+            flagContainer.append(flagAndNukeButton);
+            flagContainer.append(nukeButton);
+            container.append(flagContainer);
+        }
         popOver.append(container);
         mountPoint.append(button);
         mountPoint.append(popOver);
