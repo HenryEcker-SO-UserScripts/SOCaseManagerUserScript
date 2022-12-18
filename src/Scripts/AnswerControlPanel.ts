@@ -1,4 +1,4 @@
-import type {PostDeleteResponse} from '../SEAPI';
+import type {PostDeleteResponse, FlagOtherResponse} from '../SEAPI';
 import {type StackExchangeAPI} from '../SEAPI';
 import {buildAlertSvg} from '../SVGBuilders';
 import {fetchFromAWS, getSummaryPostInfoFromIds} from '../AWSAPI';
@@ -239,43 +239,59 @@ const delayPullSummaryPostInfo = (answerIds: number[]) => {
 };
 
 
-const nukePostAsPlagiarism = async (message: string | undefined, answerId: number, ownerId: number) => {
+const nukePostAsPlagiarism = async (message: string | undefined, answerId: number, ownerId: number, flagPost = false) => {
     if (message === undefined) {
         return;
     }
-
     const noComment = message.length === 0;
+
+    if (flagPost && !noComment) {
+        const flagFd = new FormData();
+        flagFd.set('fkey', StackExchange.options.user.fkey);
+        flagFd.set('otherText', message);
+        const flagFetch: FlagOtherResponse = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
+            body: flagFd,
+            method: 'POST'
+        }).then(res => res.json());
+        if (!flagFetch.Success) {
+            StackExchange.helpers.showToast(flagFetch.Message);
+            return; // don't continue
+        }
+    }
+
     const deleteFd = new FormData();
     deleteFd.set('fkey', StackExchange.options.user.fkey);
     const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
         body: deleteFd,
         method: 'POST'
     }).then(res => res.json());
-    if (deleteFetch.Success) {
-        if (!noComment) { // Only comment if there is a link
-            const commentFd = new FormData();
-            commentFd.set('fkey', StackExchange.options.user.fkey);
-            commentFd.set('comment', message);
-            await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
-        }
-        const body: {
-            postOwnerId?: number;
-            actionIds?: number[];
-        } = {};
-        if (ownerId !== -1) {
-            body['postOwnerId'] = ownerId;
-        }
-        body['actionIds'] = [3, 4]; // Plagiarised and Deleted
-        void fetchFromAWS(`/handle/post/${answerId}`, {
-            'method': 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body)
-        }).then(() => {
-            window.location.reload();
-        });
+
+    if (!deleteFetch.Success) {
+        return; // Deletion failed don't continue
     }
+    if (!noComment) { // Only comment if there is a link
+        const commentFd = new FormData();
+        commentFd.set('fkey', StackExchange.options.user.fkey);
+        commentFd.set('comment', message);
+        await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
+    }
+    const body: {
+        postOwnerId?: number;
+        actionIds?: number[];
+    } = {};
+    if (ownerId !== -1) {
+        body['postOwnerId'] = ownerId;
+    }
+    body['actionIds'] = [3, 4]; // Plagiarised and Deleted
+    void fetchFromAWS(`/handle/post/${answerId}`, {
+        'method': 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+    }).then(() => {
+        window.location.reload();
+    });
 };
 
 const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number, postOwnerId: number) => {
@@ -298,23 +314,43 @@ const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number,
         wrapper.append(lengthSpan);
         container.append(wrapper);
     }
-    const submitButton = $('<button title="Deletes the post, adds a comment, and logs in Case Manager on AWS" class="s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-    submitButton.on('click', (ev) => {
-        ev.preventDefault();
-        void nukePostAsPlagiarism(input.val() as string | undefined, answerId, postOwnerId);
-    });
+    {
+        const flagContainer = $('<div class="d-flex fd-row flex__fl-equal g8"></div>');
 
-    // Comment Max Length Enforced
-    input.on('input', (ev) => {
-        ev.preventDefault();
-        lengthSpan.text(ev.target.value.length);
-        if (ev.target.value.length > 600) {
-            submitButton.prop('disabled', true);
-        } else {
-            submitButton.removeProp('disabled');
-        }
-    });
-    container.append(submitButton);
+        const flagAndNukeButton = $('<button title="Flags post, deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item s-btn s-btn__danger s-btn__outlined s-btn__xs">Flag and Nuke</button>');
+        flagAndNukeButton.on('click', (ev) => {
+            ev.preventDefault();
+            void nukePostAsPlagiarism(input.val() as string | undefined, answerId, postOwnerId, true);
+        });
+
+        const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+        nukeButton.on('click', (ev) => {
+            ev.preventDefault();
+            void nukePostAsPlagiarism(input.val() as string | undefined, answerId, postOwnerId);
+        });
+
+        // Comment Max Length Enforced
+        input.on('input', (ev) => {
+            ev.preventDefault();
+            lengthSpan.text(ev.target.value.length);
+            // Flag limit is 500
+            if (ev.target.value.length > 500) {
+                flagAndNukeButton.prop('disabled', true);
+            } else {
+                flagAndNukeButton.removeProp('disabled');
+            }
+            // Comment limit is 600
+            if (ev.target.value.length > 600) {
+                nukeButton.prop('disabled', true);
+            } else {
+                nukeButton.removeProp('disabled');
+            }
+        });
+
+        flagContainer.append(flagAndNukeButton);
+        flagContainer.append(nukeButton);
+        container.append(flagContainer);
+    }
     popOver.append(container);
     mountPoint.append(button);
     mountPoint.append(popOver);

@@ -48,6 +48,14 @@ export interface PostDeleteResponse {
     HasAcceptedByModRights: boolean;
 }
 
+export interface FlagOtherResponse {
+    FlagType: number;
+    Message: string;
+    Outcome: number;
+    ResultChangedState: boolean;
+    Success: boolean;
+}
+
 
 export interface SEAPIResponse<T> {
     has_more: boolean;
