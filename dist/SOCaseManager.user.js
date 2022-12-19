@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.9
+// @version     0.1.10
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -208,12 +208,20 @@
             console.error(err);
         }));
     };
-    const nukePostAsPlagiarism = async (message, answerId, ownerId, flagPost = false) => {
-        if (void 0 === message) {
+    const nukePostAsPlagiarism = async (answerId, ownerId, message, flagPost = false, commentPost = true, logWithAws = true) => {
+        if (flagPost && (message.length < 10 || message.length > 500)) {
+            StackExchange.helpers.showToast("Flags must be between 10 and 500 characters. Either add text or disable the flagging option.", {
+                type: "danger"
+            });
             return;
         }
-        const noComment = 0 === message.length;
-        if (flagPost && !noComment) {
+        if (commentPost && (message.length < 15 || message.length > 600)) {
+            StackExchange.helpers.showToast("Comments must be between 10 and 600 characters. Either add text or disable the comment option.", {
+                type: "danger"
+            });
+            return;
+        }
+        if (flagPost) {
             const flagFd = new FormData;
             flagFd.set("fkey", StackExchange.options.user.fkey);
             flagFd.set("otherText", message);
@@ -232,39 +240,41 @@
             body: deleteFd,
             method: "POST"
         }).then((res => res.json()));
-        if (!deleteFetch.Success) {
-            return;
-        }
-        if (!noComment) {
-            const commentFd = new FormData;
-            commentFd.set("fkey", StackExchange.options.user.fkey);
-            commentFd.set("comment", message);
-            await void fetch(`/posts/${answerId}/comments`, {
-                body: commentFd,
-                method: "POST"
-            });
-        }
-        const body = {};
-        if (-1 !== ownerId) {
-            body.postOwnerId = ownerId;
-        }
-        body.actionIds = [ 3, 4 ];
-        fetchFromAWS(`/handle/post/${answerId}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        }).then((() => {
+        if (deleteFetch.Success) {
+            if (commentPost) {
+                const commentFd = new FormData;
+                commentFd.set("fkey", StackExchange.options.user.fkey);
+                commentFd.set("comment", message);
+                await void fetch(`/posts/${answerId}/comments`, {
+                    body: commentFd,
+                    method: "POST"
+                });
+            }
+            if (logWithAws) {
+                const body = {};
+                if (-1 !== ownerId) {
+                    body.postOwnerId = ownerId;
+                }
+                body.actionIds = [ 3, 4 ];
+                await fetchFromAWS(`/handle/post/${answerId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+            }
             window.location.reload();
-        }));
+        }
     };
+    const hasCheckedChild = e => e.find('input[type="checkbox"]').is(":checked");
     const buildModTools = (mountPoint, isDeleted, answerId, postOwnerId) => {
-        const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${getModMenuPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-        const popOver = $(`<div class="s-popover" id="${getModMenuPopoverId(answerId)}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`);
+        const baseId = getModMenuPopoverId(answerId);
+        const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+        const popOver = $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`);
         const container = $('<div class="d-grid g8 ai-center grid__1 ws4"></div>');
-        const label = $(`<label class="s-label" for="${getModMenuPopoverId(answerId)}-ta">Source:</label>`);
-        const input = $(`<textarea id="${getModMenuPopoverId(answerId)}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
+        const label = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
+        const input = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
         container.append(label);
         container.append(input);
         const baseText = "Copied without attribution from ";
@@ -278,31 +288,38 @@
         }
         {
             const flagContainer = $('<div class="d-flex fd-row flex__fl-equal g8"></div>');
-            const flagAndNukeButton = $('<button title="Flags post, deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item s-btn s-btn__danger s-btn__outlined s-btn__xs">Flag and Nuke</button>');
-            flagAndNukeButton.on("click", (ev => {
-                ev.preventDefault();
-                nukePostAsPlagiarism(input.val(), answerId, postOwnerId, true);
-            }));
-            const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+            const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
+            const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag" /><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
+            const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment" checked/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
+            const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log" checked/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
+            checkboxContainer.append(shouldFlagCheckbox);
+            checkboxContainer.append(shouldCommentCheckbox);
+            checkboxContainer.append(shouldLogCheckbox);
+            const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
             nukeButton.on("click", (ev => {
                 ev.preventDefault();
-                nukePostAsPlagiarism(input.val(), answerId, postOwnerId);
+                nukePostAsPlagiarism(answerId, postOwnerId, input.val(), hasCheckedChild(shouldFlagCheckbox), hasCheckedChild(shouldCommentCheckbox), hasCheckedChild(shouldLogCheckbox));
             }));
+            const updateDisplayBasedOnSelections = ev => {
+                ev.preventDefault();
+                const isFlaggingActive = hasCheckedChild(shouldFlagCheckbox);
+                const isCommentingActive = hasCheckedChild(shouldCommentCheckbox);
+                if (!isFlaggingActive && !isCommentingActive) {
+                    input.prop("disabled", true);
+                } else {
+                    input.removeProp("disabled");
+                }
+                nukeButton.attr("title", (isFlaggingActive ? "Flags the post, " : "") + (isFlaggingActive ? "deletes" : "Deletes") + " the post" + (isCommentingActive ? ", adds a comment" : "") + (hasCheckedChild(shouldLogCheckbox) ? ", logs feedback in Case manager" : ""));
+            };
+            shouldCommentCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+            shouldFlagCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+            shouldLogCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
             input.on("input", (ev => {
                 ev.preventDefault();
-                lengthSpan.text(ev.target.value.length);
-                if (ev.target.value.length > 500) {
-                    flagAndNukeButton.prop("disabled", true);
-                } else {
-                    flagAndNukeButton.removeProp("disabled");
-                }
-                if (ev.target.value.length > 600) {
-                    nukeButton.prop("disabled", true);
-                } else {
-                    nukeButton.removeProp("disabled");
-                }
+                const length = ev.target.value.length;
+                lengthSpan.text(length);
             }));
-            flagContainer.append(flagAndNukeButton);
+            flagContainer.append(checkboxContainer);
             flagContainer.append(nukeButton);
             container.append(flagContainer);
         }
