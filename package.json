@@ -1,6 +1,6 @@
 {
   "name": "so-case-manager-userscript",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "author": "Henry Ecker (https://github.com/HenryEcker)",
   "description": "Help facilitate and track collaborative plagiarism cleanup efforts",
   "repository": {
