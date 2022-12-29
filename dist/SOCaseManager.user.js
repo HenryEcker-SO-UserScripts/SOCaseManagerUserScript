@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.10
+// @version     0.1.11
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -36,6 +36,7 @@
     const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
     const accessToken = "access_token";
     const seApiToken = "se_api_token";
+    const commentDetailTextBase = "cm_detail_text_base";
     const requestNewJwt = () => fetchFromAWS("/auth/cm/jwt", {
         method: "POST",
         headers: {
@@ -277,7 +278,7 @@
         const input = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
         container.append(label);
         container.append(input);
-        const baseText = "Copied without attribution from ";
+        const baseText = GM_getValue(commentDetailTextBase, "");
         input.val(baseText);
         const lengthSpan = $(`<span>${baseText.length}</span>`);
         {
@@ -935,58 +936,81 @@
         const tokens = await fetchFromAWS("/auth/credentials").then((res => res.json()));
         const container = $("<div></div>");
         container.append('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
-        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g8"></div>');
+        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
         container.append(toolGrid);
-        const existingTokensComponent = $("<div></div>");
-        toolGrid.append(existingTokensComponent);
-        existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
-        const tokenList = $("<div></div>");
-        existingTokensComponent.append(tokenList);
-        tokens.forEach((token => {
-            const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
-            tokenList.append(tokenRow);
-            tokenRow.append(`<span>${token}</span>`);
-            const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
-            invalidateButton.on("click", (ev => {
-                ev.preventDefault();
-                fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
-                    if (200 === res.status) {
-                        tokenRow.remove();
-                        if (GM_getValue(seApiToken) === token) {
-                            GM_deleteValue(seApiToken);
-                            GM_deleteValue(accessToken);
-                            window.location.reload();
+        {
+            const existingTokensComponent = $("<div></div>");
+            toolGrid.append(existingTokensComponent);
+            existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
+            const tokenList = $("<div></div>");
+            existingTokensComponent.append(tokenList);
+            tokens.forEach((token => {
+                const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
+                tokenList.append(tokenRow);
+                tokenRow.append(`<span>${token}</span>`);
+                const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
+                invalidateButton.on("click", (ev => {
+                    ev.preventDefault();
+                    fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
+                        if (200 === res.status) {
+                            tokenRow.remove();
+                            if (GM_getValue(seApiToken) === token) {
+                                GM_deleteValue(seApiToken);
+                                GM_deleteValue(accessToken);
+                                window.location.reload();
+                            }
                         }
+                    }));
+                }));
+                tokenRow.append(invalidateButton);
+            }));
+            const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
+            existingTokensComponent.append(deAuthoriseButton);
+            deAuthoriseButton.on("click", (ev => {
+                ev.preventDefault();
+                StackExchange.helpers.showConfirmModal({
+                    title: "De-authenticate this Application",
+                    bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
+                    buttonLabel: "De-authenticate"
+                }).then((confirm => {
+                    if (confirm) {
+                        fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
+                            if (200 === res.status) {
+                                GM_deleteValue(seApiToken);
+                                GM_deleteValue(accessToken);
+                                window.location.reload();
+                            }
+                        }));
                     }
                 }));
             }));
-            tokenRow.append(invalidateButton);
-        }));
-        const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
-        existingTokensComponent.append(deAuthoriseButton);
-        deAuthoriseButton.on("click", (ev => {
-            ev.preventDefault();
-            StackExchange.helpers.showConfirmModal({
-                title: "De-authenticate this Application",
-                bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
-                buttonLabel: "De-authenticate"
-            }).then((confirm => {
-                if (confirm) {
-                    fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
-                        if (200 === res.status) {
-                            GM_deleteValue(seApiToken);
-                            GM_deleteValue(accessToken);
-                            window.location.reload();
-                        }
-                    }));
+        }
+        {
+            const getNewToken = $("<div></div>");
+            toolGrid.append(getNewToken);
+            getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
+            getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
+            getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
+        }
+        {
+            const templateIssuer = $("<div></div>");
+            toolGrid.append(templateIssuer);
+            templateIssuer.append('<h3 class="fs-title mb12">Edit base message template for comment/flags</h3>');
+            const templateForm = $("<form></form>");
+            const textarea = $(`<textarea class="s-textarea js-comment-text-input">${GM_getValue(commentDetailTextBase, "")}</textarea>`);
+            templateForm.append(textarea);
+            templateForm.append('<button class="s-btn s-btn__primary" type="submit">Submit</button>');
+            templateForm.on("submit", (ev => {
+                ev.preventDefault();
+                const v = textarea.val();
+                if (0 !== v.length) {
+                    GM_setValue(commentDetailTextBase, textarea.val());
+                } else {
+                    GM_deleteValue(commentDetailTextBase);
                 }
             }));
-        }));
-        const getNewToken = $("<div></div>");
-        toolGrid.append(getNewToken);
-        getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
-        getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
-        getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
+            templateIssuer.append(templateForm);
+        }
         return container;
     };
     const UserScript = () => {
