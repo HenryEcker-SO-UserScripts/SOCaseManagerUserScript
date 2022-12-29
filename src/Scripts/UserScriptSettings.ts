@@ -95,16 +95,24 @@ export const buildUserScriptSettingsPanel = async () => {
         templateForm.append(textarea);
         templateForm.append('<button class="s-btn s-btn__primary" type="submit">Submit</button>');
 
-        templateForm.on('submit', (ev) => {
+        const formHandler = (ev: JQuery.Event) => {
             ev.preventDefault();
             const v = textarea.val() as string;
             if (v.length === 0) {
                 GM_deleteValue(commentDetailTextBase);
-                return;
+                StackExchange.helpers.showToast('Base detail text removed successfully.', {
+                    type: 'info',
+                    transientTimeout: 3000
+                });
+            } else {
+                GM_setValue(commentDetailTextBase, textarea.val());
+                StackExchange.helpers.showToast('Base detail text updated successfully!', {
+                    type: 'success',
+                    transientTimeout: 3000
+                });
             }
-
-            GM_setValue(commentDetailTextBase, textarea.val());
-        });
+        };
+        templateForm.on('submit', formHandler);
 
         templateIssuer.append(templateForm);
     }
