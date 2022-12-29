@@ -1000,15 +1000,24 @@
             const textarea = $(`<textarea class="s-textarea js-comment-text-input">${GM_getValue(commentDetailTextBase, "")}</textarea>`);
             templateForm.append(textarea);
             templateForm.append('<button class="s-btn s-btn__primary" type="submit">Submit</button>');
-            templateForm.on("submit", (ev => {
+            const formHandler = ev => {
                 ev.preventDefault();
                 const v = textarea.val();
-                if (0 !== v.length) {
-                    GM_setValue(commentDetailTextBase, textarea.val());
-                } else {
+                if (0 === v.length) {
                     GM_deleteValue(commentDetailTextBase);
+                    StackExchange.helpers.showToast("Base detail text removed successfully.", {
+                        type: "info",
+                        transientTimeout: 3e3
+                    });
+                } else {
+                    GM_setValue(commentDetailTextBase, textarea.val());
+                    StackExchange.helpers.showToast("Base detail text updated successfully!", {
+                        type: "success",
+                        transientTimeout: 3e3
+                    });
                 }
-            }));
+            };
+            templateForm.on("submit", formHandler);
             templateIssuer.append(templateForm);
         }
         return container;
