@@ -2,6 +2,7 @@ import type {FlagOtherResponse, PostDeleteResponse} from '../SEAPI';
 import {type StackExchangeAPI} from '../SEAPI';
 import {buildAlertSvg} from '../SVGBuilders';
 import {fetchFromAWS, getSummaryPostInfoFromIds} from '../AWSAPI';
+import {commentDetailTextBase} from '../gmAPI';
 
 declare const StackExchange: StackExchangeAPI;
 
@@ -318,7 +319,7 @@ const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number,
     container.append(label);
     container.append(input);
 
-    const baseText = 'Copied without attribution from ';
+    const baseText = GM_getValue(commentDetailTextBase, ''); // Load base text from settings
     input.val(baseText);
     const lengthSpan = $(`<span>${baseText.length}</span>`);
     {
