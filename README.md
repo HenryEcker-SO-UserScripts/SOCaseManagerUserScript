@@ -45,8 +45,17 @@ action.
 
 ### Summary Profile Indicator
 
-Any posts which have already been actioned on (including "Looks OK"), will also have an indicator on the user's answers
-tab /user?tab=answers
+Any posts which have any feedback logged in the system, will also have an indicator on the user's answers
+tab /user?tab=answers. 
+
+There can be up to 4 different indicators on a post indicating actions taken.
+
+1. A checkmark indicates the post received feedback "Look OK"
+2. A pencil indicates the post has been edited to add attribution ("Edit" feedback)
+3. A red suitcase indicates the post is plagiarised and has been flagged ("Plagiarised" feedback)
+4. A yellow triangle alert indicates the post is suspicious ("Suspicious" feedback)
+
+Here is what a post with all 4 indicators would look like:
 
 [![][5]][5]
 

@@ -1,5 +1,5 @@
-import {getSummaryPostInfoFromIds} from '../AWSAPI';
-import {buildCaseSvg} from '../SVGBuilders';
+import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../AWSAPI';
+import {buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg, buildWarnSvg} from '../SVGBuilders';
 
 
 const getAnswerIdsOnPage = (): Set<number> => {
@@ -24,18 +24,34 @@ const setIntersection = <T>(a: Set<T>, b: Set<T>): Set<T> => {
 class SummaryAnnotator {
     annotateAnswers() {
         const postIdsOnPage = getAnswerIdsOnPage();
-        void getSummaryPostInfoFromIds([...postIdsOnPage])
+        void getSummaryPostActionsFromIds([...postIdsOnPage])
             .then(postResults => {
-                this.render(postIdsOnPage, new Set<number>(postResults));
+                this.render(postIdsOnPage, postResults);
             });
     }
 
-    private render(postsOnPage: Set<number>, annotatedPosts: Set<number>) {
+    private render(postsOnPage: Set<number>, annotatedPosts: SummaryPostActionResponse) {
         // Only display indicator for posts that are both on the page and should be annotated
-        for (const postId of setIntersection(postsOnPage, annotatedPosts)) {
-
-            $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`)
-                .before($(`<div title="This post is noted in the Case Manager System" class="s-post-summary--stats-item" style="color: var(--red-600)">${buildCaseSvg()}</div>`));
+        for (const postId of setIntersection(postsOnPage, new Set(Object.keys(annotatedPosts).map(Number)))) {
+            const eventValues = annotatedPosts[postId];
+            const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2"></div>');
+            eventValues.forEach(e => {
+                switch (e) {
+                    case 1:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as Looks OK" class="flex--item s-post-summary--stats-item" style="color: var(--green-600)">${buildCheckmarkSvg()}</div>`));
+                        break;
+                    case 2:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as edited" class="flex--item s-post-summary--stats-item" style="color: var(--green-800)">${buildEditPenSvg()}</div>`));
+                        break;
+                    case 3:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as plagiarised" class="flex--item s-post-summary--stats-item" style="color: var(--red-600)">${buildCaseSvg()}</div>`));
+                        break;
+                    case 5:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as suspicious" class="flex--item s-post-summary--stats-item" style="color: var(--yellow-700)">${buildWarnSvg()}</div>`));
+                        break;
+                }
+            });
+            $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(symbolBar);
         }
     }
 }

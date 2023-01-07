@@ -49,6 +49,10 @@ export interface OpenCasesSummaryPageResponse {
     cases: UserCaseSummaryEntry[];
 }
 
+export interface SummaryPostActionResponse {
+    [postId: string]: number[]; // "postId": [1,2,3,4,5] <- array of action Ids
+}
+
 export const requestNewJwt = () => {
     return fetchFromAWS('/auth/cm/jwt',
         {
@@ -102,6 +106,14 @@ export const getSummaryPostInfoFromIds = (ids: { join: (s: string) => string; })
         .then(res => res.json() as Promise<number[]>)
         .then(postIds => {
             return Promise.resolve(new Set(postIds));
+        });
+};
+
+export const getSummaryPostActionsFromIds = (ids: { join: (s: string) => string; }): Promise<SummaryPostActionResponse> => {
+    return fetchFromAWS(`/summary/posts/${ids.join(';')}/actions`)
+        .then(res => res.json() as Promise<SummaryPostActionResponse>)
+        .then(postActionData => {
+            return Promise.resolve(postActionData);
         });
 };
 
