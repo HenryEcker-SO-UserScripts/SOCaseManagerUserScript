@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.11
+// @version     0.1.12
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -34,6 +34,8 @@
     const buildAlertSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
     const buildCaseSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
     const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
+    const buildWarnSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
+    const buildEditPenSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
     const accessToken = "access_token";
     const seApiToken = "se_api_token";
     const commentDetailTextBase = "cm_detail_text_base";
@@ -75,6 +77,7 @@
         }));
     };
     const getSummaryPostInfoFromIds = ids => fetchFromAWS(`/summary/posts/${ids.join(";")}`).then((res => res.json())).then((postIds => Promise.resolve(new Set(postIds))));
+    const getSummaryPostActionsFromIds = ids => fetchFromAWS(`/summary/posts/${ids.join(";")}/actions`).then((res => res.json())).then((postActionData => Promise.resolve(postActionData)));
     const seTokenAuthRoute = "https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
     const popoverMountPointClass = "popover-mount-point";
     const getActionsPopoverId = answerId => `case-manager-answer-popover-${answerId}`;
@@ -389,13 +392,34 @@
     class SummaryAnnotator {
         annotateAnswers() {
             const postIdsOnPage = getAnswerIdsOnPage();
-            getSummaryPostInfoFromIds([ ...postIdsOnPage ]).then((postResults => {
-                this.render(postIdsOnPage, new Set(postResults));
+            getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then((postResults => {
+                this.render(postIdsOnPage, postResults);
             }));
         }
         render(postsOnPage, annotatedPosts) {
-            for (const postId of setIntersection(postsOnPage, annotatedPosts)) {
-                $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before($(`<div title="This post is noted in the Case Manager System" class="s-post-summary--stats-item" style="color: var(--red-600)">${buildCaseSvg()}</div>`));
+            for (const postId of setIntersection(postsOnPage, new Set(Object.keys(annotatedPosts).map(Number)))) {
+                const eventValues = annotatedPosts[postId];
+                const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2"></div>');
+                eventValues.forEach((e => {
+                    switch (e) {
+                      case 1:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as Looks OK" class="flex--item s-post-summary--stats-item" style="color: var(--green-600)">${buildCheckmarkSvg()}</div>`));
+                        break;
+
+                      case 2:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as edited" class="flex--item s-post-summary--stats-item" style="color: var(--green-800)">${buildEditPenSvg()}</div>`));
+                        break;
+
+                      case 3:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as plagiarised" class="flex--item s-post-summary--stats-item" style="color: var(--red-600)">${buildCaseSvg()}</div>`));
+                        break;
+
+                      case 5:
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as suspicious" class="flex--item s-post-summary--stats-item" style="color: var(--yellow-700)">${buildWarnSvg()}</div>`));
+                        break;
+                    }
+                }));
+                $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(symbolBar);
             }
         }
     }
