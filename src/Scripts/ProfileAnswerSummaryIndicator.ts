@@ -1,5 +1,5 @@
 import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../AWSAPI';
-import {buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg, buildWarnSvg} from '../SVGBuilders';
+import {buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg, buildAlertSvg} from '../SVGBuilders';
 
 
 const getAnswerIdsOnPage = (): Set<number> => {
@@ -47,7 +47,7 @@ class SummaryAnnotator {
                         symbolBar.append($(`<div title="This post is noted in the Case Manager System as plagiarised" class="flex--item s-post-summary--stats-item" style="color: var(--red-600)">${buildCaseSvg()}</div>`));
                         break;
                     case 5:
-                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as suspicious" class="flex--item s-post-summary--stats-item" style="color: var(--yellow-700)">${buildWarnSvg()}</div>`));
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as suspicious" class="flex--item s-post-summary--stats-item" style="color: var(--yellow-700)">${buildAlertSvg()}</div>`));
                         break;
                 }
             });
