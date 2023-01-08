@@ -3,14 +3,13 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.14
+// @version     0.2.0
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
 // @match       *://stackoverflow.com/users
 // @match       *://stackoverflow.com/users?*
 // @match       *://stackoverflow.com/users/*
-// @exclude     *://stackoverflow.com/users/account-info/*
 // @exclude     *://stackoverflow.com/users/apps/*
 // @exclude     *://stackoverflow.com/users/delete/*
 // @exclude     *://stackoverflow.com/users/edit/*
@@ -84,8 +83,20 @@
             }
         }));
     };
-    const getSummaryPostInfoFromIds = ids => fetchFromAWS(`/summary/posts/${ids.join(";")}`).then((res => res.json())).then((postIds => Promise.resolve(new Set(postIds))));
-    const getSummaryPostActionsFromIds = ids => fetchFromAWS(`/summary/posts/${ids.join(";")}/actions`).then((res => res.json())).then((postActionData => Promise.resolve(postActionData)));
+    const getSummaryPostInfoFromIds = ids => {
+        if (ids.length <= 0) {
+            return Promise.resolve(new Set);
+        } else {
+            return fetchFromAWS(`/summary/posts/${ids.join(";")}`).then((res => res.json())).then((postIds => Promise.resolve(new Set(postIds))));
+        }
+    };
+    const getSummaryPostActionsFromIds = ids => {
+        if (ids.length <= 0) {
+            return Promise.resolve({});
+        } else {
+            return fetchFromAWS(`/summary/posts/${ids.join(";")}/actions`).then((res => res.json())).then((postActionData => Promise.resolve(postActionData)));
+        }
+    };
     const seTokenAuthRoute = "https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
     const startAuthFlow = () => {
         const authModalId = "case-manager-client-auth-modal";
@@ -189,9 +200,12 @@
             shouldLogCheckbox: shouldLogCheckbox
         };
     };
-    const buildModTools = (mountPoint, isDeleted, answerId, postOwnerId) => {
+    const buildModTools = (isDeleted, answerId, postOwnerId) => {
         const baseId = getModMenuPopoverId(answerId);
         const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+        if (isDeleted) {
+            return button;
+        }
         const popOver = $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`);
         const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
         const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls(baseId, nukePostConfig);
@@ -239,8 +253,7 @@
             container.append(flagContainer);
         }
         popOver.append(container);
-        mountPoint.append(button);
-        mountPoint.append(popOver);
+        return $(document.createDocumentFragment()).append(button).append(popOver);
     };
     const popoverMountPointClass = "popover-mount-point";
     const getActionsPopoverId = answerId => `case-manager-answer-popover-${answerId}`;
@@ -317,7 +330,7 @@
         popOverInnerContainer.append(actionsForm);
         $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
     };
-    const buildActionsComponent = (mountPoint, answerId, ownerId) => {
+    const buildActionsComponent = (answerId, ownerId) => {
         const controlButton = $(`<button title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`);
         const popOver = $(`<div class="s-popover" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
         controlButton.on("click", (ev => {
@@ -329,16 +342,14 @@
                 }));
             }
         }));
-        mountPoint.append(controlButton);
-        mountPoint.append(popOver);
+        return $(document.createDocumentFragment()).append(controlButton).append(popOver);
     };
     const getTimelineButtonId = answerId => `${answerId}-timeline-indicator-button`;
     const getTimelinePopoverId = answerId => `case-manager-timeline-popover-${answerId}`;
-    const buildBaseTimelineButtons = (mountPoint, answerId) => {
+    const buildBaseTimelineButtons = answerId => {
         const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
         const popOver = $(`<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
-        mountPoint.append(controlButton);
-        mountPoint.append(popOver);
+        return $(document.createDocumentFragment()).append(controlButton).append(popOver);
     };
     const buildActiveTimelineButton = (buttonId, answerId) => {
         const timelinePopoverId = getTimelinePopoverId(answerId);
@@ -374,44 +385,52 @@
             console.error(err);
         }));
     };
+    const getAnswerIdFromAnswerDiv = answerDiv => Number($(answerDiv).attr("data-answerid"));
+    const getPostOwnerIdFromAuthorDiv = authorDiv => {
+        const e = $(authorDiv).find("a");
+        if (0 === e.length) {
+            return -1;
+        }
+        const href = e.attr("href");
+        if (void 0 === href) {
+            return -1;
+        }
+        const match = href.match(/\/users\/(\d+)\/.*/);
+        if (null === match) {
+            return -1;
+        } else {
+            return Number(match[1]);
+        }
+    };
+    function* extractFromAnswerDivs(answers, answerIds) {
+        for (let i = 0; i < answers.length; i++) {
+            const jAnswer = $(answers[i]);
+            const isDeleted = jAnswer.hasClass("deleted-answer");
+            const answerId = answerIds[i];
+            const postOwnerId = getPostOwnerIdFromAuthorDiv(jAnswer.find('div[itemprop="author"]'));
+            if (void 0 !== answerId && postOwnerId !== StackExchange.options.user.userId) {
+                yield {
+                    jAnswer: jAnswer,
+                    isDeleted: isDeleted,
+                    answerId: answerId,
+                    postOwnerId: postOwnerId
+                };
+            }
+        }
+    }
     const buildAnswerControlPanel = async () => {
         const answers = $("div.answer");
-        const answerIds = answers.map(((i, e) => Number($(e).attr("data-answerid")))).toArray();
-        const ownerIds = answers.find('div[itemprop="author"]').map(((i, postAuthor) => {
-            const e = $(postAuthor).find("a");
-            if (0 === e.length) {
-                return -1;
+        const answerIds = answers.map(((i, e) => getAnswerIdFromAnswerDiv(e))).toArray();
+        for (const {jAnswer: jAnswer, isDeleted: isDeleted, answerId: answerId, postOwnerId: postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
+            const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
+            controlPanel.append(buildBaseTimelineButtons(answerId));
+            if (StackExchange.options.user.isModerator) {
+                controlPanel.append(buildModTools(isDeleted, answerId, postOwnerId));
             }
-            const href = e.attr("href");
-            if (void 0 === href) {
-                return -1;
-            }
-            const match = href.match(/\/users\/(\d+)\/.*/);
-            if (null === match) {
-                return -1;
-            } else {
-                return Number(match[1]);
-            }
-        }));
-        if (answers.length > 0) {
-            for (let i = 0; i < answers.length; i++) {
-                const jAnswer = $(answers[i]);
-                const isDeleted = jAnswer.hasClass("deleted-answer");
-                const answerId = answerIds[i];
-                const postOwnerId = ownerIds[i];
-                if (void 0 === answerId || postOwnerId === StackExchange.options.user.userId) {
-                    continue;
-                }
-                const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
-                buildBaseTimelineButtons(controlPanel, answerId);
-                if (StackExchange.options.user.isModerator) {
-                    buildModTools(controlPanel, isDeleted, answerId, postOwnerId);
-                }
-                buildActionsComponent(controlPanel, answerId, postOwnerId);
-                jAnswer.append(controlPanel);
-            }
-            delayPullSummaryPostInfo(answerIds);
+            controlPanel.append(buildActionsComponent(answerId, postOwnerId));
+            jAnswer.append(controlPanel);
         }
+        delayPullSummaryPostInfo(answerIds);
     };
     const fetchFromSEAPI = (path, search) => {
         const usp = new URLSearchParams(search);
@@ -989,18 +1008,12 @@
             }
         }));
     };
-    const buildUserScriptSettingsPanel = async () => {
-        const tokens = await fetchFromAWS("/auth/credentials").then((res => res.json()));
-        const container = $("<div></div>");
-        container.append('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
-        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
-        container.append(toolGrid);
-        {
-            const existingTokensComponent = $("<div></div>");
-            toolGrid.append(existingTokensComponent);
-            existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
-            const tokenList = $("<div></div>");
-            existingTokensComponent.append(tokenList);
+    const buildExistingTokensControls = () => {
+        const existingTokensComponent = $("<div></div>");
+        existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
+        const tokenList = $("<div></div>");
+        existingTokensComponent.append(tokenList);
+        fetchFromAWS("/auth/credentials").then((res => res.json())).then((tokens => {
             tokens.forEach((token => {
                 const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
                 tokenList.append(tokenRow);
@@ -1021,61 +1034,92 @@
                 }));
                 tokenRow.append(invalidateButton);
             }));
-            const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
-            existingTokensComponent.append(deAuthoriseButton);
-            deAuthoriseButton.on("click", (ev => {
-                ev.preventDefault();
-                StackExchange.helpers.showConfirmModal({
-                    title: "De-authenticate this Application",
-                    bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
-                    buttonLabel: "De-authenticate"
-                }).then((confirm => {
-                    if (confirm) {
-                        fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
-                            if (200 === res.status) {
-                                GM_deleteValue(seApiToken);
-                                GM_deleteValue(accessToken);
-                                window.location.reload();
-                            }
-                        }));
-                    }
-                }));
+        }));
+        const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
+        existingTokensComponent.append(deAuthoriseButton);
+        deAuthoriseButton.on("click", (ev => {
+            ev.preventDefault();
+            StackExchange.helpers.showConfirmModal({
+                title: "De-authenticate this Application",
+                bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
+                buttonLabel: "De-authenticate"
+            }).then((confirm => {
+                if (confirm) {
+                    fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
+                        if (200 === res.status) {
+                            GM_deleteValue(seApiToken);
+                            GM_deleteValue(accessToken);
+                            window.location.reload();
+                        }
+                    }));
+                }
             }));
-        }
-        {
-            const getNewToken = $("<div></div>");
-            toolGrid.append(getNewToken);
-            getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
-            getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
-            getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
-        }
+        }));
+        return existingTokensComponent;
+    };
+    const buildTokenIssuer = () => {
+        const getNewToken = $("<div></div>");
+        getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
+        getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
+        getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
+        return getNewToken;
+    };
+    const buildNukeConfigControls = () => {
+        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+        const templateIssuer = $("<div></div>");
+        templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
+        const templateForm = $('<form class="d-flex fd-column g8"></form>');
+        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls("nuke-config", nukePostConfig);
+        templateForm.append(textareaLabel);
+        templateForm.append(textarea);
+        templateForm.append(checkboxContainer);
+        templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
+        const formHandler = ev => {
+            ev.preventDefault();
+            nukePostConfig.detailText = textarea.val() || "";
+            nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
+            nukePostConfig.comment = hasCheckedChild(shouldCommentCheckbox);
+            nukePostConfig.log = hasCheckedChild(shouldLogCheckbox);
+            GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
+            StackExchange.helpers.showToast("Config updated successfully!", {
+                type: "success",
+                transientTimeout: 3e3
+            });
+        };
+        templateForm.on("submit", formHandler);
+        templateIssuer.append(templateForm);
+        return templateIssuer;
+    };
+    const buildUserScriptSettingsPanel = () => {
+        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
+        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
+        toolGrid.append(buildExistingTokensControls());
+        toolGrid.append(buildTokenIssuer());
         if (StackExchange.options.user.isModerator) {
-            const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-            const templateIssuer = $("<div></div>");
-            toolGrid.append(templateIssuer);
-            templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
-            const templateForm = $('<form class="d-flex fd-column g8"></form>');
-            const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls("nuke-config", nukePostConfig);
-            templateForm.append(textareaLabel);
-            templateForm.append(textarea);
-            templateForm.append(checkboxContainer);
-            templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
-            const formHandler = ev => {
-                ev.preventDefault();
-                nukePostConfig.detailText = textarea.val() || "";
-                nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
-                nukePostConfig.comment = hasCheckedChild(shouldCommentCheckbox);
-                nukePostConfig.log = hasCheckedChild(shouldLogCheckbox);
-                GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
-                StackExchange.helpers.showToast("Config updated successfully!", {
-                    type: "success",
-                    transientTimeout: 3e3
-                });
-            };
-            templateForm.on("submit", formHandler);
-            templateIssuer.append(templateForm);
+            toolGrid.append(buildNukeConfigControls());
         }
-        return container;
+        return $(document.createDocumentFragment()).append(container).append(toolGrid);
+    };
+    const getUserIdFromWindowLocation = () => {
+        const patternMatcher = window.location.pathname.match(/^\/users\/\d+/g) || window.location.pathname.match(/^\/users\/account-info\/\d+/g);
+        if (null === patternMatcher || 1 !== patternMatcher.length) {
+            throw Error("Something changed in user path!");
+        }
+        return Number(patternMatcher[0].split("/").at(-1));
+    };
+    const buildProfileNavPill = userId => {
+        const navButton = $(`<a href="${window.location.pathname}?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
+        fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
+            if (resData.is_known_user) {
+                navButton.prepend(buildAlertSvg(16, 20));
+            }
+        }));
+        const tabContainer = $(".user-show-new .s-navigation:eq(0)");
+        tabContainer.append(navButton);
+        return {
+            tabContainer: tabContainer,
+            navButton: navButton
+        };
     };
     const UserScript = () => {
         if (null === GM_getValue(accessToken, null)) {
@@ -1090,8 +1134,7 @@
             const a = $('<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=case" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>');
             primaryUsersNav.append(a);
             if (window.location.search.startsWith("?tab=case")) {
-                const cmUserCaseSummaryPage = new CasesUserList;
-                cmUserCaseSummaryPage.init();
+                (new CasesUserList).init();
             }
         } else if (null !== window.location.pathname.match(currentUserProfilePattern)) {
             const navButton = $(`<a href="${window.location.pathname}?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>`);
@@ -1100,31 +1143,16 @@
             if (window.location.search.startsWith("?tab=case-manager-settings")) {
                 const mainPanel = $("#mainbar-full");
                 mainPanel.empty();
-                buildUserScriptSettingsPanel().then((c => {
-                    mainPanel.append(c);
-                }));
+                mainPanel.append(buildUserScriptSettingsPanel());
             }
         } else if (null !== window.location.pathname.match(/^\/users\/.*/)) {
-            const userPath = window.location.pathname.match(/^\/users\/\d+/g);
-            if (null === userPath || 1 !== userPath.length) {
-                throw Error("Something changed in user path!");
-            }
-            const userId = Number(userPath[0].split("/")[2]);
-            const navButton = $(`<a href="${window.location.pathname}?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
-            fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
-                if (resData.is_known_user) {
-                    navButton.prepend(buildAlertSvg(16, 20));
-                }
-            }));
-            const tabContainer = $(".user-show-new .s-navigation:eq(0)");
-            tabContainer.append(navButton);
+            const userId = getUserIdFromWindowLocation();
+            const {tabContainer: tabContainer, navButton: navButton} = buildProfileNavPill(userId);
             if (window.location.search.startsWith("?tab=case-manager")) {
                 const selectedClass = "is-selected";
                 tabContainer.find("a").removeClass(selectedClass);
                 navButton.addClass(selectedClass);
-                const mainPanel = $("#mainbar-full > div:last-child");
-                const cmUserControlPanel = new CaseManagerControlPanel(userId);
-                mainPanel.replaceWith(cmUserControlPanel.init());
+                $("#mainbar-full > div:last-child").replaceWith(new CaseManagerControlPanel(userId).init());
             } else if (window.location.search.startsWith("?tab=answers")) {
                 buildAnswerSummaryIndicator();
             }

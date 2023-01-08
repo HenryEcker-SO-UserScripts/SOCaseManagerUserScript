@@ -9,7 +9,7 @@ const getModMenuPopoverId = (answerId: number): string => {
     return `case-manager-mod-menu-popover-${answerId}`;
 };
 
-export const hasCheckedChild = (e: JQuery<HTMLElement>): boolean => {
+export const hasCheckedChild = (e: JQuery): boolean => {
     return (e.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).is(':checked');
 };
 
