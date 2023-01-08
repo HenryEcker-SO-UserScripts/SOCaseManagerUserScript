@@ -21,6 +21,13 @@
   "rules": {
     "semi": "off",
     "no-extra-semi": "error",
+    "func-style": [
+      "error",
+      "declaration",
+      {
+        "allowArrowFunctions": false
+      }
+    ],
     "@typescript-eslint/semi": [
       "error",
       "always"

@@ -12,7 +12,7 @@ import {buildCheckmarkSvg} from '../SVGBuilders';
 declare const StackExchange: StackExchangeAPI;
 
 
-const buildCaseManagerPane = (userId: number, isActive: boolean) => {
+function buildCaseManagerPane(userId: number, isActive: boolean) {
     const container = $('<div class="grid--item"></div>');
 
     const config: {
@@ -109,9 +109,9 @@ const buildCaseManagerPane = (userId: number, isActive: boolean) => {
     });
     container.append(button);
     return container;
-};
+}
 
-const buildActionsSummaryPane = (postSummary: CaseSummaryPostSummary) => {
+function buildActionsSummaryPane(postSummary: CaseSummaryPostSummary) {
     const container = $('<div class="grid--item p4 s-table-container"></div>');
     const actionTable = $('<table class="s-table"><thead><tr><th scope="col">Post Action</th><th scope="col">Number of Posts</th></tr></thead></table>');
     const actionTableBody = $('<tbody></tbody>');
@@ -125,9 +125,9 @@ const buildActionsSummaryPane = (postSummary: CaseSummaryPostSummary) => {
     actionTable.append(actionTableBody);
     container.append(actionTable);
     return container;
-};
+}
 
-const buildCaseHistoryPane = (caseTimeline: CaseSummaryCaseTimeline) => {
+function buildCaseHistoryPane(caseTimeline: CaseSummaryCaseTimeline) {
     const container = $('<div class="grid--item p8"><h3 class="fs-title mb8">Investigation History</h3></div>');
     const timeline = $('<div class="d-flex fd-column g4"></div>');
     caseTimeline.forEach(entry => {
@@ -137,7 +137,7 @@ const buildCaseHistoryPane = (caseTimeline: CaseSummaryCaseTimeline) => {
     });
     container.append(timeline);
     return container;
-};
+}
 
 
 type Page = 'summary' | 'posts';
@@ -147,9 +147,9 @@ interface ColumnFilterConfig {
     [columnIndex: number]: FilterType;
 }
 
-const buildSummaryTableFilterOption = (text: string, value: FilterType, activeValue: FilterType): string => {
+function buildSummaryTableFilterOption(text: string, value: FilterType, activeValue: FilterType): string {
     return `<option value="${value}"${activeValue === value ? ' selected' : ''}>${text}</option>`;
-};
+}
 
 export class CaseManagerControlPanel {
     private readonly container: JQuery;

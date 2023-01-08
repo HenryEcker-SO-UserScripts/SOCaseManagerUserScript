@@ -7,7 +7,7 @@ import {buildNukeOptionControls, hasCheckedChild} from './ModTools';
 declare const StackExchange: StackExchangeAPI;
 
 
-const buildExistingTokensControls = (): JQuery => {
+function buildExistingTokensControls(): JQuery {
     const existingTokensComponent = $('<div></div>');
 
     existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
@@ -69,18 +69,18 @@ const buildExistingTokensControls = (): JQuery => {
         });
     });
     return existingTokensComponent;
-};
+}
 
-const buildTokenIssuer = (): JQuery => {
+function buildTokenIssuer(): JQuery {
     const getNewToken = $('<div></div>');
 
     getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
     getNewToken.append('<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>');
     getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
     return getNewToken;
-};
+}
 
-const buildNukeConfigControls = (): JQuery => {
+function buildNukeConfigControls(): JQuery {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
     const templateIssuer = $('<div></div>');
 
@@ -101,7 +101,7 @@ const buildNukeConfigControls = (): JQuery => {
 
     templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
 
-    const formHandler = (ev: JQuery.Event) => {
+    function formHandler(ev: JQuery.Event) {
         ev.preventDefault();
         nukePostConfig.detailText = (textarea.val() as string | undefined) || '';
         nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
@@ -113,14 +113,14 @@ const buildNukeConfigControls = (): JQuery => {
             type: 'success',
             transientTimeout: 3000
         });
-    };
+    }
     templateForm.on('submit', formHandler);
 
     templateIssuer.append(templateForm);
     return templateIssuer;
-};
+}
 
-export const buildUserScriptSettingsPanel = () => {
+export function buildUserScriptSettingsPanel() {
     const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
     const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
 
@@ -133,4 +133,4 @@ export const buildUserScriptSettingsPanel = () => {
     return $(document.createDocumentFragment())
         .append(container)
         .append(toolGrid);
-};
+}

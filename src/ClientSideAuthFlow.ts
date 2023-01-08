@@ -2,7 +2,7 @@ import {requestNewJwt, seTokenAuthRoute} from './AWSAPI';
 import {seApiToken} from './gmAPI';
 
 
-export const startAuthFlow = () => {
+export function startAuthFlow() {
     const authModalId = 'case-manager-client-auth-modal';
 
     const modal = $(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`);
@@ -38,4 +38,4 @@ export const startAuthFlow = () => {
     });
     modal.append(modalBody);
     $('body').append(modal);
-};
+}

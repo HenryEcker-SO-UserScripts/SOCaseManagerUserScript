@@ -4,9 +4,10 @@ import {
     type OpenCasesSummaryPageResponse,
     type UserCaseSummaryEntry
 } from '../AWSAPI';
+import {buildSearchSvg} from '../SVGBuilders';
 
 
-const buildUserTile = (account_id: number, profile_image: null | string, display_name: string, current_state: string, event_date: string) => {
+function buildUserTile(account_id: number, profile_image: null | string, display_name: string, current_state: string, event_date: string) {
     const link = `/users/${account_id}${tabIdentifiers.userSummary}`;
     return $(`<div class="grid--item user-info">
                     ${profile_image !== null ? `<div class="user-gravatar48">
@@ -20,7 +21,7 @@ const buildUserTile = (account_id: number, profile_image: null | string, display
                         </div>
                     </div>
                 </div>`);
-};
+}
 
 
 export class CasesUserList {
@@ -100,11 +101,6 @@ export class CasesUserList {
 
     init() {
         this.setCurrentPage();
-        const main = $('#mainbar-full').empty();
-        // Header
-        main.append($('<h1 class="fs-headline1 mb24">Plagiarists</h1>'));
-        // Search and Toggle
-        const searchToggleBar = $('<div class="d-flex fw-wrap ai-stretch md:d-block"></div>');
         // Search
         const searchInput: JQuery<HTMLInputElement> = $('<input id="userfilter" name="userfilter" class="s-input s-input__search h100 wmx3" autocomplete="off" type="text" placeholder="Filter by user">');
         if (this.search.length > 0) {
@@ -122,10 +118,24 @@ export class CasesUserList {
                 }, 450);
             }
         });
-        searchToggleBar.append($('<div class="flex--item mb12 ps-relative"></div>').append(searchInput).append($('<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="18" height="18" viewBox="0 0 18 18"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>')));
-        // Other Page Toggle Component
-        searchToggleBar.append(
-            $(`<div class="flex--item ml-auto mb12 h100 d-flex s-btn-group js-filter-btn">
+
+        $('#mainbar-full')
+            .empty()
+            .append(
+                // Header
+                $('<h1 class="fs-headline1 mb24">Plagiarists</h1>')
+            )
+            .append(
+                // Search and Toggle
+                $('<div class="d-flex fw-wrap ai-stretch md:d-block"></div>')
+                    .append(
+                        $('<div class="flex--item mb12 ps-relative"></div>')
+                            .append(searchInput)
+                            .append($(buildSearchSvg()))
+                    )
+                    .append(
+                        // Other Page Toggle Component
+                        $(`<div class="flex--item ml-auto mb12 h100 d-flex s-btn-group js-filter-btn">
     <a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=reputation"
        data-nav-xhref="" title="Users with the highest reputation scores" data-value="reputation" data-shortcut=""
        aria-current="page"> Reputation</a>
@@ -142,15 +152,18 @@ export class CasesUserList {
     <a class="js-sort-preference-change youarehere is-selected flex--item s-btn s-btn__muted s-btn__outlined" href="/users${tabIdentifiers.cases}"
        data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist"
        data-shortcut="">Plagiarists</a>
-</div>`));
-
-        main.append(searchToggleBar);
-        // Group Selector
-        main.append($('<div class="fs-body2 mt8 mb12"><div class="d-flex jc-space-between"><div class="flex--item ml-auto md:ml0"><div id="tabs-interval" class="subtabs d-flex"></div></div></div></div>'));
-        // User Body Container
-        main.append($('<div id="user-browser" class="d-grid grid__4 lg:grid__3 md:grid__2 sm:grid__1 g12"></div>'));
-        // Pagination Container
-        main.append($('<div id="user-pagination" class="s-pagination site1 themed pager float-right"></div>'));
+</div>`)
+                    )
+            )
+            .append(
+                // Group Selector
+                $('<div class="fs-body2 mt8 mb12"><div class="d-flex jc-space-between"><div class="flex--item ml-auto md:ml0"><div id="tabs-interval" class="subtabs d-flex"></div></div></div></div>'))
+            .append(// User Body Container
+                $('<div id="user-browser" class="d-grid grid__4 lg:grid__3 md:grid__2 sm:grid__1 g12"></div>'))
+            .append(
+                // Pagination Container
+                $('<div id="user-pagination" class="s-pagination site1 themed pager float-right"></div>')
+            );
 
         // fetch then render
         void this.pullDownData().then(() => {

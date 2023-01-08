@@ -15,97 +15,101 @@ const popoverMountPointClass = 'popover-mount-point';
 
 /* ACTIONS POPOVER AND BUTTON */
 
-const getActionsPopoverId = (answerId: number): string => {
+function getActionsPopoverId(answerId: number): string {
     return `case-manager-answer-popover-${answerId}`;
-};
+}
 
-const getActionCheckboxId = (answerId: number, action_id: number): string => {
+function getActionCheckboxId(answerId: number, action_id: number): string {
     return `checkbox-${answerId}-${action_id}`;
-};
+}
 
 
-const clearMyActionHandler = (
+function clearMyActionHandler(
     action: PostActionType,
     answerId: number,
     checkboxId: string,
     clearButton: JQuery
-) => (ev: JQuery.Event) => {
-    ev.preventDefault();
-    void StackExchange.helpers.showConfirmModal(
-        {
-            title: 'Remove your action',
-            bodyHtml: `<span>Are you sure you want to remove your "${action['action_description']}" action from this post?</span>`,
-            buttonLabel: 'Remove Action',
-        }
-    ).then((confirm: boolean) => {
-        if (confirm) {
-            // Uncheck Checkbox
-            void fetchFromAWS(
-                `/handle/post/${answerId}/${action['action_id']}`,
-                {'method': 'DELETE'}
-            ).then(res => {
-                if (res.status === 200) {
-                    // Re-enable Checkbox
-                    $(`#${checkboxId}`)
-                        .prop('checked', false)
-                        .prop('disabled', false);
-                    // Remove Clear Button
-                    clearButton.remove();
-                    // Mark timeline button as unloaded (will re-fetch when opened the next time)
-                    $(`#${getTimelineButtonId(answerId)}`).attr('timeline-loaded', 'false');
-                }
-            });
-        }
-    });
-};
-
-const handleFormAction = (form: JQuery, answerId: number, ownerId: number) => (ev: JQuery.Event) => {
-    ev.preventDefault();
-    const submitButton = form.find('button[type="submit"]');
-    submitButton.prop('disabled', true); // disable button (to prevent multiple calls)
-    const actions = form.find('input[type="checkbox"]:checked:not(:disabled)');
-    if (actions.length === 0) {
-        submitButton.prop('disabled', false); // un-disable button (action is completed)
-        return;
-    }
-    const body: {
-        postOwnerId?: number;
-        actionIds?: number[];
-    } = {};
-    if (ownerId !== -1) {
-        body['postOwnerId'] = ownerId;
-    }
-    body['actionIds'] = actions.map((i, e) => {
-        const id = $(e).attr('data-action-id');
-        if (id === undefined) {
-            return undefined;
-        } else {
-            return Number(id);
-        }
-    }).toArray();
-
-    fetchFromAWS(`/handle/post/${answerId}`, {
-        'method': 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body)
-    })
-        .then(res => res.json() as Promise<PostActionType[]>)
-        .then(actions => {
-            // Rebuild timeline button (will enable button if it is disabled; will reset pull down state if already exists)
-            activateTimelineButton(answerId);
-            // Rebuild component from new actions (returned from server)
-            buildActionsComponentFromActions(answerId, ownerId, actions);
-        })
-        .catch(() => {
-            // Attach listener again if errors
-            submitButton.prop('disabled', false);
+) {
+    return (ev: JQuery.Event) => {
+        ev.preventDefault();
+        void StackExchange.helpers.showConfirmModal(
+            {
+                title: 'Remove your action',
+                bodyHtml: `<span>Are you sure you want to remove your "${action['action_description']}" action from this post?</span>`,
+                buttonLabel: 'Remove Action',
+            }
+        ).then((confirm: boolean) => {
+            if (confirm) {
+                // Uncheck Checkbox
+                void fetchFromAWS(
+                    `/handle/post/${answerId}/${action['action_id']}`,
+                    {'method': 'DELETE'}
+                ).then(res => {
+                    if (res.status === 200) {
+                        // Re-enable Checkbox
+                        $(`#${checkboxId}`)
+                            .prop('checked', false)
+                            .prop('disabled', false);
+                        // Remove Clear Button
+                        clearButton.remove();
+                        // Mark timeline button as unloaded (will re-fetch when opened the next time)
+                        $(`#${getTimelineButtonId(answerId)}`).attr('timeline-loaded', 'false');
+                    }
+                });
+            }
         });
-};
+    };
+}
+
+function handleFormAction(form: JQuery, answerId: number, ownerId: number) {
+    return (ev: JQuery.Event) => {
+        ev.preventDefault();
+        const submitButton = form.find('button[type="submit"]');
+        submitButton.prop('disabled', true); // disable button (to prevent multiple calls)
+        const actions = form.find('input[type="checkbox"]:checked:not(:disabled)');
+        if (actions.length === 0) {
+            submitButton.prop('disabled', false); // un-disable button (action is completed)
+            return;
+        }
+        const body: {
+            postOwnerId?: number;
+            actionIds?: number[];
+        } = {};
+        if (ownerId !== -1) {
+            body['postOwnerId'] = ownerId;
+        }
+        body['actionIds'] = actions.map((i, e) => {
+            const id = $(e).attr('data-action-id');
+            if (id === undefined) {
+                return undefined;
+            } else {
+                return Number(id);
+            }
+        }).toArray();
+
+        fetchFromAWS(`/handle/post/${answerId}`, {
+            'method': 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        })
+            .then(res => res.json() as Promise<PostActionType[]>)
+            .then(actions => {
+                // Rebuild timeline button (will enable button if it is disabled; will reset pull down state if already exists)
+                activateTimelineButton(answerId);
+                // Rebuild component from new actions (returned from server)
+                buildActionsComponentFromActions(answerId, ownerId, actions);
+            })
+            .catch(() => {
+                // Attach listener again if errors
+                submitButton.prop('disabled', false);
+            });
+    };
+}
 
 
-const buildActionsComponentFromActions = (answerId: number, ownerId: number, actions: PostActionType[]) => {
+function buildActionsComponentFromActions(answerId: number, ownerId: number, actions: PostActionType[]) {
     const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
     const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
     for (const action of actions) {
@@ -138,9 +142,9 @@ const buildActionsComponentFromActions = (answerId: number, ownerId: number, act
     $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`)
         .empty()
         .append(popOverInnerContainer);
-};
+}
 
-const buildActionsComponent = (answerId: number, ownerId: number) => {
+function buildActionsComponent(answerId: number, ownerId: number) {
     const controlButton = $(
         `<button title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`
     );
@@ -165,18 +169,19 @@ const buildActionsComponent = (answerId: number, ownerId: number) => {
     return $(document.createDocumentFragment())
         .append(controlButton)
         .append(popOver);
-};
+}
 
 /* ACTIONS POST TIMELINE POPOVER AND BUTTON */
 
-const getTimelineButtonId = (answerId: number): string => {
+function getTimelineButtonId(answerId: number): string {
     return `${answerId}-timeline-indicator-button`;
-};
+}
 
-const getTimelinePopoverId = (answerId: number): string => {
+function getTimelinePopoverId(answerId: number): string {
     return `case-manager-timeline-popover-${answerId}`;
-};
-const buildBaseTimelineButtons = (answerId: number) => {
+}
+
+function buildBaseTimelineButtons(answerId: number) {
     const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
     const popOver = $(
         `<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
@@ -184,9 +189,9 @@ const buildBaseTimelineButtons = (answerId: number) => {
     return $(document.createDocumentFragment())
         .append(controlButton)
         .append(popOver);
-};
+}
 
-const buildActiveTimelineButton = (buttonId: string, answerId: number) => {
+function buildActiveTimelineButton(buttonId: string, answerId: number) {
     const timelinePopoverId = getTimelinePopoverId(answerId);
     const timelineButton = $(`<button title="Click to view a record of actions taken on this post." id="${buttonId}" class="flex--item s-btn s-btn__danger s-btn__icon ws-nowrap s-btn__dropdown"  role="button" aria-controls="${timelinePopoverId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-start" data-s-popover-toggle-class="is-selected">${buildAlertSvg()}<span class="px8">Post Timeline</span></button>`);
     timelineButton.on('click', (ev) => {
@@ -215,15 +220,15 @@ const buildActiveTimelineButton = (buttonId: string, answerId: number) => {
         }
     });
     return timelineButton;
-};
+}
 
-const activateTimelineButton = (postId: number) => {
+function activateTimelineButton(postId: number) {
     const id = getTimelineButtonId(postId);
     $(`#${id}`).replaceWith(buildActiveTimelineButton(id, postId));
-};
+}
 
 
-const delayPullSummaryPostInfo = (answerIds: number[]) => {
+function delayPullSummaryPostInfo(answerIds: number[]) {
     getSummaryPostInfoFromIds(answerIds)
         .then(setPostIds => {
             for (const postId of setPostIds) {
@@ -233,13 +238,13 @@ const delayPullSummaryPostInfo = (answerIds: number[]) => {
         .catch(err => {
             console.error(err);
         });
-};
+}
 
-const getAnswerIdFromAnswerDiv = (answerDiv: HTMLElement): number => {
+function getAnswerIdFromAnswerDiv(answerDiv: HTMLElement): number {
     return Number($(answerDiv).attr('data-answerid'));
-};
+}
 
-const getPostOwnerIdFromAuthorDiv = (authorDiv: JQuery): number => {
+function getPostOwnerIdFromAuthorDiv(authorDiv: JQuery): number {
     const e = $(authorDiv).find('a');
     if (e.length === 0) {
         return -1; // jQuery.map removes null/undefined values
@@ -253,7 +258,7 @@ const getPostOwnerIdFromAuthorDiv = (authorDiv: JQuery): number => {
         return -1;
     }
     return Number(match[1]);
-};
+}
 
 function* extractFromAnswerDivs(answers: JQuery, answerIds: number[]): Generator<{ jAnswer: JQuery; isDeleted: boolean; answerId: number; postOwnerId: number; }> {
     for (let i = 0; i < answers.length; i++) {
@@ -280,7 +285,7 @@ function* extractFromAnswerDivs(answers: JQuery, answerIds: number[]): Generator
 }
 
 
-export const buildAnswerControlPanel = async () => {
+export function buildAnswerControlPanel() {
     const answers = $('div.answer');
     const answerIds = answers.map((i, e) => getAnswerIdFromAnswerDiv(e)).toArray();
     for (const {jAnswer, isDeleted, answerId, postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
@@ -293,4 +298,4 @@ export const buildAnswerControlPanel = async () => {
         jAnswer.append(controlPanel);
     }
     delayPullSummaryPostInfo(answerIds);
-};
+}
