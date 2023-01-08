@@ -109,7 +109,16 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
 };
 
 
-export const getSummaryPostInfoFromIds = (ids: { join: (s: string) => string; }): Promise<Set<number>> => {
+interface CollectionOfPostIds {
+    join: (s: string) => string;
+    length: number;
+}
+
+export const getSummaryPostInfoFromIds = (ids: CollectionOfPostIds): Promise<Set<number>> => {
+    if (ids.length <= 0) {
+        // Don't even try to fetch if there's nothing to pull; just resolve an empty set
+        return Promise.resolve(new Set());
+    }
     return fetchFromAWS(`/summary/posts/${ids.join(';')}`)
         .then(res => res.json() as Promise<number[]>)
         .then(postIds => {
@@ -117,7 +126,11 @@ export const getSummaryPostInfoFromIds = (ids: { join: (s: string) => string; })
         });
 };
 
-export const getSummaryPostActionsFromIds = (ids: { join: (s: string) => string; }): Promise<SummaryPostActionResponse> => {
+export const getSummaryPostActionsFromIds = (ids: CollectionOfPostIds): Promise<SummaryPostActionResponse> => {
+    if (ids.length <= 0) {
+        // Don't even try to fetch if there's nothing to pull; just resolve an empty object
+        return Promise.resolve({});
+    }
     return fetchFromAWS(`/summary/posts/${ids.join(';')}/actions`)
         .then(res => res.json() as Promise<SummaryPostActionResponse>)
         .then(postActionData => {
