@@ -213,9 +213,15 @@ When the Nuke button is pressed:
 
 #### Detail Text manager
 
-Moderators also have an additional option in their [settings page] to specify what the default template for their nuke comment/flag text.
+Moderators also have an additional option in their [settings page] to specify what the default form values for nuking posts.
 
-This is an empty string by default, but can be customised as needed.
+| Field       | Default      | Description                                                                                                                                                                           |
+|-------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Detail Text | Empty String | Populates the textarea with a string to easily flag and comment on posts                                                                                                              |
+| Flag        | Unchecked    | Flag post by default. This is false by default because many instances of plagiarism are brought to moderator attention via custom flag, and would not normally require a second flag. |
+| Comment     | Checked      | Leave a comment on the post by default. This is true by default to explain why a moderator deleted the post.                                                                          |
+| Log         | Checked      | Log feedback with Case Manager. This is true by default to help to record patterns of behaviour.                                                                                      |
+
 
 [![][20]][20]
 
@@ -259,4 +265,4 @@ This is an empty string by default, but can be customised as needed.
 [18]: ./readme-images/UserSummary/user-detail-stats-filtered-multiple.png
 
 [19]: ./readme-images/ModOnly/nuke-plagiarism-console.png
-[20]: ./readme-images/ModOnly/edit-detail-text-template.png
+[20]: ./readme-images/ModOnly/edit-nuke-post-default-settings.png
