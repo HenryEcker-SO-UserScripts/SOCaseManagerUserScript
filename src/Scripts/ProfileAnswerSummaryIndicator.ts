@@ -1,4 +1,4 @@
-import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../AWSAPI';
+import {Feedback, getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../AWSAPI';
 import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg} from '../SVGBuilders';
 
 
@@ -16,10 +16,10 @@ class SummaryAnnotator {
             svg: string;
         };
     } = {
-        1: {desc: 'Looks OK', colourVar: '--green-600', svg: buildCheckmarkSvg(16)},
-        2: {desc: 'edited', colourVar: '--green-800', svg: buildEditPenSvg(16)},
-        3: {desc: 'plagiarised', colourVar: '--red-600', svg: buildCaseSvg(16)},
-        5: {desc: 'suspicious', colourVar: '--yellow-700', svg: buildAlertSvg(16)},
+        [Feedback.LooksOK]: {desc: 'Looks OK', colourVar: '--green-600', svg: buildCheckmarkSvg(16)},
+        [Feedback.Edited]: {desc: 'edited', colourVar: '--green-800', svg: buildEditPenSvg(16)},
+        [Feedback.Plagiarised]: {desc: 'plagiarised', colourVar: '--red-600', svg: buildCaseSvg(16)},
+        [Feedback.Suspicious]: {desc: 'suspicious', colourVar: '--yellow-700', svg: buildAlertSvg(16)},
     };
 
     annotateAnswers() {
