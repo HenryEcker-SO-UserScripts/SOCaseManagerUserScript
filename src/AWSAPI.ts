@@ -1,5 +1,13 @@
 import {accessToken, seApiToken} from './gmAPI';
 
+export const Feedback = {
+    'LooksOK': 1,
+    'Edited': 2,
+    'Plagiarised': 3,
+    'Deleted': 4,
+    'Suspicious': 5
+} as const;
+
 export type CaseSummaryPostSummary = {
     action_taken: string;
     number_of_posts: number;

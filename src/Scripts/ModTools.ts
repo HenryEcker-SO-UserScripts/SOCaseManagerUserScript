@@ -1,4 +1,4 @@
-import {fetchFromAWS} from '../AWSAPI';
+import {Feedback, fetchFromAWS} from '../AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../gmAPI';
 import type {FlagOtherResponse, PostDeleteResponse, StackExchangeAPI} from '../SEAPI';
 
@@ -63,7 +63,7 @@ const nukePostAsPlagiarism = async (answerId: number, ownerId: number, message: 
         if (ownerId !== -1) {
             body['postOwnerId'] = ownerId;
         }
-        body['actionIds'] = [3, 4]; // Plagiarised and Deleted
+        body['actionIds'] = [Feedback.Plagiarised, Feedback.Deleted];
         void await fetchFromAWS(`/handle/post/${answerId}`, {
             'method': 'POST',
             headers: {

@@ -40,6 +40,13 @@
         log: true
     });
     const nukePostOptions = "cm_nuke_post_config";
+    const Feedback = {
+        LooksOK: 1,
+        Edited: 2,
+        Plagiarised: 3,
+        Deleted: 4,
+        Suspicious: 5
+    };
     const requestNewJwt = () => fetchFromAWS("/auth/cm/jwt", {
         method: "POST",
         headers: {
@@ -150,7 +157,7 @@
                 if (-1 !== ownerId) {
                     body.postOwnerId = ownerId;
                 }
-                body.actionIds = [ 3, 4 ];
+                body.actionIds = [ Feedback.Plagiarised, Feedback.Deleted ];
                 await fetchFromAWS(`/handle/post/${answerId}`, {
                     method: "POST",
                     headers: {
@@ -932,22 +939,22 @@
     const getAnswerIdsOnPage = () => new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
     class SummaryAnnotator {
         static iconAttrMap={
-            1: {
+            [Feedback.LooksOK]: {
                 desc: "Looks OK",
                 colourVar: "--green-600",
                 svg: buildCheckmarkSvg(16)
             },
-            2: {
+            [Feedback.Edited]: {
                 desc: "edited",
                 colourVar: "--green-800",
                 svg: buildEditPenSvg(16)
             },
-            3: {
+            [Feedback.Plagiarised]: {
                 desc: "plagiarised",
                 colourVar: "--red-600",
                 svg: buildCaseSvg(16)
             },
-            5: {
+            [Feedback.Suspicious]: {
                 desc: "suspicious",
                 colourVar: "--yellow-700",
                 svg: buildAlertSvg(16)
