@@ -85,7 +85,7 @@ export const buildUserScriptSettingsPanel = async () => {
 
 
     // Flag base template manager
-    {
+    if (StackExchange.options.user.isModerator) {
         const templateIssuer = $('<div></div>');
         toolGrid.append(templateIssuer);
 
