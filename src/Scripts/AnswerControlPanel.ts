@@ -28,7 +28,7 @@ const clearMyActionHandler = (
     action: PostActionType,
     answerId: number,
     checkboxId: string,
-    clearButton: JQuery<HTMLElement>
+    clearButton: JQuery
 ) => (ev: JQuery.Event) => {
     ev.preventDefault();
     void StackExchange.helpers.showConfirmModal(
@@ -140,7 +140,7 @@ const buildActionsComponentFromActions = (answerId: number, ownerId: number, act
         .append(popOverInnerContainer);
 };
 
-const buildActionsComponent = (mountPoint: JQuery, answerId: number, ownerId: number) => {
+const buildActionsComponent = (answerId: number, ownerId: number) => {
     const controlButton = $(
         `<button title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`
     );
@@ -162,9 +162,9 @@ const buildActionsComponent = (mountPoint: JQuery, answerId: number, ownerId: nu
         }
     });
 
-
-    mountPoint.append(controlButton);
-    mountPoint.append(popOver);
+    return $(document.createDocumentFragment())
+        .append(controlButton)
+        .append(popOver);
 };
 
 /* ACTIONS POST TIMELINE POPOVER AND BUTTON */
@@ -176,13 +176,14 @@ const getTimelineButtonId = (answerId: number): string => {
 const getTimelinePopoverId = (answerId: number): string => {
     return `case-manager-timeline-popover-${answerId}`;
 };
-const buildBaseTimelineButtons = (mountPoint: JQuery, answerId: number) => {
+const buildBaseTimelineButtons = (answerId: number) => {
     const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
     const popOver = $(
         `<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
     );
-    mountPoint.append(controlButton);
-    mountPoint.append(popOver);
+    return $(document.createDocumentFragment())
+        .append(controlButton)
+        .append(popOver);
 };
 
 const buildActiveTimelineButton = (buttonId: string, answerId: number) => {
@@ -234,48 +235,62 @@ const delayPullSummaryPostInfo = (answerIds: number[]) => {
         });
 };
 
+const getAnswerIdFromAnswerDiv = (answerDiv: HTMLElement): number => {
+    return Number($(answerDiv).attr('data-answerid'));
+};
+
+const getPostOwnerIdFromAuthorDiv = (authorDiv: JQuery): number => {
+    const e = $(authorDiv).find('a');
+    if (e.length === 0) {
+        return -1; // jQuery.map removes null/undefined values
+    }
+    const href = e.attr('href');
+    if (href === undefined) {
+        return -1;
+    }
+    const match = href.match(/\/users\/(\d+)\/.*/);
+    if (match === null) {
+        return -1;
+    }
+    return Number(match[1]);
+};
+
+function* extractFromAnswerDivs(answers: JQuery, answerIds: number[]): Generator<{ jAnswer: JQuery; isDeleted: boolean; answerId: number; postOwnerId: number; }> {
+    for (let i = 0; i < answers.length; i++) {
+        const jAnswer = $(answers[i]);
+        const isDeleted = jAnswer.hasClass('deleted-answer');
+        const answerId = answerIds[i];
+        const postOwnerId = getPostOwnerIdFromAuthorDiv(jAnswer.find('div[itemprop="author"]'));
+
+        // Skip if answer id cannot be found or if post belongs to the current user
+        if (
+            answerId === undefined ||
+            postOwnerId === StackExchange.options.user.userId
+        ) {
+            continue;
+        }
+
+        yield {
+            jAnswer,
+            isDeleted,
+            answerId,
+            postOwnerId
+        };
+    }
+}
+
 
 export const buildAnswerControlPanel = async () => {
     const answers = $('div.answer');
-    const answerIds = answers.map((i, e) => Number($(e).attr('data-answerid'))).toArray();
-    const ownerIds = answers.find('div[itemprop="author"]').map((i, postAuthor) => {
-
-        const e = $(postAuthor).find('a');
-        if (e.length === 0) {
-            return -1; // jQuery.map removes null/undefined values
+    const answerIds = answers.map((i, e) => getAnswerIdFromAnswerDiv(e)).toArray();
+    for (const {jAnswer, isDeleted, answerId, postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
+        const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
+        controlPanel.append(buildBaseTimelineButtons(answerId));
+        if (StackExchange.options.user.isModerator) {
+            controlPanel.append(buildModTools(isDeleted, answerId, postOwnerId));
         }
-        const href = e.attr('href');
-        if (href === undefined) {
-            return -1;
-        }
-        const match = href.match(/\/users\/(\d+)\/.*/);
-        if (match === null) {
-            return -1;
-        }
-        return Number(match[1]);
-    });
-
-    if (answers.length > 0) {
-        for (let i = 0; i < answers.length; i++) {
-            const jAnswer = $(answers[i]);
-            const isDeleted = jAnswer.hasClass('deleted-answer');
-            const answerId = answerIds[i];
-            const postOwnerId = ownerIds[i];
-            // Skip if answer id cannot be found or if post belongs to the current user
-            if (
-                answerId === undefined ||
-                postOwnerId === StackExchange.options.user.userId
-            ) {
-                continue;
-            }
-            const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
-            buildBaseTimelineButtons(controlPanel, answerId);
-            if (StackExchange.options.user.isModerator) {
-                buildModTools(controlPanel, isDeleted, answerId, postOwnerId);
-            }
-            buildActionsComponent(controlPanel, answerId, postOwnerId);
-            jAnswer.append(controlPanel);
-        }
-        delayPullSummaryPostInfo(answerIds);
+        controlPanel.append(buildActionsComponent(answerId, postOwnerId));
+        jAnswer.append(controlPanel);
     }
+    delayPullSummaryPostInfo(answerIds);
 };

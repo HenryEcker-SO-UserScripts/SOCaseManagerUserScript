@@ -98,9 +98,13 @@ export const buildNukeOptionControls = (baseId: string, nukePostConfig: CmNukePo
     };
 };
 
-export const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: number, postOwnerId: number) => {
+export const buildModTools = (isDeleted: boolean, answerId: number, postOwnerId: number) => {
     const baseId = getModMenuPopoverId(answerId);
     const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+    if (isDeleted) {
+        // Don't bother building the popover for deleted posts
+        return button;
+    }
     const popOver = $(
         `<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`
     );
@@ -178,6 +182,5 @@ export const buildModTools = (mountPoint: JQuery, isDeleted: boolean, answerId: 
         container.append(flagContainer);
     }
     popOver.append(container);
-    mountPoint.append(button);
-    mountPoint.append(popOver);
+    return $(document.createDocumentFragment()).append(button).append(popOver);
 };
