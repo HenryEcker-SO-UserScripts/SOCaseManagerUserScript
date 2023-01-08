@@ -182,7 +182,7 @@ to something you do not have access to (like active case status for your own acc
 On your profile there will be a "Case Manager Settings" button.
 [![][14]][14]
 
-Clicking on the tab will bring you to the UserScript Settings page. Here you can:
+Clicking on the tab will bring you to the [UserScript Settings page][settings page]. Here you can:
 
 1. retrieve a new access token (for whatever reason)
 2. invalidate any existing access tokens (invalidating the access token currently being used on this device will also
@@ -192,6 +192,35 @@ Clicking on the tab will bring you to the UserScript Settings page. Here you can
 
 [![][15]][15]
 
+## Moderator Tools
+
+### Nuke Post
+#### Post-specific options
+
+Moderators gain access to an additional button on each post, which allows the post to easily be removed and feedback provided to the Case Manager.
+
+[![][19]][19]
+
+There are three options available and up to 4 actions will be taken. The post **will always be deleted** even if all options are unchecked.
+
+When the Nuke button is pressed:
+1. Character count is validated depending on which options are selected. Comments and Flags have different length requirements, both are checked.
+2. If the Flag option is selected, the post is flagged using the text in the textarea. If the flag operations fails no further actions are taken (an error is displayed).
+3. A "delete" vote is added to the post. If the delete operation fails, no further action is taken.
+4. If the Comment option is selected, a comment is added to the post.
+5. If the Log option is selected, feedback is logged in the Case Manager. The post is marked as "Plagiarised" and "Deleted"
+
+
+#### Detail Text manager
+
+Moderators also have an additional option in their [settings page] to specify what the default template for their nuke comment/flag text.
+
+This is an empty string by default, but can be customised as needed.
+
+[![][20]][20]
+
+
+[settings page]: https://stackoverflow.com/users/current?tab=case-manager-settings
 
 [1]: ./readme-images/PostSummary/post-action-panel.png
 
@@ -228,3 +257,6 @@ Clicking on the tab will bring you to the UserScript Settings page. Here you can
 [17]: ./readme-images/UserSummary/user-detail-stats-filtered.png
 
 [18]: ./readme-images/UserSummary/user-detail-stats-filtered-multiple.png
+
+[19]: ./readme-images/ModOnly/nuke-plagiarism-console.png
+[20]: ./readme-images/ModOnly/edit-detail-text-template.png
