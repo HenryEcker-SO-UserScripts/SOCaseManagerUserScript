@@ -62,9 +62,7 @@ const UserScript = () => {
         if (window.location.search.startsWith(tabIdentifiers.settings)) {
             const mainPanel = $('#mainbar-full');
             mainPanel.empty(); // Empty before request (to indicate immediately indicate the page will render)
-            void buildUserScriptSettingsPanel().then(c => {
-                mainPanel.append(c);
-            });
+            mainPanel.append(buildUserScriptSettingsPanel());
         }
     } else if (window.location.pathname.match(/^\/users\/.*/) !== null) {
         const userId = getUserIdFromWindowLocation();
