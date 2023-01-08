@@ -204,11 +204,11 @@ Moderators gain access to an additional button on each post, which allows the po
 There are three options available and up to 4 actions will be taken. The post **will always be deleted** even if all options are unchecked.
 
 When the Nuke button is pressed:
-1. Character count is validated depending on which options are selected. Comments and Flags have different length requirements, both are checked.
-2. If the Flag option is selected, the post is flagged using the text in the textarea. If the flag operations fails no further actions are taken (an error is displayed).
+1. The character count is validated depending on which options are selected. Comments and Flags have different length requirements, both limits are validated based on the selected options.
+2. If the Flag option is selected, the post is flagged using the text in the textarea. If the flag operation fails no further actions are taken (an error is displayed).
 3. A "delete" vote is added to the post. If the delete operation fails, no further action is taken.
 4. If the Comment option is selected, a comment is added to the post.
-5. If the Log option is selected, feedback is logged in the Case Manager. The post is marked as "Plagiarised" and "Deleted"
+5. If the Log option is selected, feedback is logged in the Case Manager. The post is marked as "Plagiarised" and "Deleted".
 
 
 #### Detail Text manager
