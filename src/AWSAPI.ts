@@ -61,6 +61,13 @@ export interface SummaryPostActionResponse {
     [postId: string]: number[]; // "postId": [1,2,3,4,5] <- array of action Ids
 }
 
+export interface PostActionType {
+    action_id: number;
+    action_description: string;
+    user_acted: boolean;
+}
+
+
 export function requestNewJwt() {
     return fetchFromAWS('/auth/cm/jwt',
         {
