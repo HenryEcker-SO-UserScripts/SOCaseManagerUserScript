@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.1.13
+// @version     0.1.14
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -31,13 +31,15 @@
 
 (function() {
     "use strict";
-    const buildAlertSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
-    const buildCaseSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
-    const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
-    const buildEditPenSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
     const accessToken = "access_token";
     const seApiToken = "se_api_token";
-    const commentDetailTextBase = "cm_detail_text_base";
+    const nukePostDefaultConfigString = JSON.stringify({
+        detailText: "",
+        flag: false,
+        comment: true,
+        log: true
+    });
+    const nukePostOptions = "cm_nuke_post_config";
     const requestNewJwt = () => fetchFromAWS("/auth/cm/jwt", {
         method: "POST",
         headers: {
@@ -78,10 +80,164 @@
     const getSummaryPostInfoFromIds = ids => fetchFromAWS(`/summary/posts/${ids.join(";")}`).then((res => res.json())).then((postIds => Promise.resolve(new Set(postIds))));
     const getSummaryPostActionsFromIds = ids => fetchFromAWS(`/summary/posts/${ids.join(";")}/actions`).then((res => res.json())).then((postActionData => Promise.resolve(postActionData)));
     const seTokenAuthRoute = "https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
+    const startAuthFlow = () => {
+        const authModalId = "case-manager-client-auth-modal";
+        const modal = $(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`);
+        const modalBody = $(`<div class="s-modal--dialog" role="document"><h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1><p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p><ol><li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li><li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li></ol><div class="d-flex g8 gsx s-modal--footer"><button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button><button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button></div><button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div>`);
+        modalBody.find(`#${authModalId}-save`).on("click", (ev => {
+            ev.preventDefault();
+            const inputValue = $(`#${authModalId}-input`).val();
+            if (void 0 !== inputValue && inputValue.length > 0) {
+                GM_setValue(seApiToken, inputValue);
+                requestNewJwt().then((() => {
+                    window.location.reload();
+                }));
+            }
+        }));
+        modal.append(modalBody);
+        $("body").append(modal);
+    };
+    const buildAlertSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
+    const buildCaseSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
+    const buildCheckmarkSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
+    const buildEditPenSvg = (dim = 18, viewBox = 18) => `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
+    const getModMenuPopoverId = answerId => `case-manager-mod-menu-popover-${answerId}`;
+    const hasCheckedChild = e => e.find('input[type="checkbox"]').is(":checked");
+    const nukePostAsPlagiarism = async (answerId, ownerId, message, flagPost = false, commentPost = true, logWithAws = true) => {
+        if (flagPost && (message.length < 10 || message.length > 500)) {
+            StackExchange.helpers.showToast("Flags must be between 10 and 500 characters. Either add text or disable the flagging option.", {
+                type: "danger"
+            });
+            return;
+        }
+        if (commentPost && (message.length < 15 || message.length > 600)) {
+            StackExchange.helpers.showToast("Comments must be between 10 and 600 characters. Either add text or disable the comment option.", {
+                type: "danger"
+            });
+            return;
+        }
+        if (flagPost) {
+            const flagFd = new FormData;
+            flagFd.set("fkey", StackExchange.options.user.fkey);
+            flagFd.set("otherText", message);
+            const flagFetch = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
+                body: flagFd,
+                method: "POST"
+            }).then((res => res.json()));
+            if (!flagFetch.Success) {
+                StackExchange.helpers.showToast(flagFetch.Message);
+                return;
+            }
+        }
+        const deleteFd = new FormData;
+        deleteFd.set("fkey", StackExchange.options.user.fkey);
+        const deleteFetch = await fetch(`/posts/${answerId}/vote/10`, {
+            body: deleteFd,
+            method: "POST"
+        }).then((res => res.json()));
+        if (deleteFetch.Success) {
+            if (commentPost) {
+                const commentFd = new FormData;
+                commentFd.set("fkey", StackExchange.options.user.fkey);
+                commentFd.set("comment", message);
+                await void fetch(`/posts/${answerId}/comments`, {
+                    body: commentFd,
+                    method: "POST"
+                });
+            }
+            if (logWithAws) {
+                const body = {};
+                if (-1 !== ownerId) {
+                    body.postOwnerId = ownerId;
+                }
+                body.actionIds = [ 3, 4 ];
+                await fetchFromAWS(`/handle/post/${answerId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+            }
+            window.location.reload();
+        }
+    };
+    const buildNukeOptionControls = (baseId, nukePostConfig) => {
+        const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
+        const textarea = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
+        textarea.val(nukePostConfig.detailText);
+        const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
+        const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
+        const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
+        const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
+        checkboxContainer.append(shouldFlagCheckbox);
+        checkboxContainer.append(shouldCommentCheckbox);
+        checkboxContainer.append(shouldLogCheckbox);
+        return {
+            textareaLabel: textareaLabel,
+            textarea: textarea,
+            checkboxContainer: checkboxContainer,
+            shouldFlagCheckbox: shouldFlagCheckbox,
+            shouldCommentCheckbox: shouldCommentCheckbox,
+            shouldLogCheckbox: shouldLogCheckbox
+        };
+    };
+    const buildModTools = (mountPoint, isDeleted, answerId, postOwnerId) => {
+        const baseId = getModMenuPopoverId(answerId);
+        const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+        const popOver = $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`);
+        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls(baseId, nukePostConfig);
+        const container = $('<div class="d-grid g8 ai-center grid__1 ws4"></div>');
+        const containerHeader = $('<div class="d-flex fd-row jc-space-between"></div>');
+        containerHeader.append(textareaLabel);
+        containerHeader.append('<a class="fs-fine" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>');
+        container.append(containerHeader);
+        container.append(textarea);
+        const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
+        {
+            const wrapper = $("<div></div>");
+            wrapper.append("<span>Characters: </span>");
+            wrapper.append(lengthSpan);
+            container.append(wrapper);
+        }
+        {
+            const flagContainer = $('<div class="d-flex fd-row flex__fl-equal g8"></div>');
+            const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+            nukeButton.on("click", (ev => {
+                ev.preventDefault();
+                nukePostAsPlagiarism(answerId, postOwnerId, textarea.val(), hasCheckedChild(shouldFlagCheckbox), hasCheckedChild(shouldCommentCheckbox), hasCheckedChild(shouldLogCheckbox));
+            }));
+            const updateDisplayBasedOnSelections = ev => {
+                ev.preventDefault();
+                const isFlaggingActive = hasCheckedChild(shouldFlagCheckbox);
+                const isCommentingActive = hasCheckedChild(shouldCommentCheckbox);
+                if (!isFlaggingActive && !isCommentingActive) {
+                    textarea.prop("disabled", true);
+                } else {
+                    textarea.removeProp("disabled");
+                }
+                nukeButton.attr("title", (isFlaggingActive ? "Flags the post, " : "") + (isFlaggingActive ? "deletes" : "Deletes") + " the post" + (isCommentingActive ? ", adds a comment" : "") + (hasCheckedChild(shouldLogCheckbox) ? ", logs feedback in Case manager" : ""));
+            };
+            shouldCommentCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+            shouldFlagCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+            shouldLogCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+            textarea.on("input", (ev => {
+                ev.preventDefault();
+                const length = ev.target.value.length;
+                lengthSpan.text(length);
+            }));
+            flagContainer.append(checkboxContainer);
+            flagContainer.append(nukeButton);
+            container.append(flagContainer);
+        }
+        popOver.append(container);
+        mountPoint.append(button);
+        mountPoint.append(popOver);
+    };
     const popoverMountPointClass = "popover-mount-point";
     const getActionsPopoverId = answerId => `case-manager-answer-popover-${answerId}`;
     const getActionCheckboxId = (answerId, action_id) => `checkbox-${answerId}-${action_id}`;
-    const getModMenuPopoverId = answerId => `case-manager-mod-menu-popover-${answerId}`;
     const clearMyActionHandler = (action, answerId, checkboxId, clearButton) => ev => {
         ev.preventDefault();
         StackExchange.helpers.showConfirmModal({
@@ -211,125 +367,6 @@
             console.error(err);
         }));
     };
-    const nukePostAsPlagiarism = async (answerId, ownerId, message, flagPost = false, commentPost = true, logWithAws = true) => {
-        if (flagPost && (message.length < 10 || message.length > 500)) {
-            StackExchange.helpers.showToast("Flags must be between 10 and 500 characters. Either add text or disable the flagging option.", {
-                type: "danger"
-            });
-            return;
-        }
-        if (commentPost && (message.length < 15 || message.length > 600)) {
-            StackExchange.helpers.showToast("Comments must be between 10 and 600 characters. Either add text or disable the comment option.", {
-                type: "danger"
-            });
-            return;
-        }
-        if (flagPost) {
-            const flagFd = new FormData;
-            flagFd.set("fkey", StackExchange.options.user.fkey);
-            flagFd.set("otherText", message);
-            const flagFetch = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
-                body: flagFd,
-                method: "POST"
-            }).then((res => res.json()));
-            if (!flagFetch.Success) {
-                StackExchange.helpers.showToast(flagFetch.Message);
-                return;
-            }
-        }
-        const deleteFd = new FormData;
-        deleteFd.set("fkey", StackExchange.options.user.fkey);
-        const deleteFetch = await fetch(`/posts/${answerId}/vote/10`, {
-            body: deleteFd,
-            method: "POST"
-        }).then((res => res.json()));
-        if (deleteFetch.Success) {
-            if (commentPost) {
-                const commentFd = new FormData;
-                commentFd.set("fkey", StackExchange.options.user.fkey);
-                commentFd.set("comment", message);
-                await void fetch(`/posts/${answerId}/comments`, {
-                    body: commentFd,
-                    method: "POST"
-                });
-            }
-            if (logWithAws) {
-                const body = {};
-                if (-1 !== ownerId) {
-                    body.postOwnerId = ownerId;
-                }
-                body.actionIds = [ 3, 4 ];
-                await fetchFromAWS(`/handle/post/${answerId}`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-            }
-            window.location.reload();
-        }
-    };
-    const hasCheckedChild = e => e.find('input[type="checkbox"]').is(":checked");
-    const buildModTools = (mountPoint, isDeleted, answerId, postOwnerId) => {
-        const baseId = getModMenuPopoverId(answerId);
-        const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-        const popOver = $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`);
-        const container = $('<div class="d-grid g8 ai-center grid__1 ws4"></div>');
-        const label = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
-        const input = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
-        container.append(label);
-        container.append(input);
-        const baseText = GM_getValue(commentDetailTextBase, "");
-        input.val(baseText);
-        const lengthSpan = $(`<span>${baseText.length}</span>`);
-        {
-            const wrapper = $("<div></div>");
-            wrapper.append("<span>Characters: </span>");
-            wrapper.append(lengthSpan);
-            container.append(wrapper);
-        }
-        {
-            const flagContainer = $('<div class="d-flex fd-row flex__fl-equal g8"></div>');
-            const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-            const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag" /><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
-            const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment" checked/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
-            const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log" checked/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
-            checkboxContainer.append(shouldFlagCheckbox);
-            checkboxContainer.append(shouldCommentCheckbox);
-            checkboxContainer.append(shouldLogCheckbox);
-            const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-            nukeButton.on("click", (ev => {
-                ev.preventDefault();
-                nukePostAsPlagiarism(answerId, postOwnerId, input.val(), hasCheckedChild(shouldFlagCheckbox), hasCheckedChild(shouldCommentCheckbox), hasCheckedChild(shouldLogCheckbox));
-            }));
-            const updateDisplayBasedOnSelections = ev => {
-                ev.preventDefault();
-                const isFlaggingActive = hasCheckedChild(shouldFlagCheckbox);
-                const isCommentingActive = hasCheckedChild(shouldCommentCheckbox);
-                if (!isFlaggingActive && !isCommentingActive) {
-                    input.prop("disabled", true);
-                } else {
-                    input.removeProp("disabled");
-                }
-                nukeButton.attr("title", (isFlaggingActive ? "Flags the post, " : "") + (isFlaggingActive ? "deletes" : "Deletes") + " the post" + (isCommentingActive ? ", adds a comment" : "") + (hasCheckedChild(shouldLogCheckbox) ? ", logs feedback in Case manager" : ""));
-            };
-            shouldCommentCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-            shouldFlagCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-            shouldLogCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-            input.on("input", (ev => {
-                ev.preventDefault();
-                const length = ev.target.value.length;
-                lengthSpan.text(length);
-            }));
-            flagContainer.append(checkboxContainer);
-            flagContainer.append(nukeButton);
-            container.append(flagContainer);
-        }
-        popOver.append(container);
-        mountPoint.append(button);
-        mountPoint.append(popOver);
-    };
     const buildAnswerControlPanel = async () => {
         const answers = $("div.answer");
         const answerIds = answers.map(((i, e) => Number($(e).attr("data-answerid")))).toArray();
@@ -368,76 +405,6 @@
             }
             delayPullSummaryPostInfo(answerIds);
         }
-    };
-    const startAuthFlow = () => {
-        const authModalId = "case-manager-client-auth-modal";
-        const modal = $(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`);
-        const modalBody = $(`<div class="s-modal--dialog" role="document"><h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1><p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p><ol><li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li><li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li></ol><div class="d-flex g8 gsx s-modal--footer"><button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button><button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button></div><button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div>`);
-        modalBody.find(`#${authModalId}-save`).on("click", (ev => {
-            ev.preventDefault();
-            const inputValue = $(`#${authModalId}-input`).val();
-            if (void 0 !== inputValue && inputValue.length > 0) {
-                GM_setValue(seApiToken, inputValue);
-                requestNewJwt().then((() => {
-                    window.location.reload();
-                }));
-            }
-        }));
-        modal.append(modalBody);
-        $("body").append(modal);
-    };
-    const getAnswerIdsOnPage = () => new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
-    class SummaryAnnotator {
-        static iconAttrMap={
-            1: {
-                desc: "Looks OK",
-                colourVar: "--green-600",
-                svg: buildCheckmarkSvg(16)
-            },
-            2: {
-                desc: "edited",
-                colourVar: "--green-800",
-                svg: buildEditPenSvg(16)
-            },
-            3: {
-                desc: "plagiarised",
-                colourVar: "--red-600",
-                svg: buildCaseSvg(16)
-            },
-            5: {
-                desc: "suspicious",
-                colourVar: "--yellow-700",
-                svg: buildAlertSvg(16)
-            }
-        };
-        annotateAnswers() {
-            const postIdsOnPage = getAnswerIdsOnPage();
-            getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then((postResults => {
-                this.render(postResults);
-            }));
-        }
-        render(annotatedPosts) {
-            Object.entries(annotatedPosts).forEach((([postId, eventValues]) => {
-                const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2"></div>');
-                eventValues.forEach((e => {
-                    if (Object.hasOwn(SummaryAnnotator.iconAttrMap, e)) {
-                        const {desc: desc, colourVar: colourVar, svg: svg} = SummaryAnnotator.iconAttrMap[e];
-                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as ${desc}" class="flex--item s-post-summary--stats-item" style="color: var(${colourVar})">${svg}</div>`));
-                    }
-                }));
-                $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(symbolBar);
-            }));
-        }
-    }
-    const buildAnswerSummaryIndicator = () => {
-        const summaryAnnotator = new SummaryAnnotator;
-        summaryAnnotator.annotateAnswers();
-        const matchPattern = new RegExp("users/tab/\\d+\\?tab=answers", "gi");
-        $(document).on("ajaxComplete", ((_0, _1, {url: url}) => {
-            if (url.match(matchPattern)) {
-                summaryAnnotator.annotateAnswers();
-            }
-        }));
     };
     const fetchFromSEAPI = (path, search) => {
         const usp = new URLSearchParams(search);
@@ -962,6 +929,59 @@
             this.buildPagination();
         }
     }
+    const getAnswerIdsOnPage = () => new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
+    class SummaryAnnotator {
+        static iconAttrMap={
+            1: {
+                desc: "Looks OK",
+                colourVar: "--green-600",
+                svg: buildCheckmarkSvg(16)
+            },
+            2: {
+                desc: "edited",
+                colourVar: "--green-800",
+                svg: buildEditPenSvg(16)
+            },
+            3: {
+                desc: "plagiarised",
+                colourVar: "--red-600",
+                svg: buildCaseSvg(16)
+            },
+            5: {
+                desc: "suspicious",
+                colourVar: "--yellow-700",
+                svg: buildAlertSvg(16)
+            }
+        };
+        annotateAnswers() {
+            const postIdsOnPage = getAnswerIdsOnPage();
+            getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then((postResults => {
+                this.render(postResults);
+            }));
+        }
+        render(annotatedPosts) {
+            Object.entries(annotatedPosts).forEach((([postId, eventValues]) => {
+                const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2"></div>');
+                eventValues.forEach((e => {
+                    if (Object.hasOwn(SummaryAnnotator.iconAttrMap, e)) {
+                        const {desc: desc, colourVar: colourVar, svg: svg} = SummaryAnnotator.iconAttrMap[e];
+                        symbolBar.append($(`<div title="This post is noted in the Case Manager System as ${desc}" class="flex--item s-post-summary--stats-item" style="color: var(${colourVar})">${svg}</div>`));
+                    }
+                }));
+                $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(symbolBar);
+            }));
+        }
+    }
+    const buildAnswerSummaryIndicator = () => {
+        const summaryAnnotator = new SummaryAnnotator;
+        summaryAnnotator.annotateAnswers();
+        const matchPattern = new RegExp("users/tab/\\d+\\?tab=answers", "gi");
+        $(document).on("ajaxComplete", ((_0, _1, {url: url}) => {
+            if (url.match(matchPattern)) {
+                summaryAnnotator.annotateAnswers();
+            }
+        }));
+    };
     const buildUserScriptSettingsPanel = async () => {
         const tokens = await fetchFromAWS("/auth/credentials").then((res => res.json()));
         const container = $("<div></div>");
@@ -1023,29 +1043,27 @@
             getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
         }
         if (StackExchange.options.user.isModerator) {
+            const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
             const templateIssuer = $("<div></div>");
             toolGrid.append(templateIssuer);
-            templateIssuer.append('<h3 class="fs-title mb12">Edit base message template for comment/flags</h3>');
-            const templateForm = $("<form></form>");
-            const textarea = $(`<textarea class="s-textarea js-comment-text-input">${GM_getValue(commentDetailTextBase, "")}</textarea>`);
+            templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
+            const templateForm = $('<form class="d-flex fd-column g8"></form>');
+            const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls("nuke-config", nukePostConfig);
+            templateForm.append(textareaLabel);
             templateForm.append(textarea);
-            templateForm.append('<button class="s-btn s-btn__primary" type="submit">Submit</button>');
+            templateForm.append(checkboxContainer);
+            templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
             const formHandler = ev => {
                 ev.preventDefault();
-                const v = textarea.val();
-                if (0 === v.length) {
-                    GM_deleteValue(commentDetailTextBase);
-                    StackExchange.helpers.showToast("Base detail text removed successfully.", {
-                        type: "info",
-                        transientTimeout: 3e3
-                    });
-                } else {
-                    GM_setValue(commentDetailTextBase, textarea.val());
-                    StackExchange.helpers.showToast("Base detail text updated successfully!", {
-                        type: "success",
-                        transientTimeout: 3e3
-                    });
-                }
+                nukePostConfig.detailText = textarea.val() || "";
+                nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
+                nukePostConfig.comment = hasCheckedChild(shouldCommentCheckbox);
+                nukePostConfig.log = hasCheckedChild(shouldLogCheckbox);
+                GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
+                StackExchange.helpers.showToast("Config updated successfully!", {
+                    type: "success",
+                    transientTimeout: 3e3
+                });
             };
             templateForm.on("submit", formHandler);
             templateIssuer.append(templateForm);

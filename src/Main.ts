@@ -1,13 +1,13 @@
-import {type StackExchangeAPI} from './SEAPI';
-import {buildAlertSvg} from './SVGBuilders';
-import {buildAnswerControlPanel} from './Scripts/AnswerControlPanel';
+import {fetchFromAWS} from './AWSAPI';
 import {startAuthFlow} from './ClientSideAuthFlow';
-import {buildAnswerSummaryIndicator} from './Scripts/ProfileAnswerSummaryIndicator';
+import {accessToken} from './gmAPI';
+import {buildAnswerControlPanel} from './Scripts/AnswerControlPanel';
 import {CaseManagerControlPanel} from './Scripts/CaseManagerControlPanel';
 import {CasesUserList} from './Scripts/CasesList';
+import {buildAnswerSummaryIndicator} from './Scripts/ProfileAnswerSummaryIndicator';
 import {buildUserScriptSettingsPanel} from './Scripts/UserScriptSettings';
-import {fetchFromAWS} from './AWSAPI';
-import {accessToken} from './gmAPI';
+import {type StackExchangeAPI} from './SEAPI';
+import {buildAlertSvg} from './SVGBuilders';
 
 declare const StackExchange: StackExchangeAPI;
 

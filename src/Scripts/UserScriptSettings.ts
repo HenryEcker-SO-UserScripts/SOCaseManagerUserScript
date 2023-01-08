@@ -1,6 +1,7 @@
 import {fetchFromAWS, seTokenAuthRoute} from '../AWSAPI';
+import {accessToken, type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions, seApiToken} from '../gmAPI';
 import {type StackExchangeAPI} from '../SEAPI';
-import {accessToken, commentDetailTextBase, seApiToken} from '../gmAPI';
+import {buildNukeOptionControls, hasCheckedChild} from './ModTools';
 
 
 declare const StackExchange: StackExchangeAPI;
@@ -86,31 +87,39 @@ export const buildUserScriptSettingsPanel = async () => {
 
     // Flag base template manager
     if (StackExchange.options.user.isModerator) {
+        const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
         const templateIssuer = $('<div></div>');
         toolGrid.append(templateIssuer);
 
-        templateIssuer.append('<h3 class="fs-title mb12">Edit base message template for comment/flags</h3>');
-        const templateForm = $('<form></form>');
-        const textarea: JQuery<HTMLInputElement> = $(`<textarea class="s-textarea js-comment-text-input">${GM_getValue(commentDetailTextBase, '')}</textarea>`);
+        templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
+        const templateForm = $('<form class="d-flex fd-column g8"></form>');
+        const {
+            textareaLabel,
+            textarea,
+            checkboxContainer,
+            shouldFlagCheckbox,
+            shouldCommentCheckbox,
+            shouldLogCheckbox
+        } = buildNukeOptionControls('nuke-config', nukePostConfig);
+        templateForm.append(textareaLabel);
         templateForm.append(textarea);
-        templateForm.append('<button class="s-btn s-btn__primary" type="submit">Submit</button>');
+
+        templateForm.append(checkboxContainer);
+
+        templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
 
         const formHandler = (ev: JQuery.Event) => {
             ev.preventDefault();
-            const v = textarea.val() as string;
-            if (v.length === 0) {
-                GM_deleteValue(commentDetailTextBase);
-                StackExchange.helpers.showToast('Base detail text removed successfully.', {
-                    type: 'info',
-                    transientTimeout: 3000
-                });
-            } else {
-                GM_setValue(commentDetailTextBase, textarea.val());
-                StackExchange.helpers.showToast('Base detail text updated successfully!', {
-                    type: 'success',
-                    transientTimeout: 3000
-                });
-            }
+            nukePostConfig.detailText = (textarea.val() as string | undefined) || '';
+            nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
+            nukePostConfig.comment = hasCheckedChild(shouldCommentCheckbox);
+            nukePostConfig.log = hasCheckedChild(shouldLogCheckbox);
+            GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
+
+            StackExchange.helpers.showToast('Config updated successfully!', {
+                type: 'success',
+                transientTimeout: 3000
+            });
         };
         templateForm.on('submit', formHandler);
 
