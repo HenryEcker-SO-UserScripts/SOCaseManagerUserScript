@@ -61,7 +61,7 @@ export interface SummaryPostActionResponse {
     [postId: string]: number[]; // "postId": [1,2,3,4,5] <- array of action Ids
 }
 
-export const requestNewJwt = () => {
+export function requestNewJwt() {
     return fetchFromAWS('/auth/cm/jwt',
         {
             'method': 'POST',
@@ -81,10 +81,10 @@ export const requestNewJwt = () => {
             GM_deleteValue(accessToken);
             console.error(err);
         });
-};
+}
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const fetchFromAWS = (path: string, options?: RequestInit, withCredentials = true): Promise<Response> => {
+export function fetchFromAWS(path: string, options?: RequestInit, withCredentials = true): Promise<Response> {
     // Always send access_token along
     let newOptions: RequestInit = withCredentials ? {
         'headers': {
@@ -106,7 +106,7 @@ export const fetchFromAWS = (path: string, options?: RequestInit, withCredential
         }
         return res;
     });
-};
+}
 
 
 interface CollectionOfPostIds {
@@ -114,7 +114,7 @@ interface CollectionOfPostIds {
     length: number;
 }
 
-export const getSummaryPostInfoFromIds = (ids: CollectionOfPostIds): Promise<Set<number>> => {
+export function getSummaryPostInfoFromIds(ids: CollectionOfPostIds): Promise<Set<number>> {
     if (ids.length <= 0) {
         // Don't even try to fetch if there's nothing to pull; just resolve an empty set
         return Promise.resolve(new Set());
@@ -124,9 +124,9 @@ export const getSummaryPostInfoFromIds = (ids: CollectionOfPostIds): Promise<Set
         .then(postIds => {
             return Promise.resolve(new Set(postIds));
         });
-};
+}
 
-export const getSummaryPostActionsFromIds = (ids: CollectionOfPostIds): Promise<SummaryPostActionResponse> => {
+export function getSummaryPostActionsFromIds(ids: CollectionOfPostIds): Promise<SummaryPostActionResponse> {
     if (ids.length <= 0) {
         // Don't even try to fetch if there's nothing to pull; just resolve an empty object
         return Promise.resolve({});
@@ -136,6 +136,6 @@ export const getSummaryPostActionsFromIds = (ids: CollectionOfPostIds): Promise<
         .then(postActionData => {
             return Promise.resolve(postActionData);
         });
-};
+}
 
 export const seTokenAuthRoute = awsApiDefs.seTokenAuth;

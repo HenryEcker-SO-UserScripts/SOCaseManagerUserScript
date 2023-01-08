@@ -65,10 +65,10 @@ export interface SEAPIResponse<T> {
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const fetchFromSEAPI = (path: string, search: string): Promise<Response> => {
+export function fetchFromSEAPI(path: string, search: string): Promise<Response> {
     const usp = new URLSearchParams(search);
     usp.set('site', 'stackoverflow');
     usp.set('key', seApiDefs.apiKey);
     usp.set('access_token', GM_getValue(seApiToken));
     return fetch(`${seApiDefs.seAPIBase}${path}?${usp.toString()}`);
-};
+}

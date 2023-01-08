@@ -5,15 +5,15 @@ import type {FlagOtherResponse, PostDeleteResponse, StackExchangeAPI} from '../S
 
 declare const StackExchange: StackExchangeAPI;
 
-const getModMenuPopoverId = (answerId: number): string => {
+function getModMenuPopoverId(answerId: number): string {
     return `case-manager-mod-menu-popover-${answerId}`;
-};
+}
 
-export const hasCheckedChild = (e: JQuery): boolean => {
+export function hasCheckedChild(e: JQuery): boolean {
     return (e.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).is(':checked');
-};
+}
 
-const nukePostAsPlagiarism = async (answerId: number, ownerId: number, message: string, flagPost = false, commentPost = true, logWithAws = true) => {
+async function nukePostAsPlagiarism(answerId: number, ownerId: number, message: string, flagPost = false, commentPost = true, logWithAws = true) {
     // Flag limit is 10-500
     if (flagPost && (message.length < 10 || message.length > 500)) {
         StackExchange.helpers.showToast('Flags must be between 10 and 500 characters. Either add text or disable the flagging option.', {type: 'danger'});
@@ -73,11 +73,11 @@ const nukePostAsPlagiarism = async (answerId: number, ownerId: number, message: 
         });
     }
     window.location.reload();
-};
+}
 
-export const buildNukeOptionControls = (baseId: string, nukePostConfig: CmNukePostConfig) => {
+export function buildNukeOptionControls(baseId: string, nukePostConfig: CmNukePostConfig) {
     const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
-    const textarea: JQuery<HTMLInputElement> = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
+    const textarea: JQuery<HTMLTextAreaElement> = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
     textarea.val(nukePostConfig.detailText);
 
     const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
@@ -85,9 +85,10 @@ export const buildNukeOptionControls = (baseId: string, nukePostConfig: CmNukePo
     const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? ' checked' : ''}/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
     const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? ' checked' : ''}/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
 
-    checkboxContainer.append(shouldFlagCheckbox);
-    checkboxContainer.append(shouldCommentCheckbox);
-    checkboxContainer.append(shouldLogCheckbox);
+    checkboxContainer
+        .append(shouldFlagCheckbox)
+        .append(shouldCommentCheckbox)
+        .append(shouldLogCheckbox);
     return {
         textareaLabel,
         textarea,
@@ -96,19 +97,11 @@ export const buildNukeOptionControls = (baseId: string, nukePostConfig: CmNukePo
         shouldCommentCheckbox,
         shouldLogCheckbox
     };
-};
+}
 
-export const buildModTools = (isDeleted: boolean, answerId: number, postOwnerId: number) => {
-    const baseId = getModMenuPopoverId(answerId);
-    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-    if (isDeleted) {
-        // Don't bother building the popover for deleted posts
-        return button;
-    }
-    const popOver = $(
-        `<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`
-    );
 
+function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
+    // Build JQuery Elements For Popover
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
     const {
         textareaLabel,
@@ -118,69 +111,93 @@ export const buildModTools = (isDeleted: boolean, answerId: number, postOwnerId:
         shouldCommentCheckbox,
         shouldLogCheckbox
     } = buildNukeOptionControls(baseId, nukePostConfig);
-    const container = $('<div class="d-grid g8 ai-center grid__1 ws4"></div>');
-    const containerHeader = $('<div class="d-flex fd-row jc-space-between"></div>');
-
-    containerHeader.append(textareaLabel);
-    containerHeader.append(`<a class="fs-fine" href="/users/current${tabIdentifiers.settings}" target="_blank">Configure default options</a>`);
-    container.append(containerHeader);
-    container.append(textarea);
     const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
-    {
-        const wrapper = $('<div></div>');
-        wrapper.append('<span>Characters: </span>');
-        wrapper.append(lengthSpan);
-        container.append(wrapper);
+    const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+
+    // Configure Behaviour for form elements
+
+    nukeButton.on('click', (ev) => {
+        ev.preventDefault();
+        void nukePostAsPlagiarism(
+            answerId,
+            postOwnerId,
+            textarea.val() as string,
+            hasCheckedChild(shouldFlagCheckbox),
+            hasCheckedChild(shouldCommentCheckbox),
+            hasCheckedChild(shouldLogCheckbox)
+        );
+    });
+
+    function updateDisplayBasedOnSelections(ev: JQuery.Event) {
+        ev.preventDefault();
+        const isFlaggingActive = hasCheckedChild(shouldFlagCheckbox);
+        const isCommentingActive = hasCheckedChild(shouldCommentCheckbox);
+
+        // Disable textarea field when not needed
+        if (!isFlaggingActive && !isCommentingActive) {
+            textarea.prop('disabled', true);
+        } else {
+            textarea.removeProp('disabled');
+        }
+        nukeButton.attr(
+            'title',
+            (isFlaggingActive ? 'Flags the post, ' : '') +
+            (isFlaggingActive ? 'deletes' : 'Deletes') + ' the post' +
+            (isCommentingActive ? ', adds a comment' : '') +
+            (hasCheckedChild(shouldLogCheckbox) ? ', logs feedback in Case manager' : '')
+        );
     }
-    {
-        const flagContainer = $('<div class="d-flex fd-row flex__fl-equal g8"></div>');
 
-        const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-        nukeButton.on('click', (ev) => {
-            ev.preventDefault();
-            void nukePostAsPlagiarism(
-                answerId,
-                postOwnerId,
-                textarea.val() as string,
-                hasCheckedChild(shouldFlagCheckbox),
-                hasCheckedChild(shouldCommentCheckbox),
-                hasCheckedChild(shouldLogCheckbox)
-            );
-        });
+    (shouldCommentCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
+    (shouldFlagCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
+    (shouldLogCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
 
-        const updateDisplayBasedOnSelections = (ev: JQuery.Event) => {
-            ev.preventDefault();
-            const isFlaggingActive = hasCheckedChild(shouldFlagCheckbox);
-            const isCommentingActive = hasCheckedChild(shouldCommentCheckbox);
+    textarea.on('input', (ev) => {
+        ev.preventDefault();
+        const length = (ev.target.value as string).length;
+        lengthSpan.text(length);
+    });
 
-            // Disable textarea field when not needed
-            if (!isFlaggingActive && !isCommentingActive) {
-                textarea.prop('disabled', true);
-            } else {
-                textarea.removeProp('disabled');
-            }
-            nukeButton.attr(
-                'title',
-                (isFlaggingActive ? 'Flags the post, ' : '') +
-                (isFlaggingActive ? 'deletes' : 'Deletes') + ' the post' +
-                (isCommentingActive ? ', adds a comment' : '') +
-                (hasCheckedChild(shouldLogCheckbox) ? ', logs feedback in Case manager' : '')
-            );
-        };
+    // Compose JQuery Elements
+    return (
+        $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`)
+            .append(
+                $('<div class="d-grid g8 ai-center grid__1 ws4"></div>')
+                    .append(
+                        // Header with text area label to left and link to config on right
+                        $('<div class="d-flex fd-row jc-space-between"></div>')
+                            .append(textareaLabel)
+                            .append(`<a class="fs-fine" href="/users/current${tabIdentifiers.settings}" target="_blank">Configure default options</a>`)
+                    )
+                    .append(
+                        // Input textarea for flag/comment text
+                        textarea
+                    )
+                    .append(
+                        // Characters: Length of Textarea text
+                        $('<div></div>') // needs to be a div so that the children appear side-by-side instead of vertical grid
+                            .append('<span>Characters: </span>')
+                            .append(lengthSpan)
+                    )
+                    .append(
+                        // Checkbox container and nuke button
+                        $('<div class="d-flex fd-row flex__fl-equal g8"></div>')
+                            .append(checkboxContainer)
+                            .append(nukeButton)
+                    )
+            )
+    );
+}
 
-        (shouldCommentCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
-        (shouldFlagCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
-        (shouldLogCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
-        textarea.on('input', (ev) => {
-            ev.preventDefault();
-            const length = (ev.target.value as string).length;
-            lengthSpan.text(length);
-        });
 
-        flagContainer.append(checkboxContainer);
-        flagContainer.append(nukeButton);
-        container.append(flagContainer);
+export function buildModTools(isDeleted: boolean, answerId: number, postOwnerId: number) {
+    const baseId = getModMenuPopoverId(answerId);
+    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+    if (isDeleted) {
+        // Don't bother building the popover for deleted posts
+        return button;
     }
-    popOver.append(container);
-    return $(document.createDocumentFragment()).append(button).append(popOver);
-};
+    return $(document.createDocumentFragment())
+        .append(button)
+        .append(buildPopOver(baseId, answerId, postOwnerId));
+}
