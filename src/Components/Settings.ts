@@ -1,11 +1,25 @@
 import {fetchFromAWS, seTokenAuthRoute} from '../AWSAPI';
 import {accessToken, type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions, seApiToken} from '../gmAPI';
 import {type StackExchangeAPI} from '../SEAPI';
-import {buildNukeOptionControls, hasCheckedChild} from './ModTools';
+import {buildNukeOptionControls, getCheckboxValuesFromParentContainer} from './AnswerControlPanel/PostModTools';
 
 
 declare const StackExchange: StackExchangeAPI;
 
+export function buildUserScriptSettingsPanel() {
+    const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
+    const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
+
+    toolGrid.append(buildExistingTokensControls());
+    toolGrid.append(buildTokenIssuer());
+    if (StackExchange.options.user.isModerator) {
+        toolGrid.append(buildNukeConfigControls());
+    }
+
+    return $(document.createDocumentFragment())
+        .append(container)
+        .append(toolGrid);
+}
 
 function buildExistingTokensControls(): JQuery {
     const existingTokensComponent = $('<div></div>');
@@ -104,9 +118,14 @@ function buildNukeConfigControls(): JQuery {
     function formHandler(ev: JQuery.Event) {
         ev.preventDefault();
         nukePostConfig.detailText = (textarea.val() as string | undefined) || '';
-        nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
-        nukePostConfig.comment = hasCheckedChild(shouldCommentCheckbox);
-        nukePostConfig.log = hasCheckedChild(shouldLogCheckbox);
+        const [
+            isFlagChecked,
+            isCommentChecked,
+            isLogChecked
+        ] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+        nukePostConfig.flag = isFlagChecked;
+        nukePostConfig.comment = isCommentChecked;
+        nukePostConfig.log = isLogChecked;
         GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
 
         StackExchange.helpers.showToast('Config updated successfully!', {
@@ -114,23 +133,9 @@ function buildNukeConfigControls(): JQuery {
             transientTimeout: 3000
         });
     }
+
     templateForm.on('submit', formHandler);
 
     templateIssuer.append(templateForm);
     return templateIssuer;
-}
-
-export function buildUserScriptSettingsPanel() {
-    const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
-    const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
-
-    toolGrid.append(buildExistingTokensControls());
-    toolGrid.append(buildTokenIssuer());
-    if (StackExchange.options.user.isModerator) {
-        toolGrid.append(buildNukeConfigControls());
-    }
-
-    return $(document.createDocumentFragment())
-        .append(container)
-        .append(toolGrid);
 }

@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.0
+// @version     0.2.1
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -117,26 +117,81 @@
         modal.append(modalBody);
         $("body").append(modal);
     }
-    function buildAlertSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
+    const popoverMountPointClass = "popover-mount-point";
+    function getTimelineButtonId(answerId) {
+        return `${answerId}-timeline-indicator-button`;
     }
-    function buildCaseSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
+    function getTimelinePopoverId(answerId) {
+        return `case-manager-timeline-popover-${answerId}`;
     }
-    function buildCheckmarkSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
-    }
-    function buildEditPenSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
-    }
-    function buildSearchSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>`;
+    function getActionsPopoverId(answerId) {
+        return `case-manager-answer-popover-${answerId}`;
     }
     function getModMenuPopoverId(answerId) {
         return `case-manager-mod-menu-popover-${answerId}`;
     }
+    function buildModTools(isDeleted, answerId, postOwnerId) {
+        const baseId = getModMenuPopoverId(answerId);
+        const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
+        if (isDeleted) {
+            return button;
+        } else {
+            return $(document.createDocumentFragment()).append(button).append(buildPopOver(baseId, answerId, postOwnerId));
+        }
+    }
+    function buildPopOver(baseId, answerId, postOwnerId) {
+        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls(baseId, nukePostConfig);
+        const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
+        const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+        nukeButton.on("click", (ev => {
+            ev.preventDefault();
+            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            nukePostAsPlagiarism(answerId, postOwnerId, textarea.val(), isFlagChecked, isCommentChecked, isLogChecked);
+        }));
+        function updateDisplayBasedOnSelections(ev) {
+            ev.preventDefault();
+            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            if (!isFlagChecked && !isCommentChecked) {
+                textarea.prop("disabled", true);
+            } else {
+                textarea.removeProp("disabled");
+            }
+            nukeButton.attr("title", (isFlagChecked ? "Flags the post, " : "") + (isFlagChecked ? "deletes" : "Deletes") + " the post" + (isCommentChecked ? ", adds a comment" : "") + (isLogChecked ? ", logs feedback in Case manager" : ""));
+        }
+        shouldCommentCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+        shouldFlagCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+        shouldLogCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+        textarea.on("input", (ev => {
+            ev.preventDefault();
+            const length = ev.target.value.length;
+            lengthSpan.text(length);
+        }));
+        return $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`).append($('<div class="d-grid g8 ai-center grid__1 ws4"></div>').append($('<div class="d-flex fd-row jc-space-between"></div>').append(textareaLabel).append('<a class="fs-fine" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>')).append(textarea).append($("<div></div>").append("<span>Characters: </span>").append(lengthSpan)).append($('<div class="d-flex fd-row flex__fl-equal g8"></div>').append(checkboxContainer).append(nukeButton)));
+    }
+    function getCheckboxValuesFromParentContainer(...wrappedCheckboxes) {
+        return wrappedCheckboxes.map(hasCheckedChild);
+    }
     function hasCheckedChild(e) {
         return e.find('input[type="checkbox"]').is(":checked");
+    }
+    function buildNukeOptionControls(baseId, nukePostConfig) {
+        const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
+        const textarea = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
+        textarea.val(nukePostConfig.detailText);
+        const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
+        const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
+        const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
+        const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
+        checkboxContainer.append(shouldFlagCheckbox).append(shouldCommentCheckbox).append(shouldLogCheckbox);
+        return {
+            textareaLabel: textareaLabel,
+            textarea: textarea,
+            checkboxContainer: checkboxContainer,
+            shouldFlagCheckbox: shouldFlagCheckbox,
+            shouldCommentCheckbox: shouldCommentCheckbox,
+            shouldLogCheckbox: shouldLogCheckbox
+        };
     }
     async function nukePostAsPlagiarism(answerId, ownerId, message, flagPost = false, commentPost = true, logWithAws = true) {
         if (flagPost && (message.length < 10 || message.length > 500)) {
@@ -197,66 +252,84 @@
             window.location.reload();
         }
     }
-    function buildNukeOptionControls(baseId, nukePostConfig) {
-        const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
-        const textarea = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
-        textarea.val(nukePostConfig.detailText);
-        const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-        const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
-        const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
-        const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
-        checkboxContainer.append(shouldFlagCheckbox).append(shouldCommentCheckbox).append(shouldLogCheckbox);
-        return {
-            textareaLabel: textareaLabel,
-            textarea: textarea,
-            checkboxContainer: checkboxContainer,
-            shouldFlagCheckbox: shouldFlagCheckbox,
-            shouldCommentCheckbox: shouldCommentCheckbox,
-            shouldLogCheckbox: shouldLogCheckbox
-        };
+    function buildAlertSvg(dim = 18, viewBox = 18) {
+        return `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
     }
-    function buildPopOver(baseId, answerId, postOwnerId) {
-        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls(baseId, nukePostConfig);
-        const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
-        const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-        nukeButton.on("click", (ev => {
+    function buildCaseSvg(dim = 18, viewBox = 18) {
+        return `<svg aria-hidden="true" class="svg-icon iconBriefcase" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M5 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h1V4Zm7 0H6v1h6V4Z"></path></svg>`;
+    }
+    function buildCheckmarkSvg(dim = 18, viewBox = 18) {
+        return `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
+    }
+    function buildEditPenSvg(dim = 18, viewBox = 18) {
+        return `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
+    }
+    function buildSearchSvg(dim = 18, viewBox = 18) {
+        return `<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>`;
+    }
+    function buildBaseTimelineButtons(answerId) {
+        const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
+        const popOver = $(`<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
+        return $(document.createDocumentFragment()).append(controlButton).append(popOver);
+    }
+    function activateTimelineButton(postId) {
+        const id = getTimelineButtonId(postId);
+        $(`#${id}`).replaceWith(buildActiveTimelineButton(id, postId));
+    }
+    function buildActiveTimelineButton(buttonId, answerId) {
+        const timelinePopoverId = getTimelinePopoverId(answerId);
+        const timelineButton = $(`<button title="Click to view a record of actions taken on this post." id="${buttonId}" class="flex--item s-btn s-btn__danger s-btn__icon ws-nowrap s-btn__dropdown" role="button" aria-controls="${timelinePopoverId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-start" data-s-popover-toggle-class="is-selected">${buildAlertSvg()}<span class="px8">Post Timeline</span></button>`);
+        timelineButton.on("click", (ev => {
             ev.preventDefault();
-            nukePostAsPlagiarism(answerId, postOwnerId, textarea.val(), hasCheckedChild(shouldFlagCheckbox), hasCheckedChild(shouldCommentCheckbox), hasCheckedChild(shouldLogCheckbox));
-        }));
-        function updateDisplayBasedOnSelections(ev) {
-            ev.preventDefault();
-            const isFlaggingActive = hasCheckedChild(shouldFlagCheckbox);
-            const isCommentingActive = hasCheckedChild(shouldCommentCheckbox);
-            if (!isFlaggingActive && !isCommentingActive) {
-                textarea.prop("disabled", true);
-            } else {
-                textarea.removeProp("disabled");
+            if ("true" !== timelineButton.attr("timeline-loaded")) {
+                fetchFromAWS(`/timeline/post/${answerId}`).then((res => res.json())).then((timelineEvents => {
+                    const eventPane = $('<div class="case-manager-post-timeline-container"></div>');
+                    eventPane.append($("<h3>Case Manager Post Timeline</h3>"));
+                    const timelineEventContainer = $('<div class="d-grid ws-nowrap" style="grid-template-columns: repeat(3, min-content); grid-gap: var(--su8);"></div>');
+                    for (const event of timelineEvents) {
+                        timelineEventContainer.append($(`<a href="/users/${event.account_id}">${event.display_name}</a><span data-event-type-id="${event.timeline_event_type}">${event.timeline_event_description}</span><span>${new Date(event.event_creation_date).toLocaleString()}</span>`));
+                    }
+                    eventPane.append(timelineEventContainer);
+                    $(`#${timelinePopoverId} > .${popoverMountPointClass}`).empty().append(eventPane);
+                    timelineButton.attr("timeline-loaded", "true");
+                }));
             }
-            nukeButton.attr("title", (isFlaggingActive ? "Flags the post, " : "") + (isFlaggingActive ? "deletes" : "Deletes") + " the post" + (isCommentingActive ? ", adds a comment" : "") + (hasCheckedChild(shouldLogCheckbox) ? ", logs feedback in Case manager" : ""));
-        }
-        shouldCommentCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-        shouldFlagCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-        shouldLogCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-        textarea.on("input", (ev => {
-            ev.preventDefault();
-            const length = ev.target.value.length;
-            lengthSpan.text(length);
         }));
-        return $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`).append($('<div class="d-grid g8 ai-center grid__1 ws4"></div>').append($('<div class="d-flex fd-row jc-space-between"></div>').append(textareaLabel).append('<a class="fs-fine" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>')).append(textarea).append($("<div></div>").append("<span>Characters: </span>").append(lengthSpan)).append($('<div class="d-flex fd-row flex__fl-equal g8"></div>').append(checkboxContainer).append(nukeButton)));
+        return timelineButton;
     }
-    function buildModTools(isDeleted, answerId, postOwnerId) {
-        const baseId = getModMenuPopoverId(answerId);
-        const button = $(`<button ${isDeleted ? "disabled" : ""} class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-        if (isDeleted) {
-            return button;
-        } else {
-            return $(document.createDocumentFragment()).append(button).append(buildPopOver(baseId, answerId, postOwnerId));
+    function buildActionsComponent(answerId, ownerId) {
+        const controlButton = $(`<button title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`);
+        const popOver = $(`<div class="s-popover" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
+        controlButton.on("click", (ev => {
+            ev.preventDefault();
+            if ("true" !== controlButton.attr("options-loaded")) {
+                fetchFromAWS(`/handle/post/${answerId}`).then((res => res.json())).then((actions => {
+                    buildActionsComponentFromActions(answerId, ownerId, actions);
+                    controlButton.attr("options-loaded", "true");
+                }));
+            }
+        }));
+        return $(document.createDocumentFragment()).append(controlButton).append(popOver);
+    }
+    function buildActionsComponentFromActions(answerId, ownerId, actions) {
+        const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
+        const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
+        for (const action of actions) {
+            const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
+            const checkboxId = getActionCheckboxId(answerId, action.action_id);
+            const checkbox = $(`<div class="d-flex g8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action.action_description}" data-action-id="${action.action_id}" id="${checkboxId}" ${action.user_acted ? "checked disabled" : ""}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action.action_description}</label></div>`);
+            actionRow.append(checkbox);
+            if (action.user_acted) {
+                const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
+                clearButton.on("click", clearMyActionHandler(action, answerId, checkboxId, clearButton));
+                actionRow.append(clearButton);
+            }
+            actionsForm.append(actionRow);
         }
-    }
-    const popoverMountPointClass = "popover-mount-point";
-    function getActionsPopoverId(answerId) {
-        return `case-manager-answer-popover-${answerId}`;
+        actionsForm.append($('<div class="d-flex fd-row jc-start"><button class="s-btn s-btn__primary" type="submit">Save</button><button class="s-btn" type="reset">Reset</button></div>'));
+        actionsForm.on("submit", handleFormAction(actionsForm, answerId, ownerId));
+        popOverInnerContainer.append(actionsForm);
+        $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
     }
     function getActionCheckboxId(answerId, action_id) {
         return `checkbox-${answerId}-${action_id}`;
@@ -317,103 +390,22 @@
             }));
         };
     }
-    function buildActionsComponentFromActions(answerId, ownerId, actions) {
-        const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
-        const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
-        for (const action of actions) {
-            const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
-            const checkboxId = getActionCheckboxId(answerId, action.action_id);
-            const checkbox = $(`<div class="d-flex g8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action.action_description}" data-action-id="${action.action_id}" id="${checkboxId}" ${action.user_acted ? "checked disabled" : ""}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action.action_description}</label></div>`);
-            actionRow.append(checkbox);
-            if (action.user_acted) {
-                const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
-                clearButton.on("click", clearMyActionHandler(action, answerId, checkboxId, clearButton));
-                actionRow.append(clearButton);
+    function buildAnswerControlPanel() {
+        const answers = $("div.answer");
+        const answerIds = answers.map(((i, e) => getAnswerIdFromAnswerDiv(e))).toArray();
+        for (const {jAnswer: jAnswer, isDeleted: isDeleted, answerId: answerId, postOwnerId: postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
+            const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
+            controlPanel.append(buildBaseTimelineButtons(answerId));
+            if (StackExchange.options.user.isModerator) {
+                controlPanel.append(buildModTools(isDeleted, answerId, postOwnerId));
             }
-            actionsForm.append(actionRow);
+            controlPanel.append(buildActionsComponent(answerId, postOwnerId));
+            jAnswer.append(controlPanel);
         }
-        actionsForm.append($('<div class="d-flex fd-row jc-start"><button class="s-btn s-btn__primary" type="submit">Save</button><button class="s-btn" type="reset">Reset</button></div>'));
-        actionsForm.on("submit", handleFormAction(actionsForm, answerId, ownerId));
-        popOverInnerContainer.append(actionsForm);
-        $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
-    }
-    function buildActionsComponent(answerId, ownerId) {
-        const controlButton = $(`<button title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`);
-        const popOver = $(`<div class="s-popover" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
-        controlButton.on("click", (ev => {
-            ev.preventDefault();
-            if ("true" !== controlButton.attr("options-loaded")) {
-                fetchFromAWS(`/handle/post/${answerId}`).then((res => res.json())).then((actions => {
-                    buildActionsComponentFromActions(answerId, ownerId, actions);
-                    controlButton.attr("options-loaded", "true");
-                }));
-            }
-        }));
-        return $(document.createDocumentFragment()).append(controlButton).append(popOver);
-    }
-    function getTimelineButtonId(answerId) {
-        return `${answerId}-timeline-indicator-button`;
-    }
-    function getTimelinePopoverId(answerId) {
-        return `case-manager-timeline-popover-${answerId}`;
-    }
-    function buildBaseTimelineButtons(answerId) {
-        const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
-        const popOver = $(`<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
-        return $(document.createDocumentFragment()).append(controlButton).append(popOver);
-    }
-    function buildActiveTimelineButton(buttonId, answerId) {
-        const timelinePopoverId = getTimelinePopoverId(answerId);
-        const timelineButton = $(`<button title="Click to view a record of actions taken on this post." id="${buttonId}" class="flex--item s-btn s-btn__danger s-btn__icon ws-nowrap s-btn__dropdown" role="button" aria-controls="${timelinePopoverId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-start" data-s-popover-toggle-class="is-selected">${buildAlertSvg()}<span class="px8">Post Timeline</span></button>`);
-        timelineButton.on("click", (ev => {
-            ev.preventDefault();
-            if ("true" !== timelineButton.attr("timeline-loaded")) {
-                fetchFromAWS(`/timeline/post/${answerId}`).then((res => res.json())).then((timelineEvents => {
-                    const eventPane = $('<div class="case-manager-post-timeline-container"></div>');
-                    eventPane.append($("<h3>Case Manager Post Timeline</h3>"));
-                    const timelineEventContainer = $('<div class="d-grid ws-nowrap" style="grid-template-columns: repeat(3, min-content); grid-gap: var(--su8);"></div>');
-                    for (const event of timelineEvents) {
-                        timelineEventContainer.append($(`<a href="/users/${event.account_id}">${event.display_name}</a><span data-event-type-id="${event.timeline_event_type}">${event.timeline_event_description}</span><span>${new Date(event.event_creation_date).toLocaleString()}</span>`));
-                    }
-                    eventPane.append(timelineEventContainer);
-                    $(`#${timelinePopoverId} > .${popoverMountPointClass}`).empty().append(eventPane);
-                    timelineButton.attr("timeline-loaded", "true");
-                }));
-            }
-        }));
-        return timelineButton;
-    }
-    function activateTimelineButton(postId) {
-        const id = getTimelineButtonId(postId);
-        $(`#${id}`).replaceWith(buildActiveTimelineButton(id, postId));
-    }
-    function delayPullSummaryPostInfo(answerIds) {
-        getSummaryPostInfoFromIds(answerIds).then((setPostIds => {
-            for (const postId of setPostIds) {
-                activateTimelineButton(postId);
-            }
-        })).catch((err => {
-            console.error(err);
-        }));
+        delayPullSummaryPostInfo(answerIds);
     }
     function getAnswerIdFromAnswerDiv(answerDiv) {
         return Number($(answerDiv).attr("data-answerid"));
-    }
-    function getPostOwnerIdFromAuthorDiv(authorDiv) {
-        const e = $(authorDiv).find("a");
-        if (0 === e.length) {
-            return -1;
-        }
-        const href = e.attr("href");
-        if (void 0 === href) {
-            return -1;
-        }
-        const match = href.match(/\/users\/(\d+)\/.*/);
-        if (null === match) {
-            return -1;
-        } else {
-            return Number(match[1]);
-        }
     }
     function* extractFromAnswerDivs(answers, answerIds) {
         for (let i = 0; i < answers.length; i++) {
@@ -431,19 +423,129 @@
             }
         }
     }
-    function buildAnswerControlPanel() {
-        const answers = $("div.answer");
-        const answerIds = answers.map(((i, e) => getAnswerIdFromAnswerDiv(e))).toArray();
-        for (const {jAnswer: jAnswer, isDeleted: isDeleted, answerId: answerId, postOwnerId: postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
-            const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
-            controlPanel.append(buildBaseTimelineButtons(answerId));
-            if (StackExchange.options.user.isModerator) {
-                controlPanel.append(buildModTools(isDeleted, answerId, postOwnerId));
+    function delayPullSummaryPostInfo(answerIds) {
+        getSummaryPostInfoFromIds(answerIds).then((setPostIds => {
+            for (const postId of setPostIds) {
+                activateTimelineButton(postId);
             }
-            controlPanel.append(buildActionsComponent(answerId, postOwnerId));
-            jAnswer.append(controlPanel);
+        })).catch((err => {
+            console.error(err);
+        }));
+    }
+    function getPostOwnerIdFromAuthorDiv(authorDiv) {
+        const e = $(authorDiv).find("a");
+        if (0 === e.length) {
+            return -1;
         }
-        delayPullSummaryPostInfo(answerIds);
+        const href = e.attr("href");
+        if (void 0 === href) {
+            return -1;
+        }
+        const match = href.match(/\/users\/(\d+)\/.*/);
+        if (null === match) {
+            return -1;
+        } else {
+            return Number(match[1]);
+        }
+    }
+    function buildUserScriptSettingsPanel() {
+        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
+        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
+        toolGrid.append(buildExistingTokensControls());
+        toolGrid.append(buildTokenIssuer());
+        if (StackExchange.options.user.isModerator) {
+            toolGrid.append(buildNukeConfigControls());
+        }
+        return $(document.createDocumentFragment()).append(container).append(toolGrid);
+    }
+    function buildExistingTokensControls() {
+        const existingTokensComponent = $("<div></div>");
+        existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
+        const tokenList = $("<div></div>");
+        existingTokensComponent.append(tokenList);
+        fetchFromAWS("/auth/credentials").then((res => res.json())).then((tokens => {
+            tokens.forEach((token => {
+                const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
+                tokenList.append(tokenRow);
+                tokenRow.append(`<span>${token}</span>`);
+                const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
+                invalidateButton.on("click", (ev => {
+                    ev.preventDefault();
+                    fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
+                        if (200 === res.status) {
+                            tokenRow.remove();
+                            if (GM_getValue(seApiToken) === token) {
+                                GM_deleteValue(seApiToken);
+                                GM_deleteValue(accessToken);
+                                window.location.reload();
+                            }
+                        }
+                    }));
+                }));
+                tokenRow.append(invalidateButton);
+            }));
+        }));
+        const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
+        existingTokensComponent.append(deAuthoriseButton);
+        deAuthoriseButton.on("click", (ev => {
+            ev.preventDefault();
+            StackExchange.helpers.showConfirmModal({
+                title: "De-authenticate this Application",
+                bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
+                buttonLabel: "De-authenticate"
+            }).then((confirm => {
+                if (confirm) {
+                    fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
+                        if (200 === res.status) {
+                            GM_deleteValue(seApiToken);
+                            GM_deleteValue(accessToken);
+                            window.location.reload();
+                        }
+                    }));
+                }
+            }));
+        }));
+        return existingTokensComponent;
+    }
+    function buildTokenIssuer() {
+        const getNewToken = $("<div></div>");
+        getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
+        getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
+        getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
+        return getNewToken;
+    }
+    function buildNukeConfigControls() {
+        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+        const templateIssuer = $("<div></div>");
+        templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
+        const templateForm = $('<form class="d-flex fd-column g8"></form>');
+        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls("nuke-config", nukePostConfig);
+        templateForm.append(textareaLabel);
+        templateForm.append(textarea);
+        templateForm.append(checkboxContainer);
+        templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
+        function formHandler(ev) {
+            ev.preventDefault();
+            nukePostConfig.detailText = textarea.val() || "";
+            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            nukePostConfig.flag = isFlagChecked;
+            nukePostConfig.comment = isCommentChecked;
+            nukePostConfig.log = isLogChecked;
+            GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
+            StackExchange.helpers.showToast("Config updated successfully!", {
+                type: "success",
+                transientTimeout: 3e3
+            });
+        }
+        templateForm.on("submit", formHandler);
+        templateIssuer.append(templateForm);
+        return templateIssuer;
+    }
+    function buildCurrentUserProfilePage() {
+        $(".user-show-new .s-navigation:eq(0)").append($(`<a href="${window.location.pathname}?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>`));
+        if (window.location.search.startsWith("?tab=case-manager-settings")) {
+            $("#mainbar-full").empty().append(buildUserScriptSettingsPanel());
+        }
     }
     function fetchFromSEAPI(path, search) {
         const usp = new URLSearchParams(search);
@@ -768,6 +870,92 @@
             }
         }
     }
+    function buildAnswerSummaryIndicator() {
+        addSummaryActionIndicators();
+        const matchPattern = new RegExp("users/tab/\\d+\\?tab=answers", "gi");
+        $(document).on("ajaxComplete", ((_0, _1, {url: url}) => {
+            if (url.match(matchPattern)) {
+                addSummaryActionIndicators();
+            }
+        }));
+    }
+    function getAnswerIdsOnPage() {
+        return new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
+    }
+    function addSummaryActionIndicators() {
+        const postIdsOnPage = getAnswerIdsOnPage();
+        getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then(renderAnswerSummaryIndicators);
+    }
+    const iconAttrMap = {
+        [Feedback.LooksOK]: {
+            desc: "Looks OK",
+            colourVar: "--green-600",
+            svg: buildCheckmarkSvg(16)
+        },
+        [Feedback.Edited]: {
+            desc: "edited",
+            colourVar: "--green-800",
+            svg: buildEditPenSvg(16)
+        },
+        [Feedback.Plagiarised]: {
+            desc: "plagiarised",
+            colourVar: "--red-600",
+            svg: buildCaseSvg(16)
+        },
+        [Feedback.Suspicious]: {
+            desc: "suspicious",
+            colourVar: "--yellow-700",
+            svg: buildAlertSvg(16)
+        }
+    };
+    function buildSymbolBar(postId, eventValues) {
+        const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2"></div>');
+        eventValues.forEach((eventId => {
+            if (Object.hasOwn(iconAttrMap, eventId)) {
+                const {desc: desc, colourVar: colourVar, svg: svg} = iconAttrMap[eventId];
+                symbolBar.append($(`<div title="This post is noted in the Case Manager System as ${desc}" class="flex--item s-post-summary--stats-item" style="color: var(${colourVar})">${svg}</div>`));
+            }
+        }));
+        return symbolBar;
+    }
+    function renderAnswerSummaryIndicators(summaryPostActions) {
+        Object.entries(summaryPostActions).forEach((([postId, eventValues]) => {
+            $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(buildSymbolBar(postId, eventValues));
+        }));
+    }
+    function buildProfilePage() {
+        const userId = getUserIdFromWindowLocation();
+        const {tabContainer: tabContainer, navButton: navButton} = buildProfileNavPill(userId);
+        if (window.location.search.startsWith("?tab=case-manager")) {
+            const selectedClass = "is-selected";
+            tabContainer.find("a").removeClass(selectedClass);
+            navButton.addClass(selectedClass);
+            $("#mainbar-full > div:last-child").replaceWith(new CaseManagerControlPanel(userId).init());
+        } else if (window.location.search.startsWith("?tab=answers")) {
+            buildAnswerSummaryIndicator();
+        }
+    }
+    function getUserIdFromWindowLocation() {
+        const patternMatcher = window.location.pathname.match(/^\/users\/\d+/g) || window.location.pathname.match(/^\/users\/account-info\/\d+/g);
+        if (null === patternMatcher || 1 !== patternMatcher.length) {
+            throw Error("Something changed in user path!");
+        }
+        return Number(patternMatcher[0].split("/").at(-1));
+    }
+    function buildProfileNavPill(userId) {
+        const navButton = $(`<a href="${window.location.pathname}?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
+        fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
+            if (resData.is_known_user) {
+                navButton.prepend(buildAlertSvg(16, 20));
+            }
+        }));
+        const tabContainer = $(".user-show-new .s-navigation:eq(0)");
+        tabContainer.append(navButton);
+        return {
+            tabContainer: tabContainer,
+            navButton: navButton
+        };
+    }
     function buildUserTile(account_id, profile_image, display_name, current_state, event_date) {
         const link = `/users/${account_id}?tab=case-manager`;
         return $(`<div class="grid--item user-info"> ${null !== profile_image ? `<div class="user-gravatar48"><a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a></div>` : ""} <div class="user-details"><a href="${link}">${display_name}</a><div class="d-flex fd-column mt6"><span>Case ${current_state} on</span><span>${new Date(event_date).toLocaleString()}</span></div></div></div>`);
@@ -962,202 +1150,15 @@
             this.buildPagination();
         }
     }
-    function buildAnswerSummaryIndicator() {
-        addSummaryActionIndicators();
-        const matchPattern = new RegExp("users/tab/\\d+\\?tab=answers", "gi");
-        $(document).on("ajaxComplete", ((_0, _1, {url: url}) => {
-            if (url.match(matchPattern)) {
-                addSummaryActionIndicators();
-            }
-        }));
-    }
-    function getAnswerIdsOnPage() {
-        return new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
-    }
-    function addSummaryActionIndicators() {
-        const postIdsOnPage = getAnswerIdsOnPage();
-        getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then(renderAnswerSummaryIndicators);
-    }
-    const iconAttrMap = {
-        [Feedback.LooksOK]: {
-            desc: "Looks OK",
-            colourVar: "--green-600",
-            svg: buildCheckmarkSvg(16)
-        },
-        [Feedback.Edited]: {
-            desc: "edited",
-            colourVar: "--green-800",
-            svg: buildEditPenSvg(16)
-        },
-        [Feedback.Plagiarised]: {
-            desc: "plagiarised",
-            colourVar: "--red-600",
-            svg: buildCaseSvg(16)
-        },
-        [Feedback.Suspicious]: {
-            desc: "suspicious",
-            colourVar: "--yellow-700",
-            svg: buildAlertSvg(16)
-        }
-    };
-    function buildSymbolBar(postId, eventValues) {
-        const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2"></div>');
-        eventValues.forEach((eventId => {
-            if (Object.hasOwn(iconAttrMap, eventId)) {
-                const {desc: desc, colourVar: colourVar, svg: svg} = iconAttrMap[eventId];
-                symbolBar.append($(`<div title="This post is noted in the Case Manager System as ${desc}" class="flex--item s-post-summary--stats-item" style="color: var(${colourVar})">${svg}</div>`));
-            }
-        }));
-        return symbolBar;
-    }
-    function renderAnswerSummaryIndicators(summaryPostActions) {
-        Object.entries(summaryPostActions).forEach((([postId, eventValues]) => {
-            $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(buildSymbolBar(postId, eventValues));
-        }));
-    }
-    function buildExistingTokensControls() {
-        const existingTokensComponent = $("<div></div>");
-        existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
-        const tokenList = $("<div></div>");
-        existingTokensComponent.append(tokenList);
-        fetchFromAWS("/auth/credentials").then((res => res.json())).then((tokens => {
-            tokens.forEach((token => {
-                const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
-                tokenList.append(tokenRow);
-                tokenRow.append(`<span>${token}</span>`);
-                const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
-                invalidateButton.on("click", (ev => {
-                    ev.preventDefault();
-                    fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
-                        if (200 === res.status) {
-                            tokenRow.remove();
-                            if (GM_getValue(seApiToken) === token) {
-                                GM_deleteValue(seApiToken);
-                                GM_deleteValue(accessToken);
-                                window.location.reload();
-                            }
-                        }
-                    }));
-                }));
-                tokenRow.append(invalidateButton);
-            }));
-        }));
-        const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
-        existingTokensComponent.append(deAuthoriseButton);
-        deAuthoriseButton.on("click", (ev => {
-            ev.preventDefault();
-            StackExchange.helpers.showConfirmModal({
-                title: "De-authenticate this Application",
-                bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
-                buttonLabel: "De-authenticate"
-            }).then((confirm => {
-                if (confirm) {
-                    fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
-                        if (200 === res.status) {
-                            GM_deleteValue(seApiToken);
-                            GM_deleteValue(accessToken);
-                            window.location.reload();
-                        }
-                    }));
-                }
-            }));
-        }));
-        return existingTokensComponent;
-    }
-    function buildTokenIssuer() {
-        const getNewToken = $("<div></div>");
-        getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
-        getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
-        getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
-        return getNewToken;
-    }
-    function buildNukeConfigControls() {
-        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-        const templateIssuer = $("<div></div>");
-        templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
-        const templateForm = $('<form class="d-flex fd-column g8"></form>');
-        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls("nuke-config", nukePostConfig);
-        templateForm.append(textareaLabel);
-        templateForm.append(textarea);
-        templateForm.append(checkboxContainer);
-        templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
-        function formHandler(ev) {
-            ev.preventDefault();
-            nukePostConfig.detailText = textarea.val() || "";
-            nukePostConfig.flag = hasCheckedChild(shouldFlagCheckbox);
-            nukePostConfig.comment = hasCheckedChild(shouldCommentCheckbox);
-            nukePostConfig.log = hasCheckedChild(shouldLogCheckbox);
-            GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
-            StackExchange.helpers.showToast("Config updated successfully!", {
-                type: "success",
-                transientTimeout: 3e3
-            });
-        }
-        templateForm.on("submit", formHandler);
-        templateIssuer.append(templateForm);
-        return templateIssuer;
-    }
-    function buildUserScriptSettingsPanel() {
-        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
-        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
-        toolGrid.append(buildExistingTokensControls());
-        toolGrid.append(buildTokenIssuer());
-        if (StackExchange.options.user.isModerator) {
-            toolGrid.append(buildNukeConfigControls());
-        }
-        return $(document.createDocumentFragment()).append(container).append(toolGrid);
-    }
     function buildPlagiaristTab() {
-        const primaryUsersNav = $(".js-filter-btn");
-        const a = $('<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=case" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>');
-        primaryUsersNav.append(a);
+        $(".js-filter-btn").append($('<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=case" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>'));
         if (window.location.search.startsWith("?tab=case")) {
             (new CasesUserList).init();
         }
     }
-    function buildCurrentUserProfilePage() {
-        const navButton = $(`<a href="${window.location.pathname}?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>`);
-        const tabContainer = $(".user-show-new .s-navigation:eq(0)");
-        tabContainer.append(navButton);
-        if (window.location.search.startsWith("?tab=case-manager-settings")) {
-            const mainPanel = $("#mainbar-full");
-            mainPanel.empty();
-            mainPanel.append(buildUserScriptSettingsPanel());
-        }
-    }
-    function getUserIdFromWindowLocation() {
-        const patternMatcher = window.location.pathname.match(/^\/users\/\d+/g) || window.location.pathname.match(/^\/users\/account-info\/\d+/g);
-        if (null === patternMatcher || 1 !== patternMatcher.length) {
-            throw Error("Something changed in user path!");
-        }
-        return Number(patternMatcher[0].split("/").at(-1));
-    }
-    function buildProfileNavPill(userId) {
-        const navButton = $(`<a href="${window.location.pathname}?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
-        fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
-            if (resData.is_known_user) {
-                navButton.prepend(buildAlertSvg(16, 20));
-            }
-        }));
-        const tabContainer = $(".user-show-new .s-navigation:eq(0)");
-        tabContainer.append(navButton);
-        return {
-            tabContainer: tabContainer,
-            navButton: navButton
-        };
-    }
-    function buildProfilePage() {
-        const userId = getUserIdFromWindowLocation();
-        const {tabContainer: tabContainer, navButton: navButton} = buildProfileNavPill(userId);
-        if (window.location.search.startsWith("?tab=case-manager")) {
-            const selectedClass = "is-selected";
-            tabContainer.find("a").removeClass(selectedClass);
-            navButton.addClass(selectedClass);
-            $("#mainbar-full > div:last-child").replaceWith(new CaseManagerControlPanel(userId).init());
-        } else if (window.location.search.startsWith("?tab=answers")) {
-            buildAnswerSummaryIndicator();
-        }
-    }
+    StackExchange.ready((() => {
+        UserScript();
+    }));
     function UserScript() {
         if (null !== GM_getValue(accessToken, null)) {
             if (null !== window.location.pathname.match(/^\/questions\/.*/)) {
@@ -1173,7 +1174,4 @@
             startAuthFlow();
         }
     }
-    StackExchange.ready((() => {
-        UserScript();
-    }));
 })();

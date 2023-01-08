@@ -13,11 +13,11 @@ type ShowConfirmModalOptions =
 
 
 interface showToastOptions {
-    dismissable?: boolean;
-    transient?: boolean;
-    useRawHtml?: boolean;
-    transientTimeout?: number;
-    type?: 'info' | 'success' | 'warning' | 'danger';
+    dismissable: boolean;
+    transient: boolean;
+    useRawHtml: boolean;
+    transientTimeout: number;
+    type: 'info' | 'success' | 'warning' | 'danger';
 }
 
 export interface StackExchangeAPI {
@@ -30,7 +30,7 @@ export interface StackExchangeAPI {
     };
     helpers: {
         showConfirmModal: (options: ShowConfirmModalOptions) => Promise<boolean>;
-        showToast: (message: string, options?: showToastOptions) => void;
+        showToast: (message: string, options?: Partial<showToastOptions>) => void;
     };
     ready: (onReady: () => void) => void;
 }
