@@ -1,4 +1,4 @@
-import {startAuthFlow} from './Components/ClientSideAuthFlow';
+import {buildClientSideAuthModal} from './Components/ClientSideAuthFlow';
 import {accessToken} from './API/gmAPI';
 import {buildAnswerControlPanel} from './Components/PostControlPanel/PostControlPanelMain';
 import {buildUserScriptSettingsNav} from './Components/UserScriptControls/UserScriptControlsMain';
@@ -8,7 +8,7 @@ import {buildPlagiaristTab} from './Components/UserSearch/UserSearchMain';
 function UserScript() {
     // API TOKEN IS REQUIRED
     if (GM_getValue(accessToken, null) === null) {
-        startAuthFlow();
+        buildClientSideAuthModal();
         return; // Nothing else is allowed to run without valid auth
     }
 
