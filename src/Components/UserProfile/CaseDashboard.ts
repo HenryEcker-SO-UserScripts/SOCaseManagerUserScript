@@ -5,9 +5,9 @@ import {
     type CaseSummaryPageResponse,
     type CaseSummaryPostSummary,
     fetchFromAWS
-} from '../../AWSAPI';
-import {fetchFromSEAPI, type SEAPIResponse} from '../../SEAPI';
-import {buildCheckmarkSvg} from '../../SVGBuilders';
+} from '../../API/AWSAPI';
+import {fetchFromSEAPI, type SEAPIResponse} from '../../API/SEAPI';
+import {buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 
 
 function buildCaseManagerPane(userId: number, isActive: boolean) {

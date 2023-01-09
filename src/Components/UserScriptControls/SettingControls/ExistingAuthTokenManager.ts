@@ -1,5 +1,5 @@
-import {fetchFromAWS} from '../../../AWSAPI';
-import {accessToken, seApiToken} from '../../../gmAPI';
+import {fetchFromAWS} from '../../../API/AWSAPI';
+import {accessToken, seApiToken} from '../../../API/gmAPI';
 
 export function buildExistingTokensControls(): JQuery {
     return $('<div></div>')

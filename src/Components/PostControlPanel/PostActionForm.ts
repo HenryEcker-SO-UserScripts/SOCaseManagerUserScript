@@ -1,4 +1,4 @@
-import {fetchFromAWS, type PostActionType} from '../../AWSAPI';
+import {fetchFromAWS, type PostActionType} from '../../API/AWSAPI';
 import {getActionsPopoverId, getTimelineButtonId, popoverMountPointClass} from './ElementIdGenerators';
 import {activateTimelineButton} from './PostTimeline';
 
