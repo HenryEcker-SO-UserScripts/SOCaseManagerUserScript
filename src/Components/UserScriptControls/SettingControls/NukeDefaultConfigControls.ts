@@ -1,6 +1,6 @@
-import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../gmAPI';
+import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
 import {buildNukeOptionElements, getCheckboxValuesFromParentContainer} from '../../PostControlPanel/PostModTools';
-import {getMessageFromCaughtElement} from '../../../ErrorHandlingUtil';
+import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
 
 export function buildNukeConfigControls(): JQuery {
     return $('<div></div>')

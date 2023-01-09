@@ -1,5 +1,5 @@
-import {requestNewJwt, seTokenAuthRoute} from './AWSAPI';
-import {seApiToken} from './gmAPI';
+import {requestNewJwt, seTokenAuthRoute} from '../API/AWSAPI';
+import {seApiToken} from '../API/gmAPI';
 
 
 export function startAuthFlow() {

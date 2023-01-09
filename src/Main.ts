@@ -1,13 +1,9 @@
-import {startAuthFlow} from './ClientSideAuthFlow';
-import {accessToken} from './gmAPI';
+import {startAuthFlow} from './Components/ClientSideAuthFlow';
+import {accessToken} from './API/gmAPI';
 import {buildAnswerControlPanel} from './Components/PostControlPanel/PostControlPanelMain';
 import {buildUserScriptSettingsNav} from './Components/UserScriptControls/UserScriptControlsMain';
 import {buildProfilePage} from './Components/UserProfile/UserProfileMain';
 import {buildPlagiaristTab} from './Components/UserSearch/UserSearchMain';
-
-StackExchange.ready(() => {
-    UserScript();
-});
 
 function UserScript() {
     // API TOKEN IS REQUIRED
@@ -26,3 +22,7 @@ function UserScript() {
         buildProfilePage();
     }
 }
+
+StackExchange.ready(() => {
+    UserScript();
+});

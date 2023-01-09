@@ -1,4 +1,4 @@
-import {seTokenAuthRoute} from '../../../AWSAPI';
+import {seTokenAuthRoute} from '../../../API/AWSAPI';
 
 export function buildTokenIssuer(): JQuery {
     return $('<div></div>')

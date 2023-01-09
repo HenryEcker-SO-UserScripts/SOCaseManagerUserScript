@@ -1,5 +1,5 @@
-import {fetchFromAWS} from '../../AWSAPI';
-import {buildAlertSvg} from '../../SVGBuilders';
+import {fetchFromAWS} from '../../API/AWSAPI';
+import {buildAlertSvg} from '../../Utils/SVGBuilders';
 import {CaseManagerControlPanel} from './CaseDashboard';
 import {buildAnswerSummaryIndicator} from './PostActionSummaryIcons';
 

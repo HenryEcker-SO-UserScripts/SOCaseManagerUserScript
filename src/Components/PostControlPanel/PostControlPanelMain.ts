@@ -1,4 +1,4 @@
-import {getSummaryPostInfoFromIds} from '../../AWSAPI';
+import {getSummaryPostInfoFromIds} from '../../API/AWSAPI';
 import {buildModTools} from './PostModTools';
 import {buildActionsComponent} from './PostActionForm';
 import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
