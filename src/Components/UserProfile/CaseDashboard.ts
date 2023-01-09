@@ -5,11 +5,9 @@ import {
     type CaseSummaryPageResponse,
     type CaseSummaryPostSummary,
     fetchFromAWS
-} from '../AWSAPI';
-import {fetchFromSEAPI, type SEAPIResponse, type StackExchangeAPI} from '../SEAPI';
-import {buildCheckmarkSvg} from '../SVGBuilders';
-
-declare const StackExchange: StackExchangeAPI;
+} from '../../AWSAPI';
+import {fetchFromSEAPI, type SEAPIResponse} from '../../SEAPI';
+import {buildCheckmarkSvg} from '../../SVGBuilders';
 
 
 function buildCaseManagerPane(userId: number, isActive: boolean) {
@@ -53,59 +51,60 @@ function buildCaseManagerPane(userId: number, isActive: boolean) {
     const button = $(`<button class="ml16 s-btn ${config['buttonClasses']}">${config['buttonText']}</button>`);
     button.on('click', (ev) => {
         ev.preventDefault();
-        void StackExchange.helpers.showConfirmModal(config['modalOptions']).then(shouldContinue => {
-            if (shouldContinue) {
+        void StackExchange.helpers.showConfirmModal(config['modalOptions'])
+            .then(shouldContinue => {
+                if (shouldContinue) {
 
-                void (isActive ?
-                        fetchFromAWS(`/case/${config['apiRoute']}`, {
-                            'method': 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({'userId': userId})
-                        })
-                        :
-
-                        // Grab user display name from API
-                        fetchFromSEAPI(`/users/${userId}`, 'filter=!LnNkvqQOuAK0z-T)oydzPI')
-                            .then(res => res.json())
-                            .then((resData: SEAPIResponse<{ user_id: number; display_name: string; profile_image: string; }>) => {
-                                if (resData.items.length === 0) {
-                                    throw Error('User not found!');
-                                }
-                                const user = resData.items[0];
-                                // Pass user info to CM
-                                return fetchFromAWS(`/case/${config['apiRoute']}`, {
-                                    'method': 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        'userId': user['user_id'],
-                                        'displayName': user['display_name'],
-                                        'profileImage': user['profile_image']
-                                    })
-                                });
+                    void (isActive ?
+                            fetchFromAWS(`/case/${config['apiRoute']}`, {
+                                'method': 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({'userId': userId})
                             })
-                ).then((res) => {
-                    if (res.status === 200) {
-                        return res.json().then((resData: CaseStateChangeResponse) => {
-                            return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
-                        });
-                    } else if (res.status === 409) {
-                        // Conflict means that the state is already in the appropriate configuration
-                        return res.json().then((resData: CaseStateChangeResponse) => {
-                            StackExchange.helpers.showToast(resData['message'], {
-                                transientTimeout: 10000,
-                                type: 'warning'
+                            :
+
+                            // Grab user display name from API
+                            fetchFromSEAPI(`/users/${userId}`, 'filter=!LnNkvqQOuAK0z-T)oydzPI')
+                                .then(res => res.json())
+                                .then((resData: SEAPIResponse<{ user_id: number; display_name: string; profile_image: string; }>) => {
+                                    if (resData.items.length === 0) {
+                                        throw Error('User not found!');
+                                    }
+                                    const user = resData.items[0];
+                                    // Pass user info to CM
+                                    return fetchFromAWS(`/case/${config['apiRoute']}`, {
+                                        'method': 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            'userId': user['user_id'],
+                                            'displayName': user['display_name'],
+                                            'profileImage': user['profile_image']
+                                        })
+                                    });
+                                })
+                    ).then((res) => {
+                        if (res.status === 200) {
+                            return res.json().then((resData: CaseStateChangeResponse) => {
+                                return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
                             });
-                            return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
-                        });
-                    }
-                    throw Error('Something went wrong');
-                });
-            }
-        });
+                        } else if (res.status === 409) {
+                            // Conflict means that the state is already in the appropriate configuration
+                            return res.json().then((resData: CaseStateChangeResponse) => {
+                                StackExchange.helpers.showToast(resData['message'], {
+                                    transientTimeout: 10000,
+                                    type: 'warning'
+                                });
+                                return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
+                            });
+                        }
+                        throw Error('Something went wrong');
+                    });
+                }
+            });
     });
     container.append(button);
     return container;

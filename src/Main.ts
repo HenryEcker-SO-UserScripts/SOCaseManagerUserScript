@@ -1,13 +1,9 @@
 import {startAuthFlow} from './ClientSideAuthFlow';
 import {accessToken} from './gmAPI';
-import {buildAnswerControlPanel} from './Components/AnswerControlPanel/AnswerControlPanel';
-import {buildCurrentUserProfilePage} from './Components/UserSelfProfilePage';
-import {buildProfilePage} from './Components/UserProfilePage';
-import {buildPlagiaristTab} from './Components/UserSearchPage';
-import {type StackExchangeAPI} from './SEAPI';
-
-declare const StackExchange: StackExchangeAPI;
-
+import {buildAnswerControlPanel} from './Components/PostControlPanel/PostControlPanelMain';
+import {buildUserScriptSettingsNav} from './Components/UserScriptControls/UserScriptControlsMain';
+import {buildProfilePage} from './Components/UserProfile/UserProfileMain';
+import {buildPlagiaristTab} from './Components/UserSearch/UserSearchMain';
 
 StackExchange.ready(() => {
     UserScript();
@@ -25,7 +21,7 @@ function UserScript() {
     } else if (window.location.pathname.match(/^\/users$/) !== null) {
         buildPlagiaristTab();
     } else if (window.location.pathname.match(new RegExp(`^/users/${StackExchange.options.user.userId}.*`)) !== null) {
-        buildCurrentUserProfilePage();
+        buildUserScriptSettingsNav();
     } else if (window.location.pathname.match(/^\/users\/.*/) !== null) {
         buildProfilePage();
     }

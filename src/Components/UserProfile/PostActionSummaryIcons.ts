@@ -1,5 +1,5 @@
-import {Feedback, getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../AWSAPI';
-import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg} from '../SVGBuilders';
+import {Feedback, getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../../AWSAPI';
+import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg} from '../../SVGBuilders';
 
 export function buildAnswerSummaryIndicator() {
     addSummaryActionIndicators();
