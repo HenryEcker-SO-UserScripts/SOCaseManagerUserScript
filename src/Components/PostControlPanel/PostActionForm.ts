@@ -1,9 +1,7 @@
 import {fetchFromAWS, type PostActionType} from '../../AWSAPI';
-import {type StackExchangeAPI} from '../../SEAPI';
 import {getActionsPopoverId, getTimelineButtonId, popoverMountPointClass} from './ElementIdGenerators';
 import {activateTimelineButton} from './PostTimeline';
 
-declare const StackExchange: StackExchangeAPI;
 
 export function buildActionsComponent(answerId: number, ownerId: number) {
     const controlButton = $(

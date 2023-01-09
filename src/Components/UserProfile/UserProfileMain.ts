@@ -1,7 +1,7 @@
-import {fetchFromAWS} from '../AWSAPI';
-import {buildAlertSvg} from '../SVGBuilders';
-import {CaseManagerControlPanel} from './CaseManagerControlPanel';
-import {buildAnswerSummaryIndicator} from './UserProfileAnswerSummaryIndicator';
+import {fetchFromAWS} from '../../AWSAPI';
+import {buildAlertSvg} from '../../SVGBuilders';
+import {CaseManagerControlPanel} from './CaseDashboard';
+import {buildAnswerSummaryIndicator} from './PostActionSummaryIcons';
 
 
 export function buildProfilePage() {

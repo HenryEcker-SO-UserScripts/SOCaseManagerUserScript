@@ -3,8 +3,8 @@ import {
     fetchFromAWS,
     type OpenCasesSummaryPageResponse,
     type UserCaseSummaryEntry
-} from '../AWSAPI';
-import {buildSearchSvg} from '../SVGBuilders';
+} from '../../AWSAPI';
+import {buildSearchSvg} from '../../SVGBuilders';
 
 
 function buildUserTile(account_id: number, profile_image: null | string, display_name: string, current_state: string, event_date: string) {

@@ -1,10 +1,7 @@
 import {getSummaryPostInfoFromIds} from '../../AWSAPI';
-import type {StackExchangeAPI} from '../../SEAPI';
 import {buildModTools} from './PostModTools';
 import {buildActionsComponent} from './PostActionForm';
 import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
-
-declare const StackExchange: StackExchangeAPI;
 
 
 export function buildAnswerControlPanel() {

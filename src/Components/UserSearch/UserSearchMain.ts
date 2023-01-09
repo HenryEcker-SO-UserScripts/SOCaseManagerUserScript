@@ -1,4 +1,4 @@
-import {CasesUserList} from './CasesList';
+import {CasesUserList} from './CaseSearchResults';
 
 export function buildPlagiaristTab() {
     // User Filter Buttons

@@ -1,10 +1,8 @@
 import {Feedback, fetchFromAWS} from '../../AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../gmAPI';
-import type {FlagOtherResponse, PostDeleteResponse, StackExchangeAPI} from '../../SEAPI';
+import type {FlagOtherResponse, PostDeleteResponse} from '../../SEAPI';
 import {getModMenuPopoverId} from './ElementIdGenerators';
 
-
-declare const StackExchange: StackExchangeAPI;
 
 export function buildModTools(isDeleted: boolean, answerId: number, postOwnerId: number) {
     const baseId = getModMenuPopoverId(answerId);
@@ -29,7 +27,7 @@ function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
         shouldFlagCheckbox,
         shouldCommentCheckbox,
         shouldLogCheckbox
-    } = buildNukeOptionControls(baseId, nukePostConfig);
+    } = buildNukeOptionElements(baseId, nukePostConfig);
     const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
     const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
 
@@ -130,7 +128,7 @@ function hasCheckedChild(e: JQuery): boolean {
     return (e.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).is(':checked');
 }
 
-export function buildNukeOptionControls(baseId: string, nukePostConfig: CmNukePostConfig) {
+export function buildNukeOptionElements(baseId: string, nukePostConfig: CmNukePostConfig) {
     const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
     const textarea: JQuery<HTMLTextAreaElement> = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
     textarea.val(nukePostConfig.detailText);

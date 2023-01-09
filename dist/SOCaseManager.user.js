@@ -141,7 +141,7 @@
     }
     function buildPopOver(baseId, answerId, postOwnerId) {
         const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls(baseId, nukePostConfig);
+        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionElements(baseId, nukePostConfig);
         const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
         const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
         nukeButton.on("click", (ev => {
@@ -175,7 +175,7 @@
     function hasCheckedChild(e) {
         return e.find('input[type="checkbox"]').is(":checked");
     }
-    function buildNukeOptionControls(baseId, nukePostConfig) {
+    function buildNukeOptionElements(baseId, nukePostConfig) {
         const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
         const textarea = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
         textarea.val(nukePostConfig.detailText);
@@ -448,16 +448,6 @@
             return Number(match[1]);
         }
     }
-    function buildUserScriptSettingsPanel() {
-        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
-        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
-        toolGrid.append(buildExistingTokensControls());
-        toolGrid.append(buildTokenIssuer());
-        if (StackExchange.options.user.isModerator) {
-            toolGrid.append(buildNukeConfigControls());
-        }
-        return $(document.createDocumentFragment()).append(container).append(toolGrid);
-    }
     function buildExistingTokensControls() {
         const existingTokensComponent = $("<div></div>");
         existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
@@ -508,44 +498,70 @@
         return existingTokensComponent;
     }
     function buildTokenIssuer() {
-        const getNewToken = $("<div></div>");
-        getNewToken.append('<h3 class="fs-title mb12">Issue new token</h3>');
-        getNewToken.append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>");
-        getNewToken.append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
-        return getNewToken;
+        return $("<div></div>").append('<h3 class="fs-title mb12">Issue new token</h3>').append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>").append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
+    }
+    function getMessageFromCaughtElement(e) {
+        if (e instanceof Error) {
+            return e.message;
+        } else if ("string" === typeof e) {
+            return e;
+        } else {
+            console.error(e);
+            return "Something went wrong!";
+        }
     }
     function buildNukeConfigControls() {
-        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-        const templateIssuer = $("<div></div>");
-        templateIssuer.append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>');
-        const templateForm = $('<form class="d-flex fd-column g8"></form>');
-        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionControls("nuke-config", nukePostConfig);
-        templateForm.append(textareaLabel);
-        templateForm.append(textarea);
-        templateForm.append(checkboxContainer);
-        templateForm.append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
-        function formHandler(ev) {
-            ev.preventDefault();
-            nukePostConfig.detailText = textarea.val() || "";
-            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-            nukePostConfig.flag = isFlagChecked;
-            nukePostConfig.comment = isCommentChecked;
-            nukePostConfig.log = isLogChecked;
-            GM_setValue(nukePostOptions, JSON.stringify(nukePostConfig));
-            StackExchange.helpers.showToast("Config updated successfully!", {
-                type: "success",
-                transientTimeout: 3e3
-            });
-        }
-        templateForm.on("submit", formHandler);
-        templateIssuer.append(templateForm);
-        return templateIssuer;
+        return $("<div></div>").append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>').append(buildTemplateForm());
     }
-    function buildCurrentUserProfilePage() {
-        $(".user-show-new .s-navigation:eq(0)").append($(`<a href="${window.location.pathname}?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>`));
-        if (window.location.search.startsWith("?tab=case-manager-settings")) {
-            $("#mainbar-full").empty().append(buildUserScriptSettingsPanel());
+    function buildTemplateForm() {
+        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+        const templateForm = $('<form class="d-flex fd-column g8"></form>');
+        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionElements("nuke-config", nukePostConfig);
+        templateForm.on("submit", (function(ev) {
+            ev.preventDefault();
+            try {
+                const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+                const newConfig = {
+                    detailText: textarea.val() || "",
+                    flag: isFlagChecked,
+                    comment: isCommentChecked,
+                    log: isLogChecked
+                };
+                GM_setValue(nukePostOptions, JSON.stringify(newConfig));
+                StackExchange.helpers.showToast("Config updated successfully!", {
+                    type: "success",
+                    transientTimeout: 3e3
+                });
+            } catch (e) {
+                StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
+                    type: "danger",
+                    transientTimeout: 5e3
+                });
+            }
+        }));
+        return templateForm.append(textareaLabel).append(textarea).append(checkboxContainer).append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
+    }
+    function buildUserScriptSettingsPanel() {
+        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
+        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
+        toolGrid.append(buildExistingTokensControls());
+        toolGrid.append(buildTokenIssuer());
+        if (StackExchange.options.user.isModerator) {
+            toolGrid.append(buildNukeConfigControls());
         }
+        return $(document.createDocumentFragment()).append(container).append(toolGrid);
+    }
+    function buildUserScriptSettingsNav() {
+        addSettingsNavLink();
+        if (window.location.search.startsWith("?tab=case-manager-settings")) {
+            buildAndAttachSettingsPanel();
+        }
+    }
+    function addSettingsNavLink() {
+        $(".user-show-new .s-navigation:eq(0)").append($(`<a href="${window.location.pathname}?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>`));
+    }
+    function buildAndAttachSettingsPanel() {
+        $("#mainbar-full").empty().append(buildUserScriptSettingsPanel());
     }
     function fetchFromSEAPI(path, search) {
         const usp = new URLSearchParams(search);
@@ -1166,7 +1182,7 @@
             } else if (null !== window.location.pathname.match(/^\/users$/)) {
                 buildPlagiaristTab();
             } else if (null !== window.location.pathname.match(new RegExp(`^/users/${StackExchange.options.user.userId}.*`))) {
-                buildCurrentUserProfilePage();
+                buildUserScriptSettingsNav();
             } else if (null !== window.location.pathname.match(/^\/users\/.*/)) {
                 buildProfilePage();
             }

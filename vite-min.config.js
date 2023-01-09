@@ -9,7 +9,10 @@ minifiedConfig['build']['emptyOutDir'] = false;
 minifiedConfig['build']['minify'] = 'terser';
 minifiedConfig['build']['terserOptions'] = {
     module: true,
-    toplevel: true
+    toplevel: true,
+    compress: {
+        passes: 50
+    }
 };
 
 export default minifiedConfig;
