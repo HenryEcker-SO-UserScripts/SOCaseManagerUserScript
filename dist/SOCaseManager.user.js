@@ -102,9 +102,8 @@
     const seTokenAuthRoute = "https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
     function startAuthFlow() {
         const authModalId = "case-manager-client-auth-modal";
-        const modal = $(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`);
-        const modalBody = $(`<div class="s-modal--dialog" role="document"><h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1><p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p><ol><li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li><li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li></ol><div class="d-flex g8 gsx s-modal--footer"><button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button><button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button></div><button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div>`);
-        modalBody.find(`#${authModalId}-save`).on("click", (ev => {
+        const submitButton = $(`<button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button>`);
+        submitButton.on("click", (ev => {
             ev.preventDefault();
             const inputValue = $(`#${authModalId}-input`).val();
             if (void 0 !== inputValue && inputValue.length > 0) {
@@ -114,8 +113,7 @@
                 }));
             }
         }));
-        modal.append(modalBody);
-        $("body").append(modal);
+        $("body").append($(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`).append($('<div class="s-modal--dialog" role="document"></div>').append($('<h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1>')).append($('<p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p>')).append($("<ol></ol>").append(`<li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li>`).append(`<li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li>`)).append($('<div class="d-flex g8 gsx s-modal--footer"></div>').append(submitButton).append('<button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>')).append('<button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button>')));
     }
     const popoverMountPointClass = "popover-mount-point";
     function getTimelineButtonId(answerId) {
@@ -449,34 +447,38 @@
         }
     }
     function buildExistingTokensControls() {
-        const existingTokensComponent = $("<div></div>");
-        existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
-        const tokenList = $("<div></div>");
-        existingTokensComponent.append(tokenList);
+        return $("<div></div>").append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>').append(buildTokenList()).append(buildDeAuthoriseButton());
+    }
+    function buildTokenList() {
+        const tokenList = $('<div><div class="is-loading">Loading...</div></div>');
         fetchFromAWS("/auth/credentials").then((res => res.json())).then((tokens => {
+            tokenList.empty();
             tokens.forEach((token => {
-                const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
-                tokenList.append(tokenRow);
-                tokenRow.append(`<span>${token}</span>`);
-                const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
-                invalidateButton.on("click", (ev => {
-                    ev.preventDefault();
-                    fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
-                        if (200 === res.status) {
-                            tokenRow.remove();
-                            if (GM_getValue(seApiToken) === token) {
-                                GM_deleteValue(seApiToken);
-                                GM_deleteValue(accessToken);
-                                window.location.reload();
-                            }
-                        }
-                    }));
-                }));
-                tokenRow.append(invalidateButton);
+                tokenList.append(buildTokenRow(token));
             }));
         }));
+        return tokenList;
+    }
+    function buildTokenRow(token) {
+        const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
+        const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
+        invalidateButton.on("click", (ev => {
+            ev.preventDefault();
+            fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
+                if (200 === res.status) {
+                    tokenRow.remove();
+                    if (GM_getValue(seApiToken) === token) {
+                        GM_deleteValue(seApiToken);
+                        GM_deleteValue(accessToken);
+                        window.location.reload();
+                    }
+                }
+            }));
+        }));
+        return tokenRow.append(`<span>${token}</span>`).append(invalidateButton);
+    }
+    function buildDeAuthoriseButton() {
         const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
-        existingTokensComponent.append(deAuthoriseButton);
         deAuthoriseButton.on("click", (ev => {
             ev.preventDefault();
             StackExchange.helpers.showConfirmModal({
@@ -495,7 +497,7 @@
                 }
             }));
         }));
-        return existingTokensComponent;
+        return deAuthoriseButton;
     }
     function buildTokenIssuer() {
         return $("<div></div>").append('<h3 class="fs-title mb12">Issue new token</h3>').append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>").append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
