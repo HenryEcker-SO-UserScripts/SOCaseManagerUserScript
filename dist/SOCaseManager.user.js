@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.1
+// @version     0.2.2
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -100,12 +100,24 @@
         }
     }
     const seTokenAuthRoute = "https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
-    function startAuthFlow() {
+    function buildClientSideAuthModal() {
         const authModalId = "case-manager-client-auth-modal";
+        $("body").append($(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`).append(buildModal(authModalId)));
+    }
+    function buildModal(authModalId) {
+        return $('<div class="s-modal--dialog" role="document"></div>').append($(`<h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1>`)).append($(`<p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p>`)).append(buildOrderedListOfInstructions(authModalId)).append(buildFormControlButtons(authModalId)).append('<button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button>');
+    }
+    function getAccessTokenInputId(authModalId) {
+        return `${authModalId}-input`;
+    }
+    function buildOrderedListOfInstructions(authModalId) {
+        return $("<ol></ol>").append(`<li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li>`).append(`<li><label for="${getAccessTokenInputId(authModalId)}" class="mr6">Access Token:</label><input style="width:225px" id="${getAccessTokenInputId(authModalId)}"/></li>`);
+    }
+    function buildFormControlButtons(authModalId) {
         const submitButton = $(`<button class="flex--item s-btn s-btn__primary" type="button" id="${authModalId}-save">Save</button>`);
         submitButton.on("click", (ev => {
             ev.preventDefault();
-            const inputValue = $(`#${authModalId}-input`).val();
+            const inputValue = $(`#${getAccessTokenInputId(authModalId)}`).val();
             if (void 0 !== inputValue && inputValue.length > 0) {
                 GM_setValue(seApiToken, inputValue);
                 requestNewJwt().then((() => {
@@ -113,7 +125,7 @@
                 }));
             }
         }));
-        $("body").append($(`<aside class="s-modal" id="${authModalId}" role="dialog" aria-labelledby="${authModalId}-modal-title" aria-describedby="${authModalId}-modal-description" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"></aside>`).append($('<div class="s-modal--dialog" role="document"></div>').append($('<h1 class="s-modal--header" id="${authModalId}-modal-title">Authorise Case Manager</h1>')).append($('<p class="s-modal--body" id="${authModalId}-modal-description">The Case Manager requires API access validate your user account.</p>')).append($("<ol></ol>").append(`<li><a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Authorise App</a></li>`).append(`<li><label for="${authModalId}-input" class="mr6">Access Token:</label><input style="width:225px" id="${authModalId}-input"/></li>`)).append($('<div class="d-flex g8 gsx s-modal--footer"></div>').append(submitButton).append('<button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>')).append('<button class="s-modal--close s-btn s-btn__muted" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button>')));
+        return $('<div class="d-flex g8 gsx s-modal--footer"></div>').append(submitButton).append('<button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>');
     }
     const popoverMountPointClass = "popover-mount-point";
     function getTimelineButtonId(answerId) {
@@ -1174,9 +1186,6 @@
             (new CasesUserList).init();
         }
     }
-    StackExchange.ready((() => {
-        UserScript();
-    }));
     function UserScript() {
         if (null !== GM_getValue(accessToken, null)) {
             if (null !== window.location.pathname.match(/^\/questions\/.*/)) {
@@ -1189,7 +1198,10 @@
                 buildProfilePage();
             }
         } else {
-            startAuthFlow();
+            buildClientSideAuthModal();
         }
     }
+    StackExchange.ready((() => {
+        UserScript();
+    }));
 })();
