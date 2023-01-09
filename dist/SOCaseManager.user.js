@@ -966,14 +966,14 @@
         }
     }
     function getUserIdFromWindowLocation() {
-        const patternMatcher = window.location.pathname.match(/^\/users\/\d+/g) || window.location.pathname.match(/^\/users\/account-info\/\d+/g);
+        const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
         if (null === patternMatcher || 1 !== patternMatcher.length) {
             throw Error("Something changed in user path!");
         }
         return Number(patternMatcher[0].split("/").at(-1));
     }
     function buildProfileNavPill(userId) {
-        const navButton = $(`<a href="${window.location.pathname}?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
+        const navButton = $(`<a href="/users/${userId}/?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
         fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
             if (resData.is_known_user) {
                 navButton.prepend(buildAlertSvg(16, 20));

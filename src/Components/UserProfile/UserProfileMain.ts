@@ -26,7 +26,7 @@ export function buildProfilePage() {
 
 
 function getUserIdFromWindowLocation() {
-    const patternMatcher = window.location.pathname.match(/^\/users\/\d+/g) || window.location.pathname.match(/^\/users\/account-info\/\d+/g);
+    const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
     if (patternMatcher === null || patternMatcher.length !== 1) {
         throw Error('Something changed in user path!');
     }
@@ -34,7 +34,7 @@ function getUserIdFromWindowLocation() {
 }
 
 function buildProfileNavPill(userId: number) {
-    const navButton = $(`<a href="${window.location.pathname}${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
+    const navButton = $(`<a href="/users/${userId}/${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
     void fetchFromAWS(`/case/user/${userId}`)
         .then(res => res.json())
         .then((resData: { is_known_user: boolean; }) => {
