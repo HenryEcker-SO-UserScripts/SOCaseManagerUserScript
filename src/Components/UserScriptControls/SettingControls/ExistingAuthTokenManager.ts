@@ -2,44 +2,56 @@ import {fetchFromAWS} from '../../../AWSAPI';
 import {accessToken, seApiToken} from '../../../gmAPI';
 
 export function buildExistingTokensControls(): JQuery {
-    const existingTokensComponent = $('<div></div>');
+    return $('<div></div>')
+        .append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>')
+        .append(buildTokenList())
+        .append(buildDeAuthoriseButton());
+}
 
-    existingTokensComponent.append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>');
-    const tokenList = $('<div></div>');
-    existingTokensComponent.append(tokenList);
+function buildTokenList() {
+    // Start with loading indicator
+    const tokenList = $('<div><div class="is-loading">Loading...</div></div>');
 
+    // Make fetch request for credentials
     void fetchFromAWS('/auth/credentials')
         .then(res => res.json())
         .then((tokens: string[]) => {
-            // Token Invalidator
-            tokens.forEach((token) => {
-                const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
-                tokenList.append(tokenRow);
+            tokenList.empty(); // Clear out loading indicator
 
-                tokenRow.append(`<span>${token}</span>`);
-                const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
-                invalidateButton.on('click', (ev) => {
-                    ev.preventDefault();
-                    void fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res) => {
-                        if (res.status === 200) {
-                            // Get rid of the row from the table
-                            tokenRow.remove();
-                            if (GM_getValue(seApiToken) === token) {
-                                // If invalidating the local storage key also remove from GM storage
-                                GM_deleteValue(seApiToken);
-                                GM_deleteValue(accessToken);
-                                window.location.reload();
-                            }
-                        }
-                    });
-                });
-                tokenRow.append(invalidateButton);
+            tokens.forEach((token) => {
+                tokenList.append(buildTokenRow(token));
             });
         });
+    return tokenList;
+}
 
+function buildTokenRow(token: string) {
+    const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
+
+    const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
+
+    invalidateButton.on('click', (ev) => {
+        ev.preventDefault();
+        void fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res) => {
+            if (res.status === 200) {
+                // Delete the row from the table
+                tokenRow.remove();
+                if (GM_getValue(seApiToken) === token) {
+                    // If invalidating the local storage key also remove from GM storage
+                    GM_deleteValue(seApiToken);
+                    GM_deleteValue(accessToken);
+                    window.location.reload();
+                }
+            }
+        });
+    });
+    return tokenRow
+        .append(`<span>${token}</span>`)
+        .append(invalidateButton);
+}
+
+function buildDeAuthoriseButton() {
     const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
-    existingTokensComponent.append(deAuthoriseButton);
-
     deAuthoriseButton.on('click', (ev) => {
         ev.preventDefault();
         void StackExchange.helpers.showConfirmModal(
@@ -62,5 +74,5 @@ export function buildExistingTokensControls(): JQuery {
             }
         });
     });
-    return existingTokensComponent;
+    return deAuthoriseButton;
 }
