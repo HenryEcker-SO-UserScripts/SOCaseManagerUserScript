@@ -16,7 +16,7 @@ function UserScript() {
         buildAnswerControlPanel();
     } else if (window.location.pathname.match(/^\/users$/) !== null) {
         buildPlagiaristTab();
-    } else if (window.location.pathname.match(new RegExp(`^/users/${StackExchange.options.user.userId}.*`)) !== null) {
+    } else if (window.location.pathname.match(new RegExp(`^/users/(account-info/)?${StackExchange.options.user.userId}.*`)) !== null) {
         buildUserScriptSettingsNav();
     } else if (window.location.pathname.match(/^\/users\/.*/) !== null) {
         buildProfilePage();
