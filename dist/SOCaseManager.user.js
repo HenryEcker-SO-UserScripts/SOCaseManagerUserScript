@@ -572,7 +572,7 @@
         }
     }
     function addSettingsNavLink() {
-        $(".user-show-new .s-navigation:eq(0)").append($(`<a href="${window.location.pathname}?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>`));
+        $(".user-show-new .s-navigation:eq(0)").append($('<a href="/users/current?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>'));
     }
     function buildAndAttachSettingsPanel() {
         $("#mainbar-full").empty().append(buildUserScriptSettingsPanel());
@@ -1192,7 +1192,7 @@
                 buildAnswerControlPanel();
             } else if (null !== window.location.pathname.match(/^\/users$/)) {
                 buildPlagiaristTab();
-            } else if (null !== window.location.pathname.match(new RegExp(`^/users/${StackExchange.options.user.userId}.*`))) {
+            } else if (null !== window.location.pathname.match(new RegExp(`^/users/(account-info/)?${StackExchange.options.user.userId}.*`))) {
                 buildUserScriptSettingsNav();
             } else if (null !== window.location.pathname.match(/^\/users\/.*/)) {
                 buildProfilePage();

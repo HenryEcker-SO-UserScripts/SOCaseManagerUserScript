@@ -11,7 +11,7 @@ function addSettingsNavLink() {
     $('.user-show-new .s-navigation:eq(0)') // Nav buttons on left
         .append(
             // Add Nav button to case manager Settings
-            $(`<a href="${window.location.pathname}${tabIdentifiers.settings}" class="s-navigation--item">Case Manager Settings</a>`)
+            $(`<a href="/users/current${tabIdentifiers.settings}" class="s-navigation--item">Case Manager Settings</a>`)
         );
 }
 
