@@ -12,6 +12,7 @@ fullConfig['build']['terserOptions'] = {
         defaults: false,
         properties: true,
         side_effects: true,
+        computed_props: true,
         evaluate: true,
         if_return: true,
         keep_classnames: true,

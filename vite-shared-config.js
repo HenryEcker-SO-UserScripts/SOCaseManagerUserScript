@@ -30,6 +30,13 @@ const defObj = {
         seAPIBase: 'https://api.stackexchange.com/2.3',
         apiKey: 'BkvRpNB*IzKMdjAcikc4jA(('
     },
+    Feedback: {
+        LooksOK: 1,
+        Edited: 2,
+        Plagiarised: 3,
+        Deleted: 4,
+        Suspicious: 5
+    }
 };
 
 export default (fileName) => {

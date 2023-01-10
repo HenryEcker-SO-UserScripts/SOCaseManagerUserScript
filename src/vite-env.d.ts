@@ -23,3 +23,11 @@ declare const searchParamKeys: {
     tableFilter: string;
     tab: string;
 };
+
+declare const Feedback: {
+    LooksOK: number;
+    Edited: number;
+    Plagiarised: number;
+    Deleted: number;
+    Suspicious: number;
+};

@@ -1,4 +1,4 @@
-import {Feedback, fetchFromAWS} from '../../API/AWSAPI';
+import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import type {FlagOtherResponse, PostDeleteResponse} from '../../API/SEAPI';
 import {getModMenuPopoverId} from './ElementIdGenerators';

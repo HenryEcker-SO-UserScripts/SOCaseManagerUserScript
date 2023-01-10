@@ -1,4 +1,4 @@
-import {Feedback, getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../../API/AWSAPI';
+import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../../API/AWSAPI';
 import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg} from '../../Utils/SVGBuilders';
 
 export function buildAnswerSummaryIndicator() {
