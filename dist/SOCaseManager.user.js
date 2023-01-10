@@ -39,13 +39,6 @@
         log: true
     });
     const nukePostOptions = "cm_nuke_post_config";
-    const Feedback = {
-        LooksOK: 1,
-        Edited: 2,
-        Plagiarised: 3,
-        Deleted: 4,
-        Suspicious: 5
-    };
     function requestNewJwt() {
         return fetchFromAWS("/auth/cm/jwt", {
             method: "POST",
@@ -250,7 +243,7 @@
                 if (-1 !== ownerId) {
                     body.postOwnerId = ownerId;
                 }
-                body.actionIds = [ Feedback.Plagiarised, Feedback.Deleted ];
+                body.actionIds = [ 3, 4 ];
                 await fetchFromAWS(`/handle/post/${answerId}`, {
                     method: "POST",
                     headers: {
@@ -917,22 +910,22 @@
         getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then(renderAnswerSummaryIndicators);
     }
     const iconAttrMap = {
-        [Feedback.LooksOK]: {
+        1: {
             desc: "Looks OK",
             colourVar: "--green-600",
             svg: buildCheckmarkSvg(16)
         },
-        [Feedback.Edited]: {
+        2: {
             desc: "edited",
             colourVar: "--green-800",
             svg: buildEditPenSvg(16)
         },
-        [Feedback.Plagiarised]: {
+        3: {
             desc: "plagiarised",
             colourVar: "--red-600",
             svg: buildCaseSvg(16)
         },
-        [Feedback.Suspicious]: {
+        5: {
             desc: "suspicious",
             colourVar: "--yellow-700",
             svg: buildAlertSvg(16)
