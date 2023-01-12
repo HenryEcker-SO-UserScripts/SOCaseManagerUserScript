@@ -7,20 +7,10 @@ import {
     fetchFromAWS
 } from '../../API/AWSAPI';
 import {fetchFromSEAPI, type SEAPIResponse} from '../../API/SEAPI';
-import {buildAlertSvg, buildCheckmarkSvg} from '../../Utils/SVGBuilders';
+import {buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 
 
-export function buildAndAttachCaseManagerControlPanel() {
-    const userId = getUserIdFromWindowLocation();
-    const {tabContainer, navButton} = buildProfileNavPill(userId);
-
-    const selectedClass = 'is-selected';
-    // Make nav the only active class
-    tabContainer
-        .find('a')
-        .removeClass(selectedClass);
-    navButton
-        .addClass(selectedClass);
+export function buildAndAttachCaseManagerControlPanel(userId: number) {
     /***
      * Mods default to ?tab=activity while everyone else defaults to ?tab=profile
      * That is why the selector is the last div in #mainbar-full instead of #main-content
@@ -28,33 +18,6 @@ export function buildAndAttachCaseManagerControlPanel() {
     // Blank the content to make room for the UserScript
     $('#mainbar-full > div:last-child')
         .replaceWith(new CaseManagerControlPanel(userId).init());
-}
-
-
-function getUserIdFromWindowLocation() {
-    const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
-    if (patternMatcher === null || patternMatcher.length !== 1) {
-        throw Error('Something changed in user path!');
-    }
-    return Number(patternMatcher[0].split('/').at(-1));
-}
-
-function buildProfileNavPill(userId: number) {
-    const navButton = $(`<a href="/users/${userId}/${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
-    void fetchFromAWS(`/case/user/${userId}`)
-        .then(res => res.json())
-        .then((resData: { is_known_user: boolean; }) => {
-            if (resData['is_known_user']) {
-                navButton.prepend(buildAlertSvg(16, 20));
-            }
-        });
-
-    const tabContainer = $('.user-show-new .s-navigation:eq(0)');
-    tabContainer.append(navButton);
-    return {
-        tabContainer,
-        navButton
-    };
 }
 
 
