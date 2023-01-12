@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.2
+// @version     0.2.3
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -577,34 +577,8 @@
         usp.set("access_token", GM_getValue(seApiToken));
         return fetch(`https://api.stackexchange.com/2.3${path}?${usp.toString()}`);
     }
-    function buildAndAttachCaseManagerControlPanel() {
-        const userId = getUserIdFromWindowLocation();
-        const {tabContainer: tabContainer, navButton: navButton} = buildProfileNavPill(userId);
-        const selectedClass = "is-selected";
-        tabContainer.find("a").removeClass(selectedClass);
-        navButton.addClass(selectedClass);
+    function buildAndAttachCaseManagerControlPanel(userId) {
         $("#mainbar-full > div:last-child").replaceWith(new CaseManagerControlPanel(userId).init());
-    }
-    function getUserIdFromWindowLocation() {
-        const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
-        if (null === patternMatcher || 1 !== patternMatcher.length) {
-            throw Error("Something changed in user path!");
-        }
-        return Number(patternMatcher[0].split("/").at(-1));
-    }
-    function buildProfileNavPill(userId) {
-        const navButton = $(`<a href="/users/${userId}/?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
-        fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
-            if (resData.is_known_user) {
-                navButton.prepend(buildAlertSvg(16, 20));
-            }
-        }));
-        const tabContainer = $(".user-show-new .s-navigation:eq(0)");
-        tabContainer.append(navButton);
-        return {
-            tabContainer: tabContainer,
-            navButton: navButton
-        };
     }
     function buildSummaryTableFilterOption(text, value, activeValue) {
         return `<option value="${value}"${activeValue === value ? " selected" : ""}>${text}</option>`;
@@ -976,11 +950,40 @@
         }));
     }
     function buildProfilePage() {
+        const userId = getUserIdFromWindowLocation();
+        buildLinkToCaseManager(userId);
         if (window.location.search.startsWith("?tab=case-manager")) {
-            buildAndAttachCaseManagerControlPanel();
+            buildAndAttachCaseManagerControlPanel(userId);
         } else if (window.location.search.startsWith("?tab=answers")) {
             buildAnswerSummaryIndicator();
         }
+    }
+    function getUserIdFromWindowLocation() {
+        const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
+        if (null === patternMatcher || 1 !== patternMatcher.length) {
+            throw Error("Something changed in user path!");
+        }
+        return Number(patternMatcher[0].split("/").at(-1));
+    }
+    function buildLinkToCaseManager(userId) {
+        const {tabContainer: tabContainer, navButton: navButton} = buildProfileNavPill(userId);
+        const selectedClass = "is-selected";
+        tabContainer.find("a").removeClass(selectedClass);
+        navButton.addClass(selectedClass);
+    }
+    function buildProfileNavPill(userId) {
+        const navButton = $(`<a href="/users/${userId}/?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
+        fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
+            if (resData.is_known_user) {
+                navButton.prepend(buildAlertSvg(16, 20));
+            }
+        }));
+        const tabContainer = $(".user-show-new .s-navigation:eq(0)");
+        tabContainer.append(navButton);
+        return {
+            tabContainer: tabContainer,
+            navButton: navButton
+        };
     }
     function buildUserTile(account_id, profile_image, display_name, current_state, event_date) {
         const link = `/users/${account_id}?tab=case-manager`;
