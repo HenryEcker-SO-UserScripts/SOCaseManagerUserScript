@@ -951,8 +951,9 @@
     }
     function buildProfilePage() {
         const userId = getUserIdFromWindowLocation();
-        buildLinkToCaseManager(userId);
+        const {tabContainer: tabContainer, navButton: navButton} = buildNavToCaseManager(userId);
         if (window.location.search.startsWith("?tab=case-manager")) {
+            markNavToCaseManagerActive(tabContainer, navButton);
             buildAndAttachCaseManagerControlPanel(userId);
         } else if (window.location.search.startsWith("?tab=answers")) {
             buildAnswerSummaryIndicator();
@@ -965,13 +966,12 @@
         }
         return Number(patternMatcher[0].split("/").at(-1));
     }
-    function buildLinkToCaseManager(userId) {
-        const {tabContainer: tabContainer, navButton: navButton} = buildProfileNavPill(userId);
+    function markNavToCaseManagerActive(tabContainer, navButton) {
         const selectedClass = "is-selected";
         tabContainer.find("a").removeClass(selectedClass);
         navButton.addClass(selectedClass);
     }
-    function buildProfileNavPill(userId) {
+    function buildNavToCaseManager(userId) {
         const navButton = $(`<a href="/users/${userId}/?tab=case-manager" class="s-navigation--item">Case Manager</a>`);
         fetchFromAWS(`/case/user/${userId}`).then((res => res.json())).then((resData => {
             if (resData.is_known_user) {

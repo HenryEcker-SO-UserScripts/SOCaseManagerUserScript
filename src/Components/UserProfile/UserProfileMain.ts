@@ -6,12 +6,12 @@ import {buildAnswerSummaryIndicator} from './PostActionSummaryIcons';
 
 export function buildProfilePage() {
     const userId = getUserIdFromWindowLocation();
-
     // Build Link on profile page (regardless of search params)
-    buildLinkToCaseManager(userId);
+    const {tabContainer, navButton} = buildNavToCaseManager(userId);
 
     // Conditional Build with search params
     if (window.location.search.startsWith(tabIdentifiers.userSummary)) {
+        markNavToCaseManagerActive(tabContainer, navButton);
         buildAndAttachCaseManagerControlPanel(userId);
     } else if (window.location.search.startsWith(tabIdentifiers.userAnswers)) {
         buildAnswerSummaryIndicator();
@@ -26,19 +26,14 @@ function getUserIdFromWindowLocation() {
     return Number(patternMatcher[0].split('/').at(-1));
 }
 
-function buildLinkToCaseManager(userId: number) {
-    const {tabContainer, navButton} = buildProfileNavPill(userId);
-
+function markNavToCaseManagerActive(tabContainer: JQuery, navButton: JQuery) {
     const selectedClass = 'is-selected';
     // Make nav the only active class
-    tabContainer
-        .find('a')
-        .removeClass(selectedClass);
-    navButton
-        .addClass(selectedClass);
+    tabContainer.find('a').removeClass(selectedClass);
+    navButton.addClass(selectedClass);
 }
 
-function buildProfileNavPill(userId: number) {
+function buildNavToCaseManager(userId: number) {
     const navButton = $(`<a href="/users/${userId}/${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
     void fetchFromAWS(`/case/user/${userId}`)
         .then(res => res.json())
