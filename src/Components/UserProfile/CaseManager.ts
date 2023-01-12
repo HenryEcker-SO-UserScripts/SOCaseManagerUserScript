@@ -7,135 +7,54 @@ import {
     fetchFromAWS
 } from '../../API/AWSAPI';
 import {fetchFromSEAPI, type SEAPIResponse} from '../../API/SEAPI';
-import {buildCheckmarkSvg} from '../../Utils/SVGBuilders';
+import {buildAlertSvg, buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 
 
-function buildCaseManagerPane(userId: number, isActive: boolean) {
-    const container = $('<div class="grid--item"></div>');
+export function buildAndAttachCaseManagerControlPanel() {
+    const userId = getUserIdFromWindowLocation();
+    const {tabContainer, navButton} = buildProfileNavPill(userId);
 
-    const config: {
-        containerText: string;
-        buttonText: string;
-        apiRoute: string;
-        buttonClasses: string;
-        modalOptions: {
-            title: string;
-            body: string;
-            buttonLabel: string;
-        };
-    } = isActive ? {
-        containerText: 'This user is <strong>currently under investigation</strong>.',
-        buttonText: 'Close current investigation',
-        apiRoute: 'close',
-        buttonClasses: 's-btn__primary',
-        modalOptions: {
-            title: 'Close Current Investigation',
-            body: 'Are you sure you want to close out the current investigation of this user? This will remove the user from the active cases list. Please only do this if the majority of posts have either been actioned on or if the user is not a serial plagiarist.',
-            buttonLabel: 'Yes, I\'m sure'
-        }
-    } : {
-        containerText: 'This user is <u>not</u> currently under investigation.',
-        buttonText: 'Open an investigation',
-        apiRoute: 'open',
-        buttonClasses: 's-btn__danger s-btn__filled',
-        modalOptions: {
-            title: 'Open An Investigation',
-            body: 'Are you sure you want to open an investigation into this user? This will add this user to a list of users under investigation. Please only do this if you suspect the user of serial plagiarism.',
-            buttonLabel: 'Yes, I\'m sure'
-        }
+    const selectedClass = 'is-selected';
+    // Make nav the only active class
+    tabContainer
+        .find('a')
+        .removeClass(selectedClass);
+    navButton
+        .addClass(selectedClass);
+    /***
+     * Mods default to ?tab=activity while everyone else defaults to ?tab=profile
+     * That is why the selector is the last div in #mainbar-full instead of #main-content
+     */
+    // Blank the content to make room for the UserScript
+    $('#mainbar-full > div:last-child')
+        .replaceWith(new CaseManagerControlPanel(userId).init());
+}
+
+
+function getUserIdFromWindowLocation() {
+    const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
+    if (patternMatcher === null || patternMatcher.length !== 1) {
+        throw Error('Something changed in user path!');
+    }
+    return Number(patternMatcher[0].split('/').at(-1));
+}
+
+function buildProfileNavPill(userId: number) {
+    const navButton = $(`<a href="/users/${userId}/${tabIdentifiers.userSummary}" class="s-navigation--item">Case Manager</a>`);
+    void fetchFromAWS(`/case/user/${userId}`)
+        .then(res => res.json())
+        .then((resData: { is_known_user: boolean; }) => {
+            if (resData['is_known_user']) {
+                navButton.prepend(buildAlertSvg(16, 20));
+            }
+        });
+
+    const tabContainer = $('.user-show-new .s-navigation:eq(0)');
+    tabContainer.append(navButton);
+    return {
+        tabContainer,
+        navButton
     };
-
-
-    container.append($('<h3 class="fs-title mb8">Case Management Console</h3>'));
-    container.append($(`<p>${config['containerText']}</p>`));
-    const button = $(`<button class="ml16 s-btn ${config['buttonClasses']}">${config['buttonText']}</button>`);
-    button.on('click', (ev) => {
-        ev.preventDefault();
-        void StackExchange.helpers.showConfirmModal(config['modalOptions'])
-            .then(shouldContinue => {
-                if (shouldContinue) {
-
-                    void (isActive ?
-                            fetchFromAWS(`/case/${config['apiRoute']}`, {
-                                'method': 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({'userId': userId})
-                            })
-                            :
-
-                            // Grab user display name from API
-                            fetchFromSEAPI(`/users/${userId}`, 'filter=!LnNkvqQOuAK0z-T)oydzPI')
-                                .then(res => res.json())
-                                .then((resData: SEAPIResponse<{ user_id: number; display_name: string; profile_image: string; }>) => {
-                                    if (resData.items.length === 0) {
-                                        throw Error('User not found!');
-                                    }
-                                    const user = resData.items[0];
-                                    // Pass user info to CM
-                                    return fetchFromAWS(`/case/${config['apiRoute']}`, {
-                                        'method': 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                        },
-                                        body: JSON.stringify({
-                                            'userId': user['user_id'],
-                                            'displayName': user['display_name'],
-                                            'profileImage': user['profile_image']
-                                        })
-                                    });
-                                })
-                    ).then((res) => {
-                        if (res.status === 200) {
-                            return res.json().then((resData: CaseStateChangeResponse) => {
-                                return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
-                            });
-                        } else if (res.status === 409) {
-                            // Conflict means that the state is already in the appropriate configuration
-                            return res.json().then((resData: CaseStateChangeResponse) => {
-                                StackExchange.helpers.showToast(resData['message'], {
-                                    transientTimeout: 10000,
-                                    type: 'warning'
-                                });
-                                return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
-                            });
-                        }
-                        throw Error('Something went wrong');
-                    });
-                }
-            });
-    });
-    container.append(button);
-    return container;
-}
-
-function buildActionsSummaryPane(postSummary: CaseSummaryPostSummary) {
-    const container = $('<div class="grid--item p4 s-table-container"></div>');
-    const actionTable = $('<table class="s-table"><thead><tr><th scope="col">Post Action</th><th scope="col">Number of Posts</th></tr></thead></table>');
-    const actionTableBody = $('<tbody></tbody>');
-
-    postSummary.forEach(post => {
-        actionTableBody.append(
-            $(`<tr><td>${post['action_taken']}</td><td>${post['number_of_posts']}</td></tr>`)
-        );
-    });
-
-    actionTable.append(actionTableBody);
-    container.append(actionTable);
-    return container;
-}
-
-function buildCaseHistoryPane(caseTimeline: CaseSummaryCaseTimeline) {
-    const container = $('<div class="grid--item p8"><h3 class="fs-title mb8">Investigation History</h3></div>');
-    const timeline = $('<div class="d-flex fd-column g4"></div>');
-    caseTimeline.forEach(entry => {
-        timeline.append(
-            $(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry['case_event_id']}"><a href="/users/${entry['account_id']}">${entry['display_name']}</a><span data-event-type-id="${entry['case_event_type_id']}">${entry['case_event_description']}</span><span>${new Date(entry['event_creation_date']).toLocaleString()}</span></div>`)
-        );
-    });
-    container.append(timeline);
-    return container;
 }
 
 
@@ -406,5 +325,133 @@ export class CaseManagerControlPanel {
                 });
         }
     }
+}
 
+
+function buildCaseManagerPane(userId: number, isActive: boolean) {
+    const container = $('<div class="grid--item"></div>');
+
+    const config: {
+        containerText: string;
+        buttonText: string;
+        apiRoute: string;
+        buttonClasses: string;
+        modalOptions: {
+            title: string;
+            body: string;
+            buttonLabel: string;
+        };
+    } = isActive ? {
+        containerText: 'This user is <strong>currently under investigation</strong>.',
+        buttonText: 'Close current investigation',
+        apiRoute: 'close',
+        buttonClasses: 's-btn__primary',
+        modalOptions: {
+            title: 'Close Current Investigation',
+            body: 'Are you sure you want to close out the current investigation of this user? This will remove the user from the active cases list. Please only do this if the majority of posts have either been actioned on or if the user is not a serial plagiarist.',
+            buttonLabel: 'Yes, I\'m sure'
+        }
+    } : {
+        containerText: 'This user is <u>not</u> currently under investigation.',
+        buttonText: 'Open an investigation',
+        apiRoute: 'open',
+        buttonClasses: 's-btn__danger s-btn__filled',
+        modalOptions: {
+            title: 'Open An Investigation',
+            body: 'Are you sure you want to open an investigation into this user? This will add this user to a list of users under investigation. Please only do this if you suspect the user of serial plagiarism.',
+            buttonLabel: 'Yes, I\'m sure'
+        }
+    };
+
+
+    container.append($('<h3 class="fs-title mb8">Case Management Console</h3>'));
+    container.append($(`<p>${config['containerText']}</p>`));
+    const button = $(`<button class="ml16 s-btn ${config['buttonClasses']}">${config['buttonText']}</button>`);
+    button.on('click', (ev) => {
+        ev.preventDefault();
+        void StackExchange.helpers.showConfirmModal(config['modalOptions'])
+            .then(shouldContinue => {
+                if (shouldContinue) {
+
+                    void (isActive ?
+                            fetchFromAWS(`/case/${config['apiRoute']}`, {
+                                'method': 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({'userId': userId})
+                            })
+                            :
+
+                            // Grab user display name from API
+                            fetchFromSEAPI(`/users/${userId}`, 'filter=!LnNkvqQOuAK0z-T)oydzPI')
+                                .then(res => res.json())
+                                .then((resData: SEAPIResponse<{ user_id: number; display_name: string; profile_image: string; }>) => {
+                                    if (resData.items.length === 0) {
+                                        throw Error('User not found!');
+                                    }
+                                    const user = resData.items[0];
+                                    // Pass user info to CM
+                                    return fetchFromAWS(`/case/${config['apiRoute']}`, {
+                                        'method': 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            'userId': user['user_id'],
+                                            'displayName': user['display_name'],
+                                            'profileImage': user['profile_image']
+                                        })
+                                    });
+                                })
+                    ).then((res) => {
+                        if (res.status === 200) {
+                            return res.json().then((resData: CaseStateChangeResponse) => {
+                                return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
+                            });
+                        } else if (res.status === 409) {
+                            // Conflict means that the state is already in the appropriate configuration
+                            return res.json().then((resData: CaseStateChangeResponse) => {
+                                StackExchange.helpers.showToast(resData['message'], {
+                                    transientTimeout: 10000,
+                                    type: 'warning'
+                                });
+                                return container.replaceWith(buildCaseManagerPane(userId, resData['hasOpenCase']));
+                            });
+                        }
+                        throw Error('Something went wrong');
+                    });
+                }
+            });
+    });
+    container.append(button);
+    return container;
+}
+
+function buildActionsSummaryPane(postSummary: CaseSummaryPostSummary) {
+    const container = $('<div class="grid--item p4 s-table-container"></div>');
+    const actionTable = $('<table class="s-table"><thead><tr><th scope="col">Post Action</th><th scope="col">Number of Posts</th></tr></thead></table>');
+    const actionTableBody = $('<tbody></tbody>');
+
+    postSummary.forEach(post => {
+        actionTableBody.append(
+            $(`<tr><td>${post['action_taken']}</td><td>${post['number_of_posts']}</td></tr>`)
+        );
+    });
+
+    actionTable.append(actionTableBody);
+    container.append(actionTable);
+    return container;
+}
+
+function buildCaseHistoryPane(caseTimeline: CaseSummaryCaseTimeline) {
+    const container = $('<div class="grid--item p8"><h3 class="fs-title mb8">Investigation History</h3></div>');
+    const timeline = $('<div class="d-flex fd-column g4"></div>');
+    caseTimeline.forEach(entry => {
+        timeline.append(
+            $(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry['case_event_id']}"><a href="/users/${entry['account_id']}">${entry['display_name']}</a><span data-event-type-id="${entry['case_event_type_id']}">${entry['case_event_description']}</span><span>${new Date(entry['event_creation_date']).toLocaleString()}</span></div>`)
+        );
+    });
+    container.append(timeline);
+    return container;
 }
