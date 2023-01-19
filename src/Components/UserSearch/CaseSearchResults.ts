@@ -7,7 +7,7 @@ import {
 import {buildSearchSvg} from '../../Utils/SVGBuilders';
 
 
-function buildUserTile(account_id: number, profile_image: null | string, display_name: string, current_state: string, event_date: string) {
+function buildUserTile(account_id: number, profile_image: null | string, display_name: string, number_of_plagiarised_posts: number, current_state: string, event_date: string) {
     const link = `/users/${account_id}${tabIdentifiers.userSummary}`;
     return $(`<div class="grid--item user-info">
                     ${profile_image !== null ? `<div class="user-gravatar48">
@@ -15,6 +15,9 @@ function buildUserTile(account_id: number, profile_image: null | string, display
                     </div>` : ''}
                     <div class="user-details">
                         <a href="${link}">${display_name}</a>
+                        <div class="-flair">
+                            <span title="the number of posts marked as plagiairsm for this user" dir="ltr">${number_of_plagiarised_posts} Plagiarised posts</span>
+                        </div>
                         <div class="d-flex fd-column mt6">
                             <span>Case ${current_state} on</span>
                             <span>${new Date(event_date).toLocaleString()}</span>
@@ -214,6 +217,7 @@ export class CasesUserList {
                 userData.investigated_user_id,
                 userData.profile_image,
                 userData.display_name,
+                userData.number_of_plagiarised_posts,
                 userData.current_state,
                 userData.event_creation_date
             ));

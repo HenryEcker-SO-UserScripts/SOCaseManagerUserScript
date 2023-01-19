@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.3
+// @version     0.2.5
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -985,9 +985,9 @@
             navButton: navButton
         };
     }
-    function buildUserTile(account_id, profile_image, display_name, current_state, event_date) {
+    function buildUserTile(account_id, profile_image, display_name, number_of_plagiarised_posts, current_state, event_date) {
         const link = `/users/${account_id}?tab=case-manager`;
-        return $(`<div class="grid--item user-info"> ${null !== profile_image ? `<div class="user-gravatar48"><a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a></div>` : ""} <div class="user-details"><a href="${link}">${display_name}</a><div class="d-flex fd-column mt6"><span>Case ${current_state} on</span><span>${new Date(event_date).toLocaleString()}</span></div></div></div>`);
+        return $(`<div class="grid--item user-info"> ${null !== profile_image ? `<div class="user-gravatar48"><a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a></div>` : ""} <div class="user-details"><a href="${link}">${display_name}</a><div class="-flair"><span title="the number of posts marked as plagiairsm for this user" dir="ltr">${number_of_plagiarised_posts} Plagiarised posts</span></div><div class="d-flex fd-column mt6"><span>Case ${current_state} on</span><span>${new Date(event_date).toLocaleString()}</span></div></div></div>`);
     }
     class CasesUserList {
         needsTotalPages;
@@ -1112,7 +1112,7 @@
         buildUserPanel() {
             const mountPoint = $("#user-browser").empty();
             this.userData.forEach((userData => {
-                mountPoint.append(buildUserTile(userData.investigated_user_id, userData.profile_image, userData.display_name, userData.current_state, userData.event_creation_date));
+                mountPoint.append(buildUserTile(userData.investigated_user_id, userData.profile_image, userData.display_name, userData.number_of_plagiarised_posts, userData.current_state, userData.event_creation_date));
             }));
         }
         buildNavItem(pageNumber, linkLabel) {
