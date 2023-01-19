@@ -1,30 +1,6 @@
 import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../../API/AWSAPI';
 import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg} from '../../Utils/SVGBuilders';
 
-export function buildAnswerSummaryIndicator() {
-    addSummaryActionIndicators();
-    // The escape \\ is for the ? that comes with the variable
-    const matchPattern = new RegExp(`users/tab/\\d+\\${tabIdentifiers.userAnswers}`, 'gi');
-    // Handle buttons on tab/page navigation
-    $(document).on('ajaxComplete', (_0, _1, {url}) => {
-        if (url.match(matchPattern)) {
-            addSummaryActionIndicators();
-        }
-    });
-}
-
-function getAnswerIdsOnPage(): Set<string> {
-    return new Set($('.s-post-summary').map((i, e) => {
-        return e.getAttribute('data-post-id');
-    }).toArray());
-}
-
-function addSummaryActionIndicators() {
-    const postIdsOnPage = getAnswerIdsOnPage();
-    void getSummaryPostActionsFromIds([...postIdsOnPage]).then(renderAnswerSummaryIndicators);
-}
-
-
 const iconAttrMap: {
     [id: number]: {
         desc: string;
@@ -39,7 +15,7 @@ const iconAttrMap: {
 } as const;
 
 function buildSymbolBar(postId: string, eventValues: number[]) {
-    const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2"></div>');
+    const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2" style="width:min-content"></div>');
     eventValues.forEach(eventId => {
         if (Object.hasOwn(iconAttrMap, eventId)) {
             const {desc, colourVar, svg} = iconAttrMap[eventId];
@@ -47,7 +23,13 @@ function buildSymbolBar(postId: string, eventValues: number[]) {
         }
     });
     return symbolBar;
+}
 
+
+function getAnswerIdsOnAnswerPage(): Set<string> {
+    return new Set($('.s-post-summary').map((i, e) => {
+        return e.getAttribute('data-post-id');
+    }).toArray());
 }
 
 function renderAnswerSummaryIndicators(summaryPostActions: SummaryPostActionResponse) {
@@ -60,3 +42,53 @@ function renderAnswerSummaryIndicators(summaryPostActions: SummaryPostActionResp
             }
         );
 }
+
+function addSummaryActionIndicators() {
+    const postIdsOnPage = getAnswerIdsOnAnswerPage();
+    void getSummaryPostActionsFromIds([...postIdsOnPage]).then(renderAnswerSummaryIndicators);
+}
+
+export function buildAnswerSummaryIndicator() {
+    addSummaryActionIndicators();
+    // The escape \\ is for the ? that comes with the variable
+    const matchPattern = new RegExp(`users/tab/\\d+\\${tabIdentifiers.userAnswers}`, 'gi');
+    // Handle buttons on tab/page navigation
+    $(document).on('ajaxComplete', (_0, _1, {url}) => {
+        if (url.match(matchPattern)) {
+            addSummaryActionIndicators();
+        }
+    });
+}
+
+
+function getAnswerIdsOnFlagPage(): Set<string> {
+    return new Set($('.flagged-post .answer-link a').map((i, e) => {
+        const href = e.getAttribute('href');
+        if (href === null || !href.includes('#')) {
+            return undefined;
+        }
+        return href.split('#').at(-1);
+    }).toArray());
+}
+
+function renderFlagSummaryIndicators(summaryPostActions: SummaryPostActionResponse) {
+    Object
+        .entries(summaryPostActions)
+        .forEach(
+            ([postId, eventValues]) => {
+                const a = $(`a[href$="#${postId}"`);
+                a.parent('.answer-link').addClass('d-flex fd-row ai-center g6');
+                a.before(buildSymbolBar(postId, eventValues));
+            }
+        );
+}
+
+function addSummaryActionIndicatorsOnFlagPage() {
+    const postIdsOnPage = getAnswerIdsOnFlagPage();
+    void getSummaryPostActionsFromIds([...postIdsOnPage]).then(renderFlagSummaryIndicators);
+}
+
+export function buildFlagSummaryIndicator() {
+    addSummaryActionIndicatorsOnFlagPage();
+}
+

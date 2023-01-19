@@ -28,8 +28,7 @@ module.exports = {
                 '*://stackoverflow.com/users/teams/*',
                 '*://stackoverflow.com/users/mylogins/*',
                 '*://stackoverflow.com/users/apps/*',
-                '*://stackoverflow.com/users/flag-summary/*',
-                '*://stackoverflow.com/users/message/*',
+                '*://stackoverflow.com/users/message/*'
             ],
             'grant': ['GM_getValue', 'GM_setValue', 'GM_deleteValue']
         };

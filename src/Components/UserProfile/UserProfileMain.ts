@@ -1,10 +1,19 @@
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {buildAlertSvg} from '../../Utils/SVGBuilders';
 import {buildAndAttachCaseManagerControlPanel} from './CaseManager';
-import {buildAnswerSummaryIndicator} from './PostActionSummaryIcons';
+import {buildAnswerSummaryIndicator, buildFlagSummaryIndicator} from './PostActionSummaryIcons';
 
 
 export function buildProfilePage() {
+    if (
+        window.location.pathname.match(/^\/users\/flagged-posts\/.*/) !== null ||
+        window.location.pathname.match(/^\/users\/flag-summary\/.*/) !== null
+    ) {
+        buildFlagSummaryIndicator();
+        return;
+        // Flag Pages doesn't need nav
+    }
+
     const userId = getUserIdFromWindowLocation();
     // Build Link on profile page (regardless of search params)
     const {tabContainer, navButton} = buildNavToCaseManager(userId);
