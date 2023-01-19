@@ -39,6 +39,7 @@ export interface UserCaseSummaryEntry {
     display_name: string;
     profile_image: null | string;
     investigated_user_id: number;
+    number_of_plagiarised_posts: number;
     event_creation_date: string;
     current_state: string;
 }
