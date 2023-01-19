@@ -14,7 +14,6 @@
 // @exclude     *://stackoverflow.com/users/delete/*
 // @exclude     *://stackoverflow.com/users/edit/*
 // @exclude     *://stackoverflow.com/users/email/*
-// @exclude     *://stackoverflow.com/users/flag-summary/*
 // @exclude     *://stackoverflow.com/users/hidecommunities/*
 // @exclude     *://stackoverflow.com/users/message/*
 // @exclude     *://stackoverflow.com/users/my-collectives/*
@@ -896,22 +895,6 @@
         container.append(timeline);
         return container;
     }
-    function buildAnswerSummaryIndicator() {
-        addSummaryActionIndicators();
-        const matchPattern = new RegExp("users/tab/\\d+\\?tab=answers", "gi");
-        $(document).on("ajaxComplete", ((_0, _1, {url: url}) => {
-            if (url.match(matchPattern)) {
-                addSummaryActionIndicators();
-            }
-        }));
-    }
-    function getAnswerIdsOnPage() {
-        return new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
-    }
-    function addSummaryActionIndicators() {
-        const postIdsOnPage = getAnswerIdsOnPage();
-        getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then(renderAnswerSummaryIndicators);
-    }
     const iconAttrMap = {
         1: {
             desc: "Looks OK",
@@ -935,7 +918,7 @@
         }
     };
     function buildSymbolBar(postId, eventValues) {
-        const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2"></div>');
+        const symbolBar = $('<div class="case-manager-symbol-group d-flex fd-row g2 ba bar-sm p2" style="width:min-content"></div>');
         eventValues.forEach((eventId => {
             if (Object.hasOwn(iconAttrMap, eventId)) {
                 const {desc: desc, colourVar: colourVar, svg: svg} = iconAttrMap[eventId];
@@ -944,12 +927,54 @@
         }));
         return symbolBar;
     }
+    function getAnswerIdsOnAnswerPage() {
+        return new Set($(".s-post-summary").map(((i, e) => e.getAttribute("data-post-id"))).toArray());
+    }
     function renderAnswerSummaryIndicators(summaryPostActions) {
         Object.entries(summaryPostActions).forEach((([postId, eventValues]) => {
             $(`#answer-id-${postId} .s-post-summary--stats-item:eq(0)`).before(buildSymbolBar(postId, eventValues));
         }));
     }
+    function addSummaryActionIndicators() {
+        const postIdsOnPage = getAnswerIdsOnAnswerPage();
+        getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then(renderAnswerSummaryIndicators);
+    }
+    function buildAnswerSummaryIndicator() {
+        addSummaryActionIndicators();
+        const matchPattern = new RegExp("users/tab/\\d+\\?tab=answers", "gi");
+        $(document).on("ajaxComplete", ((_0, _1, {url: url}) => {
+            if (url.match(matchPattern)) {
+                addSummaryActionIndicators();
+            }
+        }));
+    }
+    function getAnswerIdsOnFlagPage() {
+        return new Set($(".flagged-post .answer-link a").map(((i, e) => {
+            const href = e.getAttribute("href");
+            if (null !== href && href.includes("#")) {
+                return href.split("#").at(-1);
+            }
+        })).toArray());
+    }
+    function renderFlagSummaryIndicators(summaryPostActions) {
+        Object.entries(summaryPostActions).forEach((([postId, eventValues]) => {
+            const a = $(`a[href$="#${postId}"`);
+            a.parent(".answer-link").addClass("d-flex fd-row ai-center g6");
+            a.before(buildSymbolBar(postId, eventValues));
+        }));
+    }
+    function addSummaryActionIndicatorsOnFlagPage() {
+        const postIdsOnPage = getAnswerIdsOnFlagPage();
+        getSummaryPostActionsFromIds([ ...postIdsOnPage ]).then(renderFlagSummaryIndicators);
+    }
+    function buildFlagSummaryIndicator() {
+        addSummaryActionIndicatorsOnFlagPage();
+    }
     function buildProfilePage() {
+        if (null !== window.location.pathname.match(/^\/users\/flagged-posts\/.*/) || null !== window.location.pathname.match(/^\/users\/flag-summary\/.*/)) {
+            buildFlagSummaryIndicator();
+            return;
+        }
         const userId = getUserIdFromWindowLocation();
         const {tabContainer: tabContainer, navButton: navButton} = buildNavToCaseManager(userId);
         if (window.location.search.startsWith("?tab=case-manager")) {
