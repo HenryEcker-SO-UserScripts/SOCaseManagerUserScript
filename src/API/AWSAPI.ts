@@ -50,9 +50,7 @@ export interface OpenCasesSummaryPageResponse {
     cases: UserCaseSummaryEntry[];
 }
 
-export interface SummaryPostActionResponse {
-    [postId: string]: number[]; // "postId": [1,2,3,4,5] <- array of action Ids
-}
+export type SummaryPostActionResponse = Record<string, number[]>; // "postId": [1,2,3,4,5] <- array of action Ids
 
 export interface PostActionType {
     action_id: number;

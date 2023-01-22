@@ -24,9 +24,7 @@ export function buildAndAttachCaseManagerControlPanel(userId: number) {
 type Page = 'summary' | 'posts';
 type FilterType = 'any' | 'checked' | 'unchecked';
 
-interface ColumnFilterConfig {
-    [columnIndex: number]: FilterType;
-}
+type ColumnFilterConfig = Record<number, FilterType>; // columnIndex
 
 function buildSummaryTableFilterOption(text: string, value: FilterType, activeValue: FilterType): string {
     return `<option value="${value}"${activeValue === value ? ' selected' : ''}>${text}</option>`;
