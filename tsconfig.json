@@ -22,7 +22,6 @@
     "module": "ES6",
     "moduleResolution": "node",
     "target": "ESNext",
-    "jsx": "react-jsx",
     "types": [
       "node",
       "jquery",
