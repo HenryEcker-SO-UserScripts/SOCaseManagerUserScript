@@ -1,5 +1,5 @@
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
-import {buildNukeOptionElements, getCheckboxValuesFromParentContainer} from '../../PostControlPanel/PostModTools';
+import {buildNukeOptionElements, getCheckboxValuesFromInput} from '../../PostControlPanel/PostModTools';
 import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
 
 export function buildNukeConfigControls(): JQuery {
@@ -27,7 +27,7 @@ function buildTemplateForm() {
                 isFlagChecked,
                 isCommentChecked,
                 isLogChecked
-            ] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
 
             const newConfig: CmNukePostConfig = {
                 detailText: (textarea.val() as string | undefined) || '',
