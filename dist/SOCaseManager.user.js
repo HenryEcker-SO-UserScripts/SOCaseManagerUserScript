@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.5
+// @version     0.2.6
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -148,12 +148,12 @@
         const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
         nukeButton.on("click", (ev => {
             ev.preventDefault();
-            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
             nukePostAsPlagiarism(answerId, postOwnerId, textarea.val(), isFlagChecked, isCommentChecked, isLogChecked);
         }));
         function updateDisplayBasedOnSelections(ev) {
             ev.preventDefault();
-            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
             if (!isFlagChecked && !isCommentChecked) {
                 textarea.prop("disabled", true);
             } else {
@@ -161,9 +161,9 @@
             }
             nukeButton.attr("title", (isFlagChecked ? "Flags the post, " : "") + (isFlagChecked ? "deletes" : "Deletes") + " the post" + (isCommentChecked ? ", adds a comment" : "") + (isLogChecked ? ", logs feedback in Case manager" : ""));
         }
-        shouldCommentCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-        shouldFlagCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
-        shouldLogCheckbox.find('input[type="checkbox"]').on("input", updateDisplayBasedOnSelections);
+        shouldCommentCheckbox.on("input", updateDisplayBasedOnSelections);
+        shouldFlagCheckbox.on("input", updateDisplayBasedOnSelections);
+        shouldLogCheckbox.on("input", updateDisplayBasedOnSelections);
         textarea.on("input", (ev => {
             ev.preventDefault();
             const length = ev.target.value.length;
@@ -171,21 +171,18 @@
         }));
         return $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`).append($('<div class="d-grid g8 ai-center grid__1 ws4"></div>').append($('<div class="d-flex fd-row jc-space-between"></div>').append(textareaLabel).append('<a class="fs-fine" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>')).append(textarea).append($("<div></div>").append("<span>Characters: </span>").append(lengthSpan)).append($('<div class="d-flex fd-row flex__fl-equal g8"></div>').append(checkboxContainer).append(nukeButton)));
     }
-    function getCheckboxValuesFromParentContainer(...wrappedCheckboxes) {
-        return wrappedCheckboxes.map(hasCheckedChild);
-    }
-    function hasCheckedChild(e) {
-        return e.find('input[type="checkbox"]').is(":checked");
+    function getCheckboxValuesFromInput(...checkboxes) {
+        return checkboxes.map((checkbox => checkbox.is(":checked")));
     }
     function buildNukeOptionElements(baseId, nukePostConfig) {
         const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
         const textarea = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
         textarea.val(nukePostConfig.detailText);
         const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-        const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
-        const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
-        const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? " checked" : ""}/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
-        checkboxContainer.append(shouldFlagCheckbox).append(shouldCommentCheckbox).append(shouldLogCheckbox);
+        const shouldFlagCheckbox = $(`<input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? " checked" : ""}/>`);
+        const shouldCommentCheckbox = $(`<input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? " checked" : ""}/>`);
+        const shouldLogCheckbox = $(`<input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? " checked" : ""}/>`);
+        checkboxContainer.append($('<div class="s-check-control"></div>').append(shouldFlagCheckbox).append(`<label class="s-label" for="${baseId}-cb-flag">Flag</label>`)).append($('<div class="s-check-control"></div>').append(shouldCommentCheckbox).append(`<label class="s-label" for="${baseId}-cb-comment">Comment</label>`)).append($('<div class="s-check-control"></div>').append(shouldLogCheckbox).append(`<label class="s-label" for="${baseId}-cb-log">Log</label>`));
         return {
             textareaLabel: textareaLabel,
             textarea: textarea,
@@ -526,7 +523,7 @@
         templateForm.on("submit", (function(ev) {
             ev.preventDefault();
             try {
-                const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+                const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
                 const newConfig = {
                     detailText: textarea.val() || "",
                     flag: isFlagChecked,

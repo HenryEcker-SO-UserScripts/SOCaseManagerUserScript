@@ -39,7 +39,7 @@ function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
             isFlagChecked,
             isCommentChecked,
             isLogChecked
-        ] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+        ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
         void nukePostAsPlagiarism(
             answerId,
             postOwnerId,
@@ -56,7 +56,7 @@ function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
             isFlagChecked,
             isCommentChecked,
             isLogChecked
-        ] = getCheckboxValuesFromParentContainer(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+        ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
 
         // Disable textarea field when not needed
         if (!isFlagChecked && !isCommentChecked) {
@@ -73,9 +73,9 @@ function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
         );
     }
 
-    (shouldCommentCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
-    (shouldFlagCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
-    (shouldLogCheckbox.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).on('input', updateDisplayBasedOnSelections);
+    shouldCommentCheckbox.on('input', updateDisplayBasedOnSelections);
+    shouldFlagCheckbox.on('input', updateDisplayBasedOnSelections);
+    shouldLogCheckbox.on('input', updateDisplayBasedOnSelections);
 
     textarea.on('input', (ev) => {
         ev.preventDefault();
@@ -114,18 +114,8 @@ function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
     );
 }
 
-/***
- * Get checked state from any number of JQuery elements with an input element child
- *
- * @param wrappedCheckboxes
- * @return truthValues
- */
-export function getCheckboxValuesFromParentContainer(...wrappedCheckboxes: JQuery[]): boolean[] {
-    return wrappedCheckboxes.map(hasCheckedChild);
-}
-
-function hasCheckedChild(e: JQuery): boolean {
-    return (e.find('input[type="checkbox"]') as JQuery<HTMLInputElement>).is(':checked');
+export function getCheckboxValuesFromInput(...checkboxes: JQuery[]): boolean[] {
+    return checkboxes.map(checkbox => checkbox.is(':checked'));
 }
 
 export function buildNukeOptionElements(baseId: string, nukePostConfig: CmNukePostConfig) {
@@ -134,14 +124,26 @@ export function buildNukeOptionElements(baseId: string, nukePostConfig: CmNukePo
     textarea.val(nukePostConfig.detailText);
 
     const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-    const shouldFlagCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? ' checked' : ''}/><label class="s-label" for="${baseId}-cb-flag">Flag</label></div>`);
-    const shouldCommentCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? ' checked' : ''}/><label class="s-label" for="${baseId}-cb-comment">Comment</label></div>`);
-    const shouldLogCheckbox = $(`<div class="s-check-control"><input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? ' checked' : ''}/><label class="s-label" for="${baseId}-cb-log">Log</label></div>`);
+    const shouldFlagCheckbox = $(`<input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? ' checked' : ''}/>`);
+    const shouldCommentCheckbox = $(`<input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? ' checked' : ''}/>`);
+    const shouldLogCheckbox = $(`<input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? ' checked' : ''}/>`);
 
     checkboxContainer
-        .append(shouldFlagCheckbox)
-        .append(shouldCommentCheckbox)
-        .append(shouldLogCheckbox);
+        .append(
+            $('<div class="s-check-control"></div>')
+                .append(shouldFlagCheckbox)
+                .append(`<label class="s-label" for="${baseId}-cb-flag">Flag</label>`)
+        )
+        .append(
+            $('<div class="s-check-control"></div>')
+                .append(shouldCommentCheckbox)
+                .append(`<label class="s-label" for="${baseId}-cb-comment">Comment</label>`)
+        )
+        .append(
+            $('<div class="s-check-control"></div>')
+                .append(shouldLogCheckbox)
+                .append(`<label class="s-label" for="${baseId}-cb-log">Log</label>`)
+        );
     return {
         textareaLabel,
         textarea,
