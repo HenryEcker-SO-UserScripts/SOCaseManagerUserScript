@@ -25,7 +25,8 @@
     "types": [
       "node",
       "jquery",
-      "tampermonkey"
+      "tampermonkey",
+      "@userscripters/stackexchange-global-types"
     ]
   }
 }

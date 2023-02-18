@@ -22,6 +22,7 @@
     "@types/tampermonkey": "^4.0.10",
     "@typescript-eslint/eslint-plugin": "^5.50.0",
     "@typescript-eslint/parser": "^5.50.0",
+    "@userscripters/stackexchange-global-types": "^2.6.1",
     "eslint": "^7.32.0",
     "eslint-config-standard": "^16.0.3",
     "eslint-plugin-import": "^2.27.5",
