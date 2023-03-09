@@ -72,8 +72,7 @@ export default (fileName) => {
                     main: path.resolve(__dirname, 'src', 'Main.ts')
                 },
                 output: {
-                    banner: '(function() {"use strict";',
-                    footer: '})();',
+                    format: 'iife',
                     manualChunks: undefined,
                     entryFileNames: fileName
                 }
