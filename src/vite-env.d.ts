@@ -33,25 +33,35 @@ declare const Feedback: {
 };
 
 // Pre Built HTML Components
-declare const NUKE_POST_FORM: string;
-declare const NUKE_POST_FORM_CONTROLLER: string;
-declare const NUKE_POST_FORM_MODAL_ID: string;
-declare const NUKE_POST_DATA_TARGETS: string[];
-declare const NUKE_POST_ENABLE_FLAG_TOGGLE_TARGET: string;
-declare const NUKE_POST_ENABLE_COMMENT_TOGGLE_TARGET: string;
-declare const NUKE_POST_ENABLE_LOG_TOGGLE_TARGET: string;
-declare const NUKE_POST_COMMENT_TEXT_TARGET: string;
-declare const NUKE_POST_FLAG_LINK_TEXT_TARGET: string;
-declare const NUKE_POST_FLAG_DETAIL_TEXT_TARGET: string;
-declare const NUKE_POST_FLAG_CONTROL_FIELDS_TARGET: string;
-declare const NUKE_POST_COMMENT_CONTROL_FIELDS_TARGET: string;
+declare const NUKE_POST: {
+    FORM: string;
+    FORM_MODAL_ID: string;
+    FORM_CONTROLLER: string;
+    DATA_TARGETS: string[];
+    ENABLE_FLAG_TOGGLE_TARGET: string;
+    ENABLE_COMMENT_TOGGLE_TARGET: string;
+    ENABLE_LOG_TOGGLE_TARGET: string;
+    COMMENT_TEXT_TARGET: string;
+    FLAG_LINK_TEXT_TARGET: string;
+    FLAG_DETAIL_TEXT_TARGET: string;
+    FLAG_CONTROL_FIELDS_TARGET: string;
+    COMMENT_CONTROL_FIELDS_TARGET: string;
+    HANDLE_SUBMIT: string;
+    HANDLE_CANCEL: string;
+    HANDLE_UPDATE_CONTROLLED_FIELD: string;
+};
 
 
-declare const NUKE_POST_SAVE_CONFIG_CONTROLLER:string;
-declare const NUKE_POST_SAVE_CONFIG_FORM: string;
-declare const NUKE_POST_SAVE_CONFIG_DATA_TARGETS: string[];
-declare const NUKE_POST_SAVE_CONFIG_SHOULD_FLAG_TARGET: string;
-declare const NUKE_POST_SAVE_CONFIG_SHOULD_COMMENT_TARGET: string;
-declare const NUKE_POST_SAVE_CONFIG_SHOULD_LOG_TARGET: string;
-declare const NUKE_POST_SAVE_CONFIG_FLAG_DETAIL_TARGET: string;
-declare const NUKE_POST_SAVE_CONFIG_COMMENT_TARGET: string;
+declare const SAVE_NUKE_CONFIG: {
+    CONTROLLER: string;
+    FORM: string;
+    DATA_TARGETS: string[];
+    SHOULD_FLAG_TARGET: string;
+    SHOULD_COMMENT_TARGET: string;
+    SHOULD_LOG_TARGET: string;
+    FLAG_DETAIL_TARGET: string;
+    COMMENT_TARGET: string;
+    HANDLE_SAVE: string;
+    HANDLE_RESET: string;
+};
+

@@ -6,49 +6,40 @@ export function buildNukeConfigControls(): JQuery {
     registerNukeConfigSettingsController();
     return $('<div></div>')
         .append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>')
-        .append(buildTemplateForm());
-}
-
-
-function buildTemplateForm() {
-    return NUKE_POST_SAVE_CONFIG_FORM;
+        .append(SAVE_NUKE_CONFIG.FORM);
 }
 
 function registerNukeConfigSettingsController() {
-    Stacks.addController(NUKE_POST_SAVE_CONFIG_CONTROLLER, {
-        targets: NUKE_POST_SAVE_CONFIG_DATA_TARGETS,
+    Stacks.addController(SAVE_NUKE_CONFIG.CONTROLLER, {
+        targets: SAVE_NUKE_CONFIG.DATA_TARGETS,
         get shouldFlag(): boolean {
-            return this[NUKE_POST_SAVE_CONFIG_SHOULD_FLAG_TARGET].checked as boolean;
+            return this[SAVE_NUKE_CONFIG.SHOULD_FLAG_TARGET].checked as boolean;
         },
         get shouldComment(): boolean {
-            return this[NUKE_POST_SAVE_CONFIG_SHOULD_COMMENT_TARGET].checked as boolean;
+            return this[SAVE_NUKE_CONFIG.SHOULD_COMMENT_TARGET].checked as boolean;
         },
         get shouldLog(): boolean {
-            return this[NUKE_POST_SAVE_CONFIG_SHOULD_LOG_TARGET].checked;
+            return this[SAVE_NUKE_CONFIG.SHOULD_LOG_TARGET].checked;
         },
         get commentTemplate(): string {
-            return this[NUKE_POST_SAVE_CONFIG_COMMENT_TARGET].value ?? '';
+            return this[SAVE_NUKE_CONFIG.COMMENT_TARGET].value ?? '';
         },
         get flagTemplate(): string {
-            return this[NUKE_POST_SAVE_CONFIG_SHOULD_COMMENT_TARGET].value ?? '';
+            return this[SAVE_NUKE_CONFIG.FLAG_DETAIL_TARGET].value ?? '';
+        },
+        setValues(config: CmNukePostConfig) {
+            this[SAVE_NUKE_CONFIG.SHOULD_FLAG_TARGET].checked = config.flag;
+            this[SAVE_NUKE_CONFIG.SHOULD_COMMENT_TARGET].checked = config.comment;
+            this[SAVE_NUKE_CONFIG.SHOULD_LOG_TARGET].checked = config.log;
+
+            this[SAVE_NUKE_CONFIG.FLAG_DETAIL_TARGET].value = config.flagDetailText ?? '';
+            this[SAVE_NUKE_CONFIG.COMMENT_TARGET].value = config.commentText ?? '';
         },
         connect() {
             const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-
-            if (nukePostConfig.flag) {
-                this[NUKE_POST_SAVE_CONFIG_SHOULD_FLAG_TARGET].checked = true;
-            }
-            if (nukePostConfig.comment) {
-                this[NUKE_POST_SAVE_CONFIG_SHOULD_COMMENT_TARGET].checked = true;
-            }
-            if (nukePostConfig.log) {
-                this[NUKE_POST_SAVE_CONFIG_SHOULD_LOG_TARGET].checked = true;
-            }
-
-            this[NUKE_POST_SAVE_CONFIG_FLAG_DETAIL_TARGET].value = nukePostConfig.flagDetailText ?? '';
-            this[NUKE_POST_SAVE_CONFIG_COMMENT_TARGET].value = nukePostConfig.commentText ?? '';
+            this.setValues(nukePostConfig);
         },
-        NUKE_POST_SAVE_CONFIG_HANDLE_SAVE(ev: ActionEvent) {
+        [SAVE_NUKE_CONFIG.HANDLE_SAVE](ev: ActionEvent) {
             ev.preventDefault();
             try {
                 const newConfig: CmNukePostConfig = {
@@ -71,5 +62,10 @@ function registerNukeConfigSettingsController() {
                 });
             }
         },
+        [SAVE_NUKE_CONFIG.HANDLE_RESET](ev: ActionEvent) {
+            ev.preventDefault();
+            const defaultConfig: CmNukePostConfig = JSON.parse(nukePostDefaultConfigString);
+            this.setValues(defaultConfig);
+        }
     });
 }

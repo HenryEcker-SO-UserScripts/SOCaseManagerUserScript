@@ -39,8 +39,8 @@ const defObj = {
         Deleted: 4,
         Suspicious: 5
     },
-    ...nukePostFormComponents,
-    ...nukePostSaveComponents
+    NUKE_POST: nukePostFormComponents,
+    SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
 
 export default (fileName) => {
