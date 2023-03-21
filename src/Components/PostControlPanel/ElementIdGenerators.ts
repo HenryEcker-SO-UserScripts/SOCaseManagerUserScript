@@ -11,7 +11,3 @@ export function getTimelinePopoverId(answerId: number): string {
 export function getActionsPopoverId(answerId: number): string {
     return `case-manager-answer-popover-${answerId}`;
 }
-
-export function getModMenuPopoverId(answerId: number): string {
-    return `case-manager-mod-menu-popover-${answerId}`;
-}
