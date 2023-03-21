@@ -9,6 +9,7 @@ export function buildUserScriptSettingsPanel() {
 
     toolGrid.append(buildExistingTokensControls());
     toolGrid.append(buildTokenIssuer());
+    // TODO Re-add config controls
     // if (StackExchange.options.user.isModerator) {
     //     toolGrid.append(buildNukeConfigControls());
     // }

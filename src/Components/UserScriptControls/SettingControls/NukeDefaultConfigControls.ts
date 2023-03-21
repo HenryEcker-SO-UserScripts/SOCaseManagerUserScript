@@ -1,3 +1,20 @@
+/**
+ * TODO
+ * Create configurable fields (API/gmAPI.ts)
+ * {
+ *     flagDetailText: string;
+ *     commentText: string;
+ *     flag: boolean;
+ *     comment: boolean;
+ *     log: boolean;
+ * }
+ *
+ * Can use components from Utils/StimulusComponentBuilder.ts for design consistency
+ * Always enable textareas even when default toggled off since the default text should be always loaded in case
+ * the it's onetime enabled.
+ */
+
+
 // import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
 // import {buildNukeOptionElements, getCheckboxValuesFromInput} from '../../PostControlPanel/PostModTools';
 // import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
