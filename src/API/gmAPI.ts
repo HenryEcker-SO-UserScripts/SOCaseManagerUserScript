@@ -14,7 +14,7 @@ export const nukePostDefaultConfigString = JSON.stringify({
     flagDetailText: '',
     commentText: '',
     flag: false,
-    comment: true,
+    comment: false,
     log: true
 } as CmNukePostConfig);
 export const nukePostOptions = 'cm_nuke_post_config';
