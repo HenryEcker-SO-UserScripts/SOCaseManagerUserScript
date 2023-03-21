@@ -24,8 +24,8 @@ const data = {
         enableFlagToggle: 'flag-enable-toggle',
         enableCommentToggle: 'comment-enable-toggle',
         enableLogToggle: 'log-enable-toggle',
-        flagInfoFields: 'flag-info-area',
-        commentInfoFields: 'comment-info-area',
+        flagControlFields: 'flag-info-area',
+        commentControlFields: 'comment-info-area',
         flagDetailTextarea: 'flag-detail-area',
         commentTextarea: 'comment-area'
     },
@@ -36,7 +36,12 @@ const data = {
     }
 };
 
-const validationBounds = {
+interface ValidationBounds {
+    min: number;
+    max: number;
+}
+
+const validationBounds: Record<string, ValidationBounds> = {
     flagDetailTextarea: {
         min: 10,
         max: 500
@@ -51,6 +56,29 @@ const validationBounds = {
     }
 };
 
+function buildTextarea(
+    textareaId: string | number, textareaName: string, textareaText: string, rows: string | number, dataTarget: string,
+    labelText: string,
+    vB: ValidationBounds
+) {
+    return `
+<div class="d-flex ff-column-nowrap gs4 gsy" 
+     data-controller="se-char-counter"
+     data-se-char-counter-min="${vB.min}"
+     data-se-char-counter-max="${vB.max}">
+     <label class="s-label flex--item" for="${textareaId}">${labelText}</label>
+     <textarea style="font-family:monospace"
+               class="flex--item s-textarea" 
+               data-se-char-counter-target="field" 
+               data-is-valid-length="false" 
+               id="${textareaId}" 
+               name="${textareaName}" 
+               rows="${rows}" 
+               data-${data.controller}-target="${dataTarget}">${textareaText}</textarea>
+     <div data-se-char-counter-target="output"></div>
+</div>`;
+}
+
 function getNukePostModalId(postId: number): string {
     return `${ids.modal}-${postId}`;
 }
@@ -58,8 +86,8 @@ function getNukePostModalId(postId: number): string {
 // Builder Modal
 function buildModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-    // TODO Extract both text areas into helper function they have significant overlap
-    // TODO 2 Move the modal--body content into a separate function with configurable controller fields so that the settings page can be build from that
+    // TODO Move the modal--body content into a separate function with configurable controller fields so that the settings page can be build from that
+    // TODO Move toggle labels into helper function
     return `
 <aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
     <div class="s-modal--dialog" style="min-width:45vw; width: max-content; max-width: 65vw;" 
@@ -70,65 +98,50 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
             <div class="d-flex fd-column g8">
                 <div>
                     <div class="d-flex ai-center g8">
-                        <label class="s-label" for="${ids.enableFlagToggle}">Flag before deletion:</label>
+                        <label class="s-label" for="${ids.enableFlagToggle}-${postId}">Flag before deletion:</label>
                         <input class="s-toggle-switch" 
-                               id="${ids.enableFlagToggle}"
+                               id="${ids.enableFlagToggle}-${postId}"
                                data-${data.controller}-target="${data.target.enableFlagToggle}" 
-                               data-${data.controller}-${data.params.controls}-param="${data.target.flagInfoFields}"
+                               data-${data.controller}-${data.params.controls}-param="${data.target.flagControlFields}"
                                data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
                                type="checkbox"${nukePostConfig.flag ? ' checked' : ''}>
                     </div>
-                    <div${nukePostConfig.flag ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.flagInfoFields}">
-                        <div class="d-flex ff-column-nowrap gs4 gsy" 
-                             data-controller="se-char-counter" 
-                             data-se-char-counter-min="${validationBounds.flagDetailTextarea.min}" 
-                             data-se-char-counter-max="${validationBounds.flagDetailTextarea.max}">
-                            <label class="s-label flex--item" for="${ids.flagDetailTextarea}">Flag Detail Text:</label>
-                            <textarea style="font-family:monospace"
-                                      class="flex--item s-textarea" 
-                                      data-se-char-counter-target="field" 
-                                      data-is-valid-length="false" 
-                                      id="${ids.flagDetailTextarea}" 
-                                      name="flag detail text" 
-                                      rows="5" 
-                                      data-${data.controller}-target="${data.target.flagDetailTextarea}">${nukePostConfig.flagDetailText}</textarea>
-                            <div data-se-char-counter-target="output"></div>
-                        </div>
+                    <div${nukePostConfig.flag ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.flagControlFields}">${
+        buildTextarea(
+            `${ids.flagDetailTextarea}-${postId}`,
+            'flag detail text',
+            nukePostConfig.flagDetailText ?? '',
+            5,
+            data.target.flagDetailTextarea,
+            'Flag Detail Text:',
+            validationBounds.flagDetailTextarea)}
                     </div>
                 </div>
                 <div>
                     <div class="d-flex ai-center g8">
-                        <label class="s-label" for="${ids.enableCommentToggle}">Comment after deletion:</label>
+                        <label class="s-label" for="${ids.enableCommentToggle}-${postId}">Comment after deletion:</label>
                         <input class="s-toggle-switch" 
-                              id="${ids.enableCommentToggle}" 
+                              id="${ids.enableCommentToggle}-${postId}" 
                               data-${data.controller}-target="${data.target.enableCommentToggle}" 
-                              data-${data.controller}-${data.params.controls}-param="${data.target.commentInfoFields}"
+                              data-${data.controller}-${data.params.controls}-param="${data.target.commentControlFields}"
                               data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
                               type="checkbox"${nukePostConfig.comment ? ' checked' : ''}>
                     </div>
-                    <div${nukePostConfig.comment ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.commentInfoFields}">
-                        <div class="d-flex ff-column-nowrap gs4 gsy" 
-                             data-controller="se-char-counter" 
-                             data-se-char-counter-min="${validationBounds.commentTextarea.min}" 
-                             data-se-char-counter-max="${validationBounds.commentTextarea.max}"
-                             data-${data.controller}-target="${data.target.commentInfoFields}">
-                            <label class="s-label flex--item" for="${ids.commentTextarea}">Comment Text:</label>
-                            <textarea style="font-family:monospace" 
-                                      class="flex--item s-textarea" 
-                                      data-se-char-counter-target="field" 
-                                      data-is-valid-length="false" 
-                                      id="${ids.commentTextarea}"
-                                      name="comment text" 
-                                      rows="5" 
-                                      data-${data.controller}-target="${data.target.commentTextarea}">${nukePostConfig.commentText}</textarea>
-                            <div data-se-char-counter-target="output"></div>
-                        </div>
+                    <div${nukePostConfig.comment ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.commentControlFields}">${
+        buildTextarea(
+            `${ids.commentTextarea}-${postId}`,
+            'comment text',
+            nukePostConfig.commentText ?? '',
+            5,
+            data.target.commentTextarea,
+            'Comment Text:',
+            validationBounds.commentTextarea)}
                     </div>
                 </div>
                 <div class="d-flex ai-center g8">
-                    <label class="s-label" for="${ids.enableLogToggle}">Log post in Case Manager:</label>
+                    <label class="s-label" for="${ids.enableLogToggle}-${postId}">Log post in Case Manager:</label>
                     <input class="s-toggle-switch" 
-                           id="${ids.enableLogToggle}"
+                           id="${ids.enableLogToggle}-${postId}"
                            data-${data.controller}-target="${data.target.enableLogToggle}" 
                            type="checkbox"${nukePostConfig.log ? ' checked' : ''}>
                 </div>
@@ -186,10 +199,10 @@ export function registerNukePostStacksController() {
             return (this[`${data.target.enableLogToggle}Target`] as unknown as HTMLInputElement).checked;
         },
         get commentText(): string {
-            return (this[`${data.target.commentTextarea}Target`] as unknown as HTMLTextAreaElement).value;
+            return (this[`${data.target.commentTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
         },
         get flagDetailText(): string {
-            return (this[`${data.target.flagDetailTextarea}Target`] as unknown as HTMLTextAreaElement).value;
+            return (this[`${data.target.flagDetailTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
         },
         [data.action.handleSubmitActions](ev: ActionEvent) {
             ev.preventDefault();
