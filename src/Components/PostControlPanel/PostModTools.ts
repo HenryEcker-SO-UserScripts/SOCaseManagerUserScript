@@ -1,5 +1,6 @@
 import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
+import {buildTextarea, buildToggle, type ValidationBounds} from '../../Utils/StimulusComponentBuilder';
 
 
 const ids = {
@@ -52,11 +53,6 @@ const data = {
     }
 };
 
-interface ValidationBounds {
-    min: number;
-    max: number;
-}
-
 const validationBounds: Record<string, ValidationBounds> = {
     flagDetailTextarea: {
         min: 10,
@@ -72,46 +68,22 @@ const validationBounds: Record<string, ValidationBounds> = {
     }
 };
 
-function buildTextarea(
-    textareaId: string | number, textareaName: string, textareaText: string, rows: string | number, dataTarget: string,
-    labelText: string,
-    vB: ValidationBounds
-) {
-    return `
-<div class="d-flex ff-column-nowrap gs4 gsy" 
-     data-controller="se-char-counter"
-     data-se-char-counter-min="${vB.min}"
-     data-se-char-counter-max="${vB.max}">
-     <label class="s-label flex--item" for="${textareaId}">${labelText}</label>
-     <textarea style="font-family:monospace"
-               class="flex--item s-textarea" 
-               data-se-char-counter-target="field" 
-               data-is-valid-length="false" 
-               id="${textareaId}" 
-               name="${textareaName}" 
-               rows="${rows}" 
-               data-${data.controller}-target="${dataTarget}">${textareaText}</textarea>
-     <div data-se-char-counter-target="output"></div>
-</div>`;
+
+function buildFieldControlToggle(labelText: string, inputId: string, inputTarget: string, isChecked: boolean, controlParam: string) {
+    return buildToggle(labelText, inputId, data.controller, inputTarget, isChecked,
+        `data-${data.controller}-${data.params.controls}-param="${controlParam}"
+           data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"`
+    );
 }
 
-function buildFieldControlToggle(labelText: string, inputId: string, inputTarget: string, controlParam: string, isChecked: boolean) {
+function buildFieldControlArea(isVisible: boolean, target: string, innerHTML: string) {
     return `
-<div class="d-flex ai-center g8 jc-space-between">
-    <label class="s-label" for="${inputId}">${labelText}</label>
-    <input class="s-toggle-switch" 
-           id="${inputId}"
-           data-${data.controller}-target="${inputTarget}" 
-           data-${data.controller}-${data.params.controls}-param="${controlParam}"
-           data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
-           type="checkbox"${isChecked ? ' checked' : ''}>
-</div>`;
+<div class="d-flex fd-column g8${isVisible ? '' : ' d-none'}" data-${data.controller}-target="${target}">${innerHTML}</div>`;
 }
 
 // Builder Modal
 function buildModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-    // TODO Move the modal--body content into a separate function with configurable controller fields so that the settings page can be build from that
     return `
 <aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
     <div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" 
@@ -119,57 +91,63 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
          data-controller="${data.controller}">
         <h1 class="s-modal--header">Nuke Plagiarism</h1>
         <div class="s-modal--body">
-            <div class="d-flex fd-column g8">
-                ${buildFieldControlToggle(
-        'Flag before deletion:',
-        ids.enableFlagToggle(postId),
-        data.target.enableFlagToggle,
-        data.target.flagControlFields,
-        nukePostConfig.flag
-    )}
-                    <div${nukePostConfig.flag ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.flagControlFields}">${
-        buildTextarea(
-            `${ids.flagLinkTextarea(postId)}`,
-            'flag link text',
-            '',
-            2,
-            data.target.flagLinkTextarea,
-            'Link to source:',
-            validationBounds.flagLinkTextarea)}
-       ${buildTextarea(
-        `${ids.flagDetailTextarea(postId)}`,
-        'flag detail text',
-        nukePostConfig.flagDetailText ?? '',
-        5,
-        data.target.flagDetailTextarea,
-        'Flag Detail Text:',
-        validationBounds.flagDetailTextarea)}
-                    </div>
-                    ${buildFieldControlToggle(
-        'Comment after deletion:',
-        ids.enableCommentToggle(postId),
-        data.target.enableCommentToggle,
-        data.target.commentControlFields,
-        nukePostConfig.comment
-    )}
-                    <div${nukePostConfig.comment ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.commentControlFields}">${
-        buildTextarea(
-            `${ids.commentTextarea(postId)}`,
-            'comment text',
-            nukePostConfig.commentText ?? '',
-            5,
-            data.target.commentTextarea,
-            'Comment Text:',
-            validationBounds.commentTextarea)}
-                    </div>
-                <div class="d-flex ai-center g8 jc-space-between">
-                    <label class="s-label" for="${ids.enableLogToggle(postId)}">Log post in Case Manager:</label>
-                    <input class="s-toggle-switch" 
-                           id="${ids.enableLogToggle(postId)}"
-                           data-${data.controller}-target="${data.target.enableLogToggle}" 
-                           type="checkbox"${nukePostConfig.log ? ' checked' : ''}>
-                </div>
-            </div>
+            <div class="d-flex fd-column g8">${
+        buildFieldControlToggle(
+            'Flag before deletion:',
+            ids.enableFlagToggle(postId),
+            data.target.enableFlagToggle,
+            nukePostConfig.flag,
+            data.target.flagControlFields
+        )}${
+        buildFieldControlArea(
+            nukePostConfig.flag,
+            data.target.flagControlFields,
+            buildTextarea(
+                `${ids.flagLinkTextarea(postId)}`,
+                'flag link text',
+                '',
+                2,
+                data.controller,
+                data.target.flagLinkTextarea,
+                'Link to source:',
+                validationBounds.flagLinkTextarea)
+            + '\n' +
+            buildTextarea(
+                `${ids.flagDetailTextarea(postId)}`,
+                'flag detail text',
+                nukePostConfig.flagDetailText ?? '',
+                5,
+                data.controller,
+                data.target.flagDetailTextarea,
+                'Flag Detail Text:',
+                validationBounds.flagDetailTextarea))}${
+        buildFieldControlToggle(
+            'Comment after deletion:',
+            ids.enableCommentToggle(postId),
+            data.target.enableCommentToggle,
+            nukePostConfig.comment,
+            data.target.commentControlFields
+        )}${
+        buildFieldControlArea(
+            nukePostConfig.comment,
+            data.target.commentControlFields,
+            buildTextarea(
+                `${ids.commentTextarea(postId)}`,
+                'comment text',
+                nukePostConfig.commentText ?? '',
+                5,
+                data.controller,
+                data.target.commentTextarea,
+                'Comment Text:',
+                validationBounds.commentTextarea)
+        )}${
+        buildToggle(
+            'Log post in Case Manager:',
+            ids.enableLogToggle(postId),
+            data.controller,
+            data.target.enableLogToggle,
+            nukePostConfig.log
+        )}</div>
         </div>
         <div class="d-flex gx8 s-modal--footer ai-center">
             <button class="s-btn flex--item s-btn__filled s-btn__danger" 
