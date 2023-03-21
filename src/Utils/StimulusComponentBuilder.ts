@@ -4,8 +4,33 @@ export interface ValidationBounds {
 }
 
 
+export const validationBounds = {
+    flagDetailTextarea: {
+        min: 10,
+        max: 500
+    } as ValidationBounds,
+    flagLinkTextarea: {
+        min: 10,
+        max: 200
+    } as ValidationBounds,
+    commentTextarea: {
+        min: 15,
+        max: 600
+    } as ValidationBounds
+};
+
+
 export function isInValidationBounds(textLength: number, vB: ValidationBounds) {
     return textLength < vB.min || textLength > vB.max;
+}
+
+
+export function buildCheckbox(labelText: string, inputId: string, dataController: string, dataTarget: string, isChecked: boolean) {
+    return `
+<div class="s-check-control">
+    <input class="s-checkbox" type="checkbox" id="${inputId}" data-${dataController}-target="${dataTarget}"${isChecked ? ' checked' : ''}/>
+    <label class="s-label" for="${inputId}">${labelText}</label>
+</div>`;
 }
 
 export function buildToggle(labelText: string, inputId: string, dataController: string, dataTarget: string, isChecked: boolean, extraInputAttrs?: string) {
@@ -39,7 +64,7 @@ export function buildTextarea(
                id="${textareaId}" 
                name="${textareaName}" 
                rows="${rows}" 
-               data-${dataController}-target="${dataTarget}">${textareaText}</textarea>
+               data-${dataController}-target="${dataTarget}">${textareaText ?? ''}</textarea>
      <div data-se-char-counter-target="output"></div>
 </div>`;
 }

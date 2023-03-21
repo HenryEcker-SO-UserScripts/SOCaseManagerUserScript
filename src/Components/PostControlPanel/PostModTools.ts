@@ -4,7 +4,7 @@ import {
     buildTextarea,
     buildToggle,
     isInValidationBounds,
-    type ValidationBounds
+    validationBounds
 } from '../../Utils/StimulusComponentBuilder';
 
 
@@ -58,22 +58,6 @@ const data = {
     }
 };
 
-const validationBounds: Record<string, ValidationBounds> = {
-    flagDetailTextarea: {
-        min: 10,
-        max: 500
-    },
-    flagLinkTextarea: {
-        min: 10,
-        max: 200
-    },
-    commentTextarea: {
-        min: 15,
-        max: 600
-    }
-};
-
-
 function buildFieldControlToggle(labelText: string, inputId: string, inputTarget: string, isChecked: boolean, controlParam: string) {
     return buildToggle(labelText, inputId, data.controller, inputTarget, isChecked,
         `data-${data.controller}-${data.params.controls}-param="${controlParam}"
@@ -120,7 +104,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
             buildTextarea(
                 `${ids.flagDetailTextarea(postId)}`,
                 'flag detail text',
-                nukePostConfig.flagDetailText ?? '',
+                nukePostConfig.flagDetailText,
                 5,
                 data.controller,
                 data.target.flagDetailTextarea,
@@ -139,7 +123,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
             buildTextarea(
                 `${ids.commentTextarea(postId)}`,
                 'comment text',
-                nukePostConfig.commentText ?? '',
+                nukePostConfig.commentText,
                 5,
                 data.controller,
                 data.target.commentTextarea,
