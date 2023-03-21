@@ -59,6 +59,7 @@ function getNukePostModalId(postId: number): string {
 function buildModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
     // TODO Extract both text areas into helper function they have significant overlap
+    // TODO 2 Move the modal--body content into a separate function with configurable controller fields so that the settings page can be build from that
     return `
 <aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
     <div class="s-modal--dialog" style="min-width:45vw; width: max-content; max-width: 65vw;" 
@@ -133,7 +134,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                 </div>
             </div>
         </div>
-        <div class="d-flex gx8 s-modal--footer">
+        <div class="d-flex gx8 s-modal--footer ai-center">
             <button class="s-btn flex--item s-btn__filled s-btn__danger" 
                     type="button" 
                     data-${data.controller}-target="${data.target.nukePostButton}" 
@@ -144,6 +145,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                     type="button" 
                     data-action="click->${data.controller}#${data.action.handleCancelActions}"
                     data-${data.controller}-${data.params.postId}-param="${postId}" >Cancel</button>
+            <a class="fs-fine ml-auto" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>
         </div>
         <button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button>
     </div>
