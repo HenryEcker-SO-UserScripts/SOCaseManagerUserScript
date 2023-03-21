@@ -1,165 +1,19 @@
 import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import {
-    buildTextarea,
-    buildToggle,
-    isInValidationBounds,
-    validationBounds
-} from '../../Utils/StimulusComponentBuilder';
+import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
 
-
-const ids = {
-    modal(postId: number) {
-        return `socm-nuke-post-form-${postId}`;
-    },
-    enableFlagToggle(postId: number) {
-        return `socm-flag-enable-toggle-${postId}`;
-    },
-    enableCommentToggle(postId: number) {
-        return `socm-comment-enable-toggle-${postId}`;
-    },
-    enableLogToggle(postId: number) {
-        return `socm-log-nuked-post-toggle-${postId}`;
-    },
-    flagLinkTextarea(postId: number) {
-        return `socm-nuke-flag-link-area-${postId}`;
-    },
-    flagDetailTextarea(postId: number) {
-        return `socm-nuke-flag-detail-area-${postId}`;
-    },
-    commentTextarea(postId: number) {
-        return `socm-nuke-comment-area-${postId}`;
-    }
-};
-
-const data = {
-    controller: 'socm-nuke-post-form',
-    params: {
-        postId: 'post-id',
-        postOwner: 'post-owner',
-        controls: 'controls'
-    },
-    target: {
-        nukePostButton: 'nuke-post-button',
-        cancelButton: 'cancel-button',
-        enableFlagToggle: 'flag-enable-toggle',
-        enableCommentToggle: 'comment-enable-toggle',
-        enableLogToggle: 'log-enable-toggle',
-        flagControlFields: 'flag-info-area',
-        commentControlFields: 'comment-info-area',
-        flagLinkTextarea: 'flag-link-area',
-        flagDetailTextarea: 'flag-detail-area',
-        commentTextarea: 'comment-area'
-    },
-    action: {
-        handleSubmitActions: 'handleSubmitActions',
-        handleCancelActions: 'cancelNuke',
-        handleUpdateControlledField: 'handleUpdateControlledField'
-    }
-};
-
-function buildFieldControlToggle(labelText: string, inputId: string, inputTarget: string, isChecked: boolean, controlParam: string) {
-    return buildToggle(labelText, inputId, data.controller, inputTarget, isChecked,
-        `data-${data.controller}-${data.params.controls}-param="${controlParam}"
-           data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"`
-    );
-}
-
-function buildFieldControlArea(isVisible: boolean, target: string, innerHTML: string) {
-    return `
-<div class="d-flex fd-column g8${isVisible ? '' : ' d-none'}" data-${data.controller}-target="${target}">${innerHTML}</div>`;
-}
-
-const modalDivider = '<div class="my6 bb bc-black-400"></div>';
 
 // Builder Modal
 function buildNukePostModal(modalId: string, postId: number, postOwnerId: number) {
-    const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-    return `
-<aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
-    <div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" 
-         role="document" 
-         data-controller="${data.controller}">
-        <h1 class="s-modal--header">Nuke Plagiarism</h1>
-        <div class="s-modal--body">
-            <div class="d-flex fd-column g8">${
-        buildFieldControlToggle(
-            'Flag before deletion:',
-            ids.enableFlagToggle(postId),
-            data.target.enableFlagToggle,
-            nukePostConfig.flag,
-            data.target.flagControlFields
-        )}${
-        buildFieldControlArea(
-            nukePostConfig.flag,
-            data.target.flagControlFields,
-            buildTextarea(
-                `${ids.flagLinkTextarea(postId)}`,
-                'flag link text',
-                '', // No supported template for source 
-                2,
-                data.controller,
-                data.target.flagLinkTextarea,
-                'Link to source:',
-                validationBounds.flagLinkTextarea)
-            + '\n' +
-            buildTextarea(
-                `${ids.flagDetailTextarea(postId)}`,
-                'flag detail text',
-                nukePostConfig.flagDetailText,
-                5,
-                data.controller,
-                data.target.flagDetailTextarea,
-                'Flag Detail Text:',
-                validationBounds.flagDetailTextarea))}${modalDivider}${
-        buildFieldControlToggle(
-            'Comment after deletion:',
-            ids.enableCommentToggle(postId),
-            data.target.enableCommentToggle,
-            nukePostConfig.comment,
-            data.target.commentControlFields
-        )}${
-        buildFieldControlArea(
-            nukePostConfig.comment,
-            data.target.commentControlFields,
-            buildTextarea(
-                `${ids.commentTextarea(postId)}`,
-                'comment text',
-                nukePostConfig.commentText,
-                5,
-                data.controller,
-                data.target.commentTextarea,
-                'Comment Text:',
-                validationBounds.commentTextarea)
-        )}${modalDivider}${
-        buildToggle(
-            'Log post in Case Manager:',
-            ids.enableLogToggle(postId),
-            data.controller,
-            data.target.enableLogToggle,
-            nukePostConfig.log
-        )}</div>
-        </div>
-        <div class="d-flex gx8 s-modal--footer ai-center">
-            <button class="s-btn flex--item s-btn__filled s-btn__danger" 
-                    type="button" 
-                    data-${data.controller}-target="${data.target.nukePostButton}" 
-                    data-action="click->${data.controller}#${data.action.handleSubmitActions}" 
-                    data-${data.controller}-${data.params.postId}-param="${postId}" 
-                    data-${data.controller}-${data.params.postOwner}-param="${postOwnerId}">Nuke Post</button>
-            <button class="s-btn flex--item s-btn__muted" 
-                    type="button" 
-                    data-action="click->${data.controller}#${data.action.handleCancelActions}"
-                    data-${data.controller}-${data.params.postId}-param="${postId}" >Cancel</button>
-            <a class="fs-fine ml-auto" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>
-        </div>
-        <button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button>
-    </div>
-</aside>`;
+    return NUKE_POST_FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId});
+}
+
+function getModalId(postId: number) {
+    return NUKE_POST_FORM_MODAL_ID.formatUnicorn({postId: postId});
 }
 
 function handleNukePostButtonClick(postId: number, postOwnerId: number) {
-    const modalId = ids.modal(postId);
+    const modalId = getModalId(postId);
     const modal: HTMLElement | null | JQuery = document.getElementById(modalId);
     if (modal !== null) {
         Stacks.showModal(modal);
@@ -177,30 +31,49 @@ export function buildNukePostButton(isDeleted: boolean, answerId: number, postOw
     return button;
 }
 
-
 // Controller Logic
 export function registerNukePostStacksController() {
-    const controllerConfig = {
-        targets: [...Object.values(data.target)],
+    Stacks.addController(NUKE_POST_FORM_CONTROLLER, {
+        targets: NUKE_POST_DATA_TARGETS,
         get shouldFlag(): boolean {
-            return (this[`${data.target.enableFlagToggle}Target`] as unknown as HTMLInputElement).checked as boolean;
+            return this[NUKE_POST_ENABLE_FLAG_TOGGLE_TARGET].checked as boolean;
         },
         get shouldComment(): boolean {
-            return (this[`${data.target.enableCommentToggle}Target`] as unknown as HTMLInputElement).checked as boolean;
+            return this[NUKE_POST_ENABLE_COMMENT_TOGGLE_TARGET].checked as boolean;
         },
         get shouldLog(): boolean {
-            return (this[`${data.target.enableLogToggle}Target`] as unknown as HTMLInputElement).checked;
+            return this[NUKE_POST_ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
         },
         get commentText(): string {
-            return (this[`${data.target.commentTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
+            return this[NUKE_POST_COMMENT_TEXT_TARGET].value ?? '';
         },
         get flagLinkText(): string {
-            return (this[`${data.target.flagLinkTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
+            return this[NUKE_POST_FLAG_LINK_TEXT_TARGET].value ?? '';
         },
         get flagDetailText(): string {
-            return (this[`${data.target.flagDetailTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
+            return this[NUKE_POST_FLAG_DETAIL_TEXT_TARGET].value ?? '';
         },
-        [data.action.handleSubmitActions](ev: ActionEvent) {
+        connect() {
+            const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+
+            if (nukePostConfig.flag) {
+                this[NUKE_POST_ENABLE_FLAG_TOGGLE_TARGET].checked = true;
+            } else {
+                $(this[NUKE_POST_FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
+            }
+            if (nukePostConfig.comment) {
+                this[NUKE_POST_ENABLE_COMMENT_TOGGLE_TARGET].checked = true;
+            } else {
+                $(this[NUKE_POST_COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
+            }
+            if (nukePostConfig.log) {
+                this[NUKE_POST_ENABLE_LOG_TOGGLE_TARGET].checked = true;
+            }
+
+            this[NUKE_POST_FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
+            this[NUKE_POST_COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
+        },
+        NUKE_POST_HANDLE_SUBMIT(ev: ActionEvent) {
             ev.preventDefault();
             const {postOwner, postId} = ev.params;
             void nukePostAsPlagiarism(
@@ -214,25 +87,23 @@ export function registerNukePostStacksController() {
                 this.shouldLog
             );
         },
-        [data.action.handleCancelActions](ev: ActionEvent) {
+        NUKE_POST_HANDLE_CANCEL(ev: ActionEvent) {
             ev.preventDefault();
             const {postId} = ev.params;
-            const existingModal = document.getElementById(ids.modal(postId));
+            const existingModal = document.getElementById(getModalId(postId));
             if (existingModal !== null) {
                 existingModal.remove();
             }
         },
-        [data.action.handleUpdateControlledField](ev: ActionEvent) {
+        NUKE_POST_HANDLE_UPDATE_CONTROLLED_FIELD(ev: ActionEvent) {
             const {controls} = ev.params;
             if ((<HTMLInputElement>ev.target).checked) {
-                $(this[`${controls}Target`] as unknown as HTMLElement).removeClass('d-none');
+                $(this[`${controls}Target`]).removeClass('d-none');
             } else {
-                $(this[`${controls}Target`] as unknown as HTMLElement).addClass('d-none');
-
+                $(this[`${controls}Target`]).addClass('d-none');
             }
         }
-    };
-    Stacks.addController(data.controller, controllerConfig);
+    });
 }
 
 
