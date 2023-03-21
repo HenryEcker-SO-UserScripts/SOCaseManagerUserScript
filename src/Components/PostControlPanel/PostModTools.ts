@@ -1,217 +1,297 @@
-import {fetchFromAWS} from '../../API/AWSAPI';
+import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import type {FlagOtherResponse, PostDeleteResponse} from '../../API/SEAPI';
-import {getModMenuPopoverId} from './ElementIdGenerators';
 
 
-export function buildModTools(isDeleted: boolean, answerId: number, postOwnerId: number) {
-    const baseId = getModMenuPopoverId(answerId);
-    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-    if (isDeleted) {
-        // Don't bother building the popover for deleted posts
-        return button;
+const ids = {
+    modal: 'socm-nuke-post-form',
+    enableFlagToggle: 'socm-flag-enable-toggle',
+    enableCommentToggle: 'socm-comment-enable-toggle',
+    enableLogToggle: 'socm-log-nuked-post-toggle',
+    flagDetailTextarea: 'socm-nuke-flag-detail-area',
+    commentTextarea: 'socm-nuke-comment-area'
+};
+
+const data = {
+    controller: 'socm-nuke-post-form',
+    params: {
+        postId: 'post-id',
+        postOwner: 'post-owner',
+        controls: 'controls'
+    },
+    target: {
+        nukePostButton: 'nuke-post-button',
+        cancelButton: 'cancel-button',
+        enableFlagToggle: 'flag-enable-toggle',
+        enableCommentToggle: 'comment-enable-toggle',
+        enableLogToggle: 'log-enable-toggle',
+        flagInfoFields: 'flag-info-area',
+        commentInfoFields: 'comment-info-area',
+        flagDetailTextarea: 'flag-detail-area',
+        commentTextarea: 'comment-area'
+    },
+    action: {
+        handleSubmitActions: 'handleSubmitActions',
+        handleCancelActions: 'cancelNuke',
+        handleUpdateControlledField: 'handleUpdateControlledField'
     }
-    return $(document.createDocumentFragment())
-        .append(button)
-        .append(buildPopOver(baseId, answerId, postOwnerId));
+};
+
+const validationBounds = {
+    flagDetailTextarea: {
+        min: 10,
+        max: 500
+    },
+    flagLinkTextarea: {
+        min: 10,
+        max: 200
+    },
+    commentTextarea: {
+        min: 15,
+        max: 600
+    }
+};
+
+function getNukePostModalId(postId: number): string {
+    return `${ids.modal}-${postId}`;
 }
 
-
-function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
-    // Build JQuery Elements For Popover
+// Builder Modal
+function buildModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-    const {
-        textareaLabel,
-        textarea,
-        checkboxContainer,
-        shouldFlagCheckbox,
-        shouldCommentCheckbox,
-        shouldLogCheckbox
-    } = buildNukeOptionElements(baseId, nukePostConfig);
-    const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
-    const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
+    // TODO Extract both text areas into helper function they have significant overlap
+    return `
+<aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
+    <div class="s-modal--dialog" style="min-width:45vw; width: max-content; max-width: 65vw;" 
+         role="document" 
+         data-controller="${data.controller}">
+        <h1 class="s-modal--header">Nuke Plagiarism</h1>
+        <div class="s-modal--body">
+            <div class="d-flex fd-column g8">
+                <div>
+                    <div class="d-flex ai-center g8">
+                        <label class="s-label" for="${ids.enableFlagToggle}">Flag before deletion:</label>
+                        <input class="s-toggle-switch" 
+                               id="${ids.enableFlagToggle}"
+                               data-${data.controller}-target="${data.target.enableFlagToggle}" 
+                               data-${data.controller}-${data.params.controls}-param="${data.target.flagInfoFields}"
+                               data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
+                               type="checkbox"${nukePostConfig.flag ? ' checked' : ''}>
+                    </div>
+                    <div${nukePostConfig.flag ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.flagInfoFields}">
+                        <div class="d-flex ff-column-nowrap gs4 gsy" 
+                             data-controller="se-char-counter" 
+                             data-se-char-counter-min="${validationBounds.flagDetailTextarea.min}" 
+                             data-se-char-counter-max="${validationBounds.flagDetailTextarea.max}">
+                            <label class="s-label flex--item" for="${ids.flagDetailTextarea}">Flag Detail Text:</label>
+                            <textarea style="font-family:monospace"
+                                      class="flex--item s-textarea" 
+                                      data-se-char-counter-target="field" 
+                                      data-is-valid-length="false" 
+                                      id="${ids.flagDetailTextarea}" 
+                                      name="flag detail text" 
+                                      rows="5" 
+                                      data-${data.controller}-target="${data.target.flagDetailTextarea}">${nukePostConfig.flagDetailText}</textarea>
+                            <div data-se-char-counter-target="output"></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex ai-center g8">
+                        <label class="s-label" for="${ids.enableCommentToggle}">Comment after deletion:</label>
+                        <input class="s-toggle-switch" 
+                              id="${ids.enableCommentToggle}" 
+                              data-${data.controller}-target="${data.target.enableCommentToggle}" 
+                              data-${data.controller}-${data.params.controls}-param="${data.target.commentInfoFields}"
+                              data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
+                              type="checkbox"${nukePostConfig.comment ? ' checked' : ''}>
+                    </div>
+                    <div${nukePostConfig.comment ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.commentInfoFields}">
+                        <div class="d-flex ff-column-nowrap gs4 gsy" 
+                             data-controller="se-char-counter" 
+                             data-se-char-counter-min="${validationBounds.commentTextarea.min}" 
+                             data-se-char-counter-max="${validationBounds.commentTextarea.max}"
+                             data-${data.controller}-target="${data.target.commentInfoFields}">
+                            <label class="s-label flex--item" for="${ids.commentTextarea}">Comment Text:</label>
+                            <textarea style="font-family:monospace" 
+                                      class="flex--item s-textarea" 
+                                      data-se-char-counter-target="field" 
+                                      data-is-valid-length="false" 
+                                      id="${ids.commentTextarea}"
+                                      name="comment text" 
+                                      rows="5" 
+                                      data-${data.controller}-target="${data.target.commentTextarea}">${nukePostConfig.commentText}</textarea>
+                            <div data-se-char-counter-target="output"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex ai-center g8">
+                    <label class="s-label" for="${ids.enableLogToggle}">Log post in Case Manager:</label>
+                    <input class="s-toggle-switch" 
+                           id="${ids.enableLogToggle}"
+                           data-${data.controller}-target="${data.target.enableLogToggle}" 
+                           type="checkbox"${nukePostConfig.log ? ' checked' : ''}>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gx8 s-modal--footer">
+            <button class="s-btn flex--item s-btn__filled s-btn__danger" 
+                    type="button" 
+                    data-${data.controller}-target="${data.target.nukePostButton}" 
+                    data-action="click->${data.controller}#${data.action.handleSubmitActions}" 
+                    data-${data.controller}-${data.params.postId}-param="${postId}" 
+                    data-${data.controller}-${data.params.postOwner}-param="${postOwnerId}">Nuke Post</button>
+            <button class="s-btn flex--item s-btn__muted" 
+                    type="button" 
+                    data-action="click->${data.controller}#${data.action.handleCancelActions}"
+                    data-${data.controller}-${data.params.postId}-param="${postId}" >Cancel</button>
+        </div>
+        <button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button>
+    </div>
+</aside>`;
+}
 
-    // Configure Behaviour for form elements
-
-    nukeButton.on('click', (ev) => {
-        ev.preventDefault();
-        const [
-            isFlagChecked,
-            isCommentChecked,
-            isLogChecked
-        ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-        void nukePostAsPlagiarism(
-            answerId,
-            postOwnerId,
-            textarea.val() as string,
-            isFlagChecked,
-            isCommentChecked,
-            isLogChecked
-        );
-    });
-
-    function updateDisplayBasedOnSelections(ev: JQuery.Event) {
-        ev.preventDefault();
-        const [
-            isFlagChecked,
-            isCommentChecked,
-            isLogChecked
-        ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-
-        // Disable textarea field when not needed
-        if (!isFlagChecked && !isCommentChecked) {
-            textarea.prop('disabled', true);
-        } else {
-            textarea.removeProp('disabled');
-        }
-        nukeButton.attr(
-            'title',
-            (isFlagChecked ? 'Flags the post, ' : '') +
-            (isFlagChecked ? 'deletes' : 'Deletes') + ' the post' +
-            (isCommentChecked ? ', adds a comment' : '') +
-            (isLogChecked ? ', logs feedback in Case manager' : '')
-        );
+function handleNukePostButtonClick(postId: number, postOwnerId: number) {
+    const modalId = getNukePostModalId(postId);
+    const modal: HTMLElement | null | JQuery = document.getElementById(modalId);
+    if (modal !== null) {
+        Stacks.showModal(modal);
+    } else {
+        $('body').append(buildModal(modalId, postId, postOwnerId));
     }
+}
 
-    shouldCommentCheckbox.on('input', updateDisplayBasedOnSelections);
-    shouldFlagCheckbox.on('input', updateDisplayBasedOnSelections);
-    shouldLogCheckbox.on('input', updateDisplayBasedOnSelections);
 
-    textarea.on('input', (ev) => {
-        ev.preventDefault();
-        const length = (ev.target.value as string).length;
-        lengthSpan.text(length);
+export function buildNukePostButton(isDeleted: boolean, answerId: number, postOwnerId: number) {
+    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined" type="button">Nuke as plagiarism</button>`);
+    button.on('click', () => {
+        handleNukePostButtonClick(answerId, postOwnerId);
     });
-
-    // Compose JQuery Elements
-    return (
-        $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`)
-            .append(
-                $('<div class="d-grid g8 ai-center grid__1 ws4"></div>')
-                    .append(
-                        // Header with text area label to left and link to config on right
-                        $('<div class="d-flex fd-row jc-space-between"></div>')
-                            .append(textareaLabel)
-                            .append(`<a class="fs-fine" href="/users/current${tabIdentifiers.settings}" target="_blank">Configure default options</a>`)
-                    )
-                    .append(
-                        // Input textarea for flag/comment text
-                        textarea
-                    )
-                    .append(
-                        // Characters: Length of Textarea text
-                        $('<div></div>') // needs to be a div so that the children appear side-by-side instead of vertical grid
-                            .append('<span>Characters: </span>')
-                            .append(lengthSpan)
-                    )
-                    .append(
-                        // Checkbox container and nuke button
-                        $('<div class="d-flex fd-row flex__fl-equal g8"></div>')
-                            .append(checkboxContainer)
-                            .append(nukeButton)
-                    )
-            )
-    );
+    return button;
 }
 
-export function getCheckboxValuesFromInput(...checkboxes: JQuery[]): boolean[] {
-    return checkboxes.map(checkbox => checkbox.is(':checked'));
-}
 
-export function buildNukeOptionElements(baseId: string, nukePostConfig: CmNukePostConfig) {
-    const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
-    const textarea: JQuery<HTMLTextAreaElement> = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
-    textarea.val(nukePostConfig.detailText);
+// Controller Logic
+export function registerNukePostStacksController() {
+    const controllerConfig = {
+        targets: [...Object.values(data.target)],
+        get shouldFlag(): boolean {
+            return (this[`${data.target.enableFlagToggle}Target`] as unknown as HTMLInputElement).checked as boolean;
+        },
+        get shouldComment(): boolean {
+            return (this[`${data.target.enableCommentToggle}Target`] as unknown as HTMLInputElement).checked as boolean;
+        },
+        get shouldLog(): boolean {
+            return (this[`${data.target.enableLogToggle}Target`] as unknown as HTMLInputElement).checked;
+        },
+        get commentText(): string {
+            return (this[`${data.target.commentTextarea}Target`] as unknown as HTMLTextAreaElement).value;
+        },
+        get flagDetailText(): string {
+            return (this[`${data.target.flagDetailTextarea}Target`] as unknown as HTMLTextAreaElement).value;
+        },
+        [data.action.handleSubmitActions](ev: ActionEvent) {
+            ev.preventDefault();
+            const {postOwner, postId} = ev.params;
+            void nukePostAsPlagiarism(
+                postId,
+                postOwner,
+                this.flagDetailText,
+                this.commentText,
+                this.shouldFlag,
+                this.shouldComment,
+                this.shouldLog
+            );
+        },
+        [data.action.handleCancelActions](ev: ActionEvent) {
+            ev.preventDefault();
+            const {postId} = ev.params;
+            const existingModal = document.getElementById(getNukePostModalId(postId));
+            if (existingModal !== null) {
+                existingModal.remove();
+            }
+        },
+        [data.action.handleUpdateControlledField](ev: ActionEvent) {
+            const {controls} = ev.params;
+            if ((<HTMLInputElement>ev.target).checked) {
+                $(this[`${controls}Target`] as unknown as HTMLElement).removeClass('d-none');
+            } else {
+                $(this[`${controls}Target`] as unknown as HTMLElement).addClass('d-none');
 
-    const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-    const shouldFlagCheckbox = $(`<input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? ' checked' : ''}/>`);
-    const shouldCommentCheckbox = $(`<input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? ' checked' : ''}/>`);
-    const shouldLogCheckbox = $(`<input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? ' checked' : ''}/>`);
-
-    checkboxContainer
-        .append(
-            $('<div class="s-check-control"></div>')
-                .append(shouldFlagCheckbox)
-                .append(`<label class="s-label" for="${baseId}-cb-flag">Flag</label>`)
-        )
-        .append(
-            $('<div class="s-check-control"></div>')
-                .append(shouldCommentCheckbox)
-                .append(`<label class="s-label" for="${baseId}-cb-comment">Comment</label>`)
-        )
-        .append(
-            $('<div class="s-check-control"></div>')
-                .append(shouldLogCheckbox)
-                .append(`<label class="s-label" for="${baseId}-cb-log">Log</label>`)
-        );
-    return {
-        textareaLabel,
-        textarea,
-        checkboxContainer,
-        shouldFlagCheckbox,
-        shouldCommentCheckbox,
-        shouldLogCheckbox
+            }
+        }
     };
+    Stacks.addController(data.controller, controllerConfig);
 }
 
-async function nukePostAsPlagiarism(answerId: number, ownerId: number, message: string, flagPost = false, commentPost = true, logWithAws = true) {
-    // Flag limit is 10-500
-    if (flagPost && (message.length < 10 || message.length > 500)) {
-        StackExchange.helpers.showToast('Flags must be between 10 and 500 characters. Either add text or disable the flagging option.', {type: 'danger'});
+async function nukePostAsPlagiarism(answerId: number, ownerId: number, flagText: string, commentText: string,
+                                    flagPost = false, commentPost = true, logWithAws = true) {
+    if (flagPost && (flagText.length < validationBounds.flagDetailTextarea.min || flagText.length > validationBounds.flagDetailTextarea.max)) {
+        StackExchange.helpers.showToast(`Flags must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either add text or disable the flagging option.`, {type: 'danger'});
         return;
     }
-    // Comment limit is 15-600
-    if (commentPost && (message.length < 15 || message.length > 600)) {
-        StackExchange.helpers.showToast('Comments must be between 10 and 600 characters. Either add text or disable the comment option.', {type: 'danger'});
+
+    if (commentPost && (commentText.length < validationBounds.commentTextarea.min || commentText.length > validationBounds.commentTextarea.max)) {
+        StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either add text or disable the comment option.`, {type: 'danger'});
         return;
-
-    }
-    if (flagPost) {
-        const flagFd = new FormData();
-        flagFd.set('fkey', StackExchange.options.user.fkey);
-        flagFd.set('otherText', message);
-        const flagFetch: FlagOtherResponse = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
-            body: flagFd,
-            method: 'POST'
-        }).then(res => res.json());
-        if (!flagFetch.Success) {
-            StackExchange.helpers.showToast(flagFetch.Message);
-            return; // don't continue
-        }
     }
 
-    const deleteFd = new FormData();
-    deleteFd.set('fkey', StackExchange.options.user.fkey);
-    const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
-        body: deleteFd,
-        method: 'POST'
-    }).then(res => res.json());
-
-    if (!deleteFetch.Success) {
-        return; // Deletion failed don't continue
-    }
-    if (commentPost) {
-        const commentFd = new FormData();
-        commentFd.set('fkey', StackExchange.options.user.fkey);
-        commentFd.set('comment', message);
-        await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
-    }
-    if (logWithAws) {
-        const body: {
-            postOwnerId?: number;
-            actionIds?: number[];
-        } = {};
-        if (ownerId !== -1) {
-            body['postOwnerId'] = ownerId;
-        }
-        body['actionIds'] = [Feedback.Plagiarised, Feedback.Deleted];
-        void await fetchFromAWS(`/handle/post/${answerId}`, {
-            'method': 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body)
-        });
-    }
-    window.location.reload();
+    console.log({
+        answerId,
+        ownerId,
+        flagText,
+        commentText,
+        flagPost,
+        commentPost,
+        logWithAws
+    });
+    //
+    //
+    // if (flagPost) {
+    //     const flagFd = new FormData();
+    //     flagFd.set('fkey', StackExchange.options.user.fkey);
+    //     flagFd.set('otherText', flagText);
+    //     const flagFetch: FlagOtherResponse = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
+    //         body: flagFd,
+    //         method: 'POST'
+    //     }).then(res => res.json());
+    //     if (!flagFetch.Success) {
+    //         StackExchange.helpers.showToast(flagFetch.Message);
+    //         return; // don't continue
+    //     }
+    // }
+    //
+    // const deleteFd = new FormData();
+    // deleteFd.set('fkey', StackExchange.options.user.fkey);
+    // const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
+    //     body: deleteFd,
+    //     method: 'POST'
+    // }).then(res => res.json());
+    //
+    // if (!deleteFetch.Success) {
+    //     return; // Deletion failed don't continue
+    // }
+    // if (commentPost) {
+    //     const commentFd = new FormData();
+    //     commentFd.set('fkey', StackExchange.options.user.fkey);
+    //     commentFd.set('comment', commentText);
+    //     await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
+    // }
+    // if (logWithAws) {
+    //     const body: {
+    //         postOwnerId?: number;
+    //         actionIds?: number[];
+    //     } = {};
+    //     if (ownerId !== -1) {
+    //         body['postOwnerId'] = ownerId;
+    //     }
+    //     body['actionIds'] = [Feedback.Plagiarised, Feedback.Deleted];
+    //     void await fetchFromAWS(`/handle/post/${answerId}`, {
+    //         'method': 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify(body)
+    //     });
+    // }
+    // window.location.reload();
 }

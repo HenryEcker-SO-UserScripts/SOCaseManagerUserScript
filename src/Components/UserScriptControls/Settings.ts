@@ -1,6 +1,6 @@
 import {buildExistingTokensControls} from './SettingControls/ExistingAuthTokenManager';
 import {buildTokenIssuer} from './SettingControls/AuthTokenIssuer';
-import {buildNukeConfigControls} from './SettingControls/NukeDefaultConfigControls';
+// import {buildNukeConfigControls} from './SettingControls/NukeDefaultConfigControls';
 
 
 export function buildUserScriptSettingsPanel() {
@@ -9,9 +9,9 @@ export function buildUserScriptSettingsPanel() {
 
     toolGrid.append(buildExistingTokensControls());
     toolGrid.append(buildTokenIssuer());
-    if (StackExchange.options.user.isModerator) {
-        toolGrid.append(buildNukeConfigControls());
-    }
+    // if (StackExchange.options.user.isModerator) {
+    //     toolGrid.append(buildNukeConfigControls());
+    // }
 
     return $(document.createDocumentFragment())
         .append(container)
