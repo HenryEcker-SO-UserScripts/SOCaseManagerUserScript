@@ -1,6 +1,6 @@
 import {getSummaryPostInfoFromIds} from '../../API/AWSAPI';
-import {buildModTools} from './PostModTools';
 import {buildActionsComponent} from './PostActionForm';
+import {buildNukePostButton, registerNukePostStacksController} from './PostModTools';
 import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
 
 
@@ -10,11 +10,14 @@ export function buildAnswerControlPanel() {
     for (const {jAnswer, isDeleted, answerId, postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
         const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
         controlPanel.append(buildBaseTimelineButtons(answerId));
-        if (StackExchange.options.user.isModerator) {
-            controlPanel.append(buildModTools(isDeleted, answerId, postOwnerId));
+        if (StackExchange.options.user.isModerator === true) {
+            controlPanel.append(buildNukePostButton(isDeleted, answerId, postOwnerId));
         }
         controlPanel.append(buildActionsComponent(answerId, postOwnerId));
         jAnswer.append(controlPanel);
+    }
+    if (StackExchange.options.user.isModerator === true) {
+        registerNukePostStacksController(); // Only need to do this once per page
     }
     delayPullSummaryPostInfo(answerIds);
 }
