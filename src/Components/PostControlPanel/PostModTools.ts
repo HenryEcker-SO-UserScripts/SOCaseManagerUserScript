@@ -5,11 +5,11 @@ import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelp
 
 // Builder Modal
 function buildNukePostModal(modalId: string, postId: number, postOwnerId: number) {
-    return NUKE_POST_FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId});
+    return NUKE_POST.FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId});
 }
 
 function getModalId(postId: number) {
-    return NUKE_POST_FORM_MODAL_ID.formatUnicorn({postId: postId});
+    return NUKE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
 }
 
 function handleNukePostButtonClick(postId: number, postOwnerId: number) {
@@ -33,47 +33,47 @@ export function buildNukePostButton(isDeleted: boolean, answerId: number, postOw
 
 // Controller Logic
 export function registerNukePostStacksController() {
-    Stacks.addController(NUKE_POST_FORM_CONTROLLER, {
-        targets: NUKE_POST_DATA_TARGETS,
+    Stacks.addController(NUKE_POST.FORM_CONTROLLER, {
+        targets: NUKE_POST.DATA_TARGETS,
         get shouldFlag(): boolean {
-            return this[NUKE_POST_ENABLE_FLAG_TOGGLE_TARGET].checked as boolean;
+            return this[NUKE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked as boolean;
         },
         get shouldComment(): boolean {
-            return this[NUKE_POST_ENABLE_COMMENT_TOGGLE_TARGET].checked as boolean;
+            return this[NUKE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked as boolean;
         },
         get shouldLog(): boolean {
-            return this[NUKE_POST_ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
+            return this[NUKE_POST.ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
         },
         get commentText(): string {
-            return this[NUKE_POST_COMMENT_TEXT_TARGET].value ?? '';
+            return this[NUKE_POST.COMMENT_TEXT_TARGET].value ?? '';
         },
         get flagLinkText(): string {
-            return this[NUKE_POST_FLAG_LINK_TEXT_TARGET].value ?? '';
+            return this[NUKE_POST.FLAG_LINK_TEXT_TARGET].value ?? '';
         },
         get flagDetailText(): string {
-            return this[NUKE_POST_FLAG_DETAIL_TEXT_TARGET].value ?? '';
+            return this[NUKE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
         },
         connect() {
             const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
 
             if (nukePostConfig.flag) {
-                this[NUKE_POST_ENABLE_FLAG_TOGGLE_TARGET].checked = true;
+                this[NUKE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked = true;
             } else {
-                $(this[NUKE_POST_FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
+                $(this[NUKE_POST.FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
             }
             if (nukePostConfig.comment) {
-                this[NUKE_POST_ENABLE_COMMENT_TOGGLE_TARGET].checked = true;
+                this[NUKE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked = true;
             } else {
-                $(this[NUKE_POST_COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
+                $(this[NUKE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
             }
             if (nukePostConfig.log) {
-                this[NUKE_POST_ENABLE_LOG_TOGGLE_TARGET].checked = true;
+                this[NUKE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             }
 
-            this[NUKE_POST_FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
-            this[NUKE_POST_COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
+            this[NUKE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
+            this[NUKE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
         },
-        NUKE_POST_HANDLE_SUBMIT(ev: ActionEvent) {
+        [NUKE_POST.HANDLE_SUBMIT](ev: ActionEvent) {
             ev.preventDefault();
             const {postOwner, postId} = ev.params;
             void nukePostAsPlagiarism(
@@ -87,7 +87,7 @@ export function registerNukePostStacksController() {
                 this.shouldLog
             );
         },
-        NUKE_POST_HANDLE_CANCEL(ev: ActionEvent) {
+        [NUKE_POST.HANDLE_CANCEL](ev: ActionEvent) {
             ev.preventDefault();
             const {postId} = ev.params;
             const existingModal = document.getElementById(getModalId(postId));
@@ -95,7 +95,7 @@ export function registerNukePostStacksController() {
                 existingModal.remove();
             }
         },
-        NUKE_POST_HANDLE_UPDATE_CONTROLLED_FIELD(ev: ActionEvent) {
+        [NUKE_POST.HANDLE_UPDATE_CONTROLLED_FIELD](ev: ActionEvent) {
             const {controls} = ev.params;
             if ((<HTMLInputElement>ev.target).checked) {
                 $(this[`${controls}Target`]).removeClass('d-none');

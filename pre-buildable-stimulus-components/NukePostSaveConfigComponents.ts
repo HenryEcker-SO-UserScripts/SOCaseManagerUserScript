@@ -20,12 +20,13 @@ const data = {
         commentTemplateTextarea: 'nuke-config-comment-template'
     },
     action: {
-        handleSaveConfig: 'handleSaveConfig'
+        handleSaveConfig: 'handleSaveConfig',
+        handleResetConfig: 'handleResetConfig',
     }
 };
 
 
-const nukeConfigSaveForm = `<form class="d-flex fd-column g12" data-controller="${data.controller}" data-action="submit->${data.controller}#${data.action.handleSaveConfig}">${
+const nukeConfigSaveForm = `<form class="d-flex fd-column g12" data-controller="${data.controller}" data-action="submit->${data.controller}#${data.action.handleSaveConfig} reset->${data.controller}#${data.action.handleResetConfig}">${
     buildCheckbox('Should Flag', ids.shouldFlagCheckbox, data.controller, data.target.shouldFlagCheckbox)
 }${
     buildCheckbox('Should Comment', ids.shouldCommentCheckbox, data.controller, data.target.shouldCommentCheckbox)
@@ -47,16 +48,17 @@ const nukeConfigSaveForm = `<form class="d-flex fd-column g12" data-controller="
         'Comment Text Template:',
         validationBounds.commentTextarea
     )
-}<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div></form>`;
+}<div class="d-flex fd-row g8"><button class="s-btn s-btn__primary" type="submit">Save Config</button><button class="s-btn s-btn__muted" type="reset">Reset To Default</button></div></form>`;
 
 export default {
-    NUKE_POST_SAVE_CONFIG_CONTROLLER: JSON.stringify(data.controller),
-    NUKE_POST_SAVE_CONFIG_FORM: JSON.stringify(cleanWhitespace(nukeConfigSaveForm)),
-    NUKE_POST_SAVE_CONFIG_DATA_TARGETS: JSON.stringify([...Object.values(data.target)]),
-    NUKE_POST_SAVE_CONFIG_SHOULD_FLAG_TARGET: `'${data.target.shouldFlagCheckbox}Target'`,
-    NUKE_POST_SAVE_CONFIG_SHOULD_COMMENT_TARGET: `'${data.target.shouldCommentCheckbox}Target'`,
-    NUKE_POST_SAVE_CONFIG_SHOULD_LOG_TARGET: `'${data.target.shouldLogCheckbox}Target'`,
-    NUKE_POST_SAVE_CONFIG_FLAG_DETAIL_TARGET: `'${data.target.flagDetailTemplateTextarea}Target'`,
-    NUKE_POST_SAVE_CONFIG_COMMENT_TARGET: `'${data.target.commentTemplateTextarea}Target'`,
-    NUKE_POST_SAVE_CONFIG_HANDLE_SAVE: data.action.handleSaveConfig,
+    CONTROLLER: data.controller,
+    FORM: cleanWhitespace(nukeConfigSaveForm),
+    DATA_TARGETS: [...Object.values(data.target)],
+    SHOULD_FLAG_TARGET: `${data.target.shouldFlagCheckbox}Target`,
+    SHOULD_COMMENT_TARGET: `${data.target.shouldCommentCheckbox}Target`,
+    SHOULD_LOG_TARGET: `${data.target.shouldLogCheckbox}Target`,
+    FLAG_DETAIL_TARGET: `${data.target.flagDetailTemplateTextarea}Target`,
+    COMMENT_TARGET: `${data.target.commentTemplateTextarea}Target`,
+    HANDLE_SAVE: data.action.handleSaveConfig,
+    HANDLE_RESET: data.action.handleResetConfig
 };
