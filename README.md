@@ -219,7 +219,7 @@ Moderators also have an additional option in their [settings page] to specify wh
 |-------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Detail Text | Empty String | Populates the textarea with a string to easily flag and comment on posts                                                                                                              |
 | Flag        | Unchecked    | Flag post by default. This is false by default because many instances of plagiarism are brought to moderator attention via custom flag, and would not normally require a second flag. |
-| Comment     | Checked      | Leave a comment on the post by default. This is true by default to explain why a moderator deleted the post.                                                                          |
+| Comment     | Unchecked    | Leave a comment on the post by default. This is false by default since "Delete as plagiarism" now causes the UI to show the reason for deletion.                                      |
 | Log         | Checked      | Log feedback with Case Manager. This is true by default to help to record patterns of behaviour.                                                                                      |
 
 
