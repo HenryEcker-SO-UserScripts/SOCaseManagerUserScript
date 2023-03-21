@@ -95,29 +95,38 @@ function buildTextarea(
 </div>`;
 }
 
+function buildFieldControlToggle(labelText: string, inputId: string, inputTarget: string, controlParam: string, isChecked: boolean) {
+    return `
+<div class="d-flex ai-center g8 jc-space-between">
+    <label class="s-label" for="${inputId}">${labelText}</label>
+    <input class="s-toggle-switch" 
+           id="${inputId}"
+           data-${data.controller}-target="${inputTarget}" 
+           data-${data.controller}-${data.params.controls}-param="${controlParam}"
+           data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
+           type="checkbox"${isChecked ? ' checked' : ''}>
+</div>`;
+}
+
 // Builder Modal
 function buildModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
     // TODO Move the modal--body content into a separate function with configurable controller fields so that the settings page can be build from that
-    // TODO Move toggle labels into helper function
     return `
 <aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
-    <div class="s-modal--dialog" style="min-width:45vw; width: max-content; max-width: 65vw;" 
+    <div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" 
          role="document" 
          data-controller="${data.controller}">
         <h1 class="s-modal--header">Nuke Plagiarism</h1>
         <div class="s-modal--body">
             <div class="d-flex fd-column g8">
-                <div>
-                    <div class="d-flex ai-center g8">
-                        <label class="s-label" for="${ids.enableFlagToggle(postId)}">Flag before deletion:</label>
-                        <input class="s-toggle-switch" 
-                               id="${ids.enableFlagToggle(postId)}"
-                               data-${data.controller}-target="${data.target.enableFlagToggle}" 
-                               data-${data.controller}-${data.params.controls}-param="${data.target.flagControlFields}"
-                               data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
-                               type="checkbox"${nukePostConfig.flag ? ' checked' : ''}>
-                    </div>
+                ${buildFieldControlToggle(
+        'Flag before deletion:',
+        ids.enableFlagToggle(postId),
+        data.target.enableFlagToggle,
+        data.target.flagControlFields,
+        nukePostConfig.flag
+    )}
                     <div${nukePostConfig.flag ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.flagControlFields}">${
         buildTextarea(
             `${ids.flagLinkTextarea(postId)}`,
@@ -136,17 +145,13 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
         'Flag Detail Text:',
         validationBounds.flagDetailTextarea)}
                     </div>
-                </div>
-                <div>
-                    <div class="d-flex ai-center g8">
-                        <label class="s-label" for="${ids.enableCommentToggle(postId)}">Comment after deletion:</label>
-                        <input class="s-toggle-switch" 
-                              id="${ids.enableCommentToggle(postId)}" 
-                              data-${data.controller}-target="${data.target.enableCommentToggle}" 
-                              data-${data.controller}-${data.params.controls}-param="${data.target.commentControlFields}"
-                              data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
-                              type="checkbox"${nukePostConfig.comment ? ' checked' : ''}>
-                    </div>
+                    ${buildFieldControlToggle(
+        'Comment after deletion:',
+        ids.enableCommentToggle(postId),
+        data.target.enableCommentToggle,
+        data.target.commentControlFields,
+        nukePostConfig.comment
+    )}
                     <div${nukePostConfig.comment ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.commentControlFields}">${
         buildTextarea(
             `${ids.commentTextarea(postId)}`,
@@ -157,8 +162,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
             'Comment Text:',
             validationBounds.commentTextarea)}
                     </div>
-                </div>
-                <div class="d-flex ai-center g8">
+                <div class="d-flex ai-center g8 jc-space-between">
                     <label class="s-label" for="${ids.enableLogToggle(postId)}">Log post in Case Manager:</label>
                     <input class="s-toggle-switch" 
                            id="${ids.enableLogToggle(postId)}"
