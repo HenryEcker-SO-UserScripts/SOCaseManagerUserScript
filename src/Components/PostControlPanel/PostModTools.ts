@@ -110,7 +110,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
             buildTextarea(
                 `${ids.flagLinkTextarea(postId)}`,
                 'flag link text',
-                '',
+                '', // No supported template for source 
                 2,
                 data.controller,
                 data.target.flagLinkTextarea,
