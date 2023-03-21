@@ -3,6 +3,11 @@ export interface ValidationBounds {
     max: number;
 }
 
+
+export function isInValidationBounds(textLength: number, vB: ValidationBounds) {
+    return textLength < vB.min || textLength > vB.max;
+}
+
 export function buildToggle(labelText: string, inputId: string, dataController: string, dataTarget: string, isChecked: boolean, extraInputAttrs?: string) {
     return `
 <div class="d-flex ai-center g8 jc-space-between">

@@ -1,6 +1,11 @@
 import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import {buildTextarea, buildToggle, type ValidationBounds} from '../../Utils/StimulusComponentBuilder';
+import {
+    buildTextarea,
+    buildToggle,
+    isInValidationBounds,
+    type ValidationBounds
+} from '../../Utils/StimulusComponentBuilder';
 
 
 const ids = {
@@ -244,20 +249,24 @@ export function registerNukePostStacksController() {
     Stacks.addController(data.controller, controllerConfig);
 }
 
-async function nukePostAsPlagiarism(answerId: number, ownerId: number,
-                                    flagLinkText: string, flagText: string,
-                                    commentText: string,
-                                    flagPost = false, commentPost = true, logWithAws = true) {
-    if (flagPost && (flagLinkText.length < validationBounds.flagLinkTextarea.min || flagLinkText.length > validationBounds.flagLinkTextarea.max)) {
-        StackExchange.helpers.showToast(`Flags must be between ${validationBounds.flagLinkTextarea.min} and ${validationBounds.flagLinkTextarea.max} characters. Either add text or disable the flagging option.`, {type: 'danger'});
+
+async function nukePostAsPlagiarism(
+    answerId: number, ownerId: number,
+    flagLinkText: string, flagDetailText: string,
+    commentText: string,
+    shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true
+) {
+    if (shouldFlagPost && isInValidationBounds(flagLinkText.length, validationBounds.flagLinkTextarea)) {
+        StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagLinkTextarea.min} and ${validationBounds.flagLinkTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
     }
-    if (flagPost && (flagText.length < validationBounds.flagDetailTextarea.min || flagText.length > validationBounds.flagDetailTextarea.max)) {
-        StackExchange.helpers.showToast(`Flags must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either add text or disable the flagging option.`, {type: 'danger'});
+    if (shouldFlagPost && isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
+        StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
     }
-    if (commentPost && (commentText.length < validationBounds.commentTextarea.min || commentText.length > validationBounds.commentTextarea.max)) {
-        StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either add text or disable the comment option.`, {type: 'danger'});
+
+    if (shouldCommentPost && isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
+        StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {type: 'danger'});
         return;
     }
 
@@ -265,11 +274,11 @@ async function nukePostAsPlagiarism(answerId: number, ownerId: number,
         answerId,
         ownerId,
         flagLinkText,
-        flagText,
+        flagDetailText,
         commentText,
-        flagPost,
-        commentPost,
-        logWithAws
+        flagPost: shouldFlagPost,
+        commentPost: shouldCommentPost,
+        logWithAws: shouldLogWithAws
     });
     //
     // TODO Update new flag type and fields
