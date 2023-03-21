@@ -44,7 +44,7 @@ function buildTemplateForm() {
         buildTextarea(
             ids.flagDetailTemplateTextarea, 'flag detail template', nukePostConfig.flagDetailText, 5,
             data.controller, data.target.flagDetailTemplateTextarea,
-            'Flag Detail Text Template',
+            'Flag Detail Text Template:',
             validationBounds.flagDetailTextarea
         )
     }${
@@ -54,14 +54,13 @@ function buildTemplateForm() {
             nukePostConfig.commentText,
             5,
             data.controller, data.target.commentTemplateTextarea,
-            'Comment Text Template',
+            'Comment Text Template:',
             validationBounds.commentTextarea
         )
     }<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div></form>`;
 }
 
 function registerNukeConfigSettingsController() {
-// TODO Create Stacks Controller
     const controllerConfig = {
         targets: [...Object.values(data.target)],
         get shouldFlag(): boolean {

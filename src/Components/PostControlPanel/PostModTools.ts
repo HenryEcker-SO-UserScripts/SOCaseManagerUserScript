@@ -70,8 +70,10 @@ function buildFieldControlArea(isVisible: boolean, target: string, innerHTML: st
 <div class="d-flex fd-column g8${isVisible ? '' : ' d-none'}" data-${data.controller}-target="${target}">${innerHTML}</div>`;
 }
 
+const modalDivider = '<div class="my6 bb bc-black-400"></div>';
+
 // Builder Modal
-function buildModal(modalId: string, postId: number, postOwnerId: number) {
+function buildNukePostModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
     return `
 <aside class="s-modal s-modal__danger" id="${modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
@@ -109,7 +111,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                 data.controller,
                 data.target.flagDetailTextarea,
                 'Flag Detail Text:',
-                validationBounds.flagDetailTextarea))}${
+                validationBounds.flagDetailTextarea))}${modalDivider}${
         buildFieldControlToggle(
             'Comment after deletion:',
             ids.enableCommentToggle(postId),
@@ -129,7 +131,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                 data.target.commentTextarea,
                 'Comment Text:',
                 validationBounds.commentTextarea)
-        )}${
+        )}${modalDivider}${
         buildToggle(
             'Log post in Case Manager:',
             ids.enableLogToggle(postId),
@@ -162,7 +164,7 @@ function handleNukePostButtonClick(postId: number, postOwnerId: number) {
     if (modal !== null) {
         Stacks.showModal(modal);
     } else {
-        $('body').append(buildModal(modalId, postId, postOwnerId));
+        $('body').append(buildNukePostModal(modalId, postId, postOwnerId));
     }
 }
 

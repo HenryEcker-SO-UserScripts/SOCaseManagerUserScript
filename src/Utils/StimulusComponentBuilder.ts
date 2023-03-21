@@ -57,8 +57,7 @@ export function buildTextarea(
      data-se-char-counter-min="${vB.min}"
      data-se-char-counter-max="${vB.max}">
      <label class="s-label flex--item" for="${textareaId}">${labelText}</label>
-     <textarea style="font-family:monospace"
-               class="flex--item s-textarea" 
+     <textarea class="flex--item s-textarea" 
                data-se-char-counter-target="field" 
                data-is-valid-length="false" 
                id="${textareaId}" 
