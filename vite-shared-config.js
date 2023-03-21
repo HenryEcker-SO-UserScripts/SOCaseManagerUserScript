@@ -1,6 +1,7 @@
 import banner from 'vite-plugin-banner';
 import {buildTamperMonkeyPreamble} from './build_utils';
 import path from 'path';
+import filterReplace from 'vite-plugin-filter-replace';
 
 // Defined variables
 export const awsApiRoute = 'https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod';
@@ -41,7 +42,19 @@ const defObj = {
 export default (fileName) => {
     return {
         plugins: [
-            banner(buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, ''))
+            banner(buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, '')),
+            filterReplace(
+                [
+                    {
+                        replace:
+                            {
+                                from: /\n+\s{2,}/gi,
+                                to: '\n'
+                            }
+                    }
+                ],
+                {enforce: 'post'}
+            )
         ],
         define: defObj,
         build: {
