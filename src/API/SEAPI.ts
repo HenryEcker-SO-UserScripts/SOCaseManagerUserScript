@@ -1,5 +1,6 @@
 import {seApiToken} from './gmAPI';
 
+// TODO Update this to reflect "Delete as plagiarism" response because it may differ!!
 export interface PostDeleteResponse {
     Success: boolean;
     Reason: number;
@@ -13,6 +14,7 @@ export interface PostDeleteResponse {
     HasAcceptedByModRights: boolean;
 }
 
+// TODO Update With Flag Plagiarism Response as it is no longer FlagOther!!
 export interface FlagOtherResponse {
     FlagType: number;
     Message: string;
