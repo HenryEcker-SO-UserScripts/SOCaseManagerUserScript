@@ -3,12 +3,27 @@ import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} fro
 
 
 const ids = {
-    modal: 'socm-nuke-post-form',
-    enableFlagToggle: 'socm-flag-enable-toggle',
-    enableCommentToggle: 'socm-comment-enable-toggle',
-    enableLogToggle: 'socm-log-nuked-post-toggle',
-    flagDetailTextarea: 'socm-nuke-flag-detail-area',
-    commentTextarea: 'socm-nuke-comment-area'
+    modal(postId: number) {
+        return `socm-nuke-post-form-${postId}`;
+    },
+    enableFlagToggle(postId: number) {
+        return `socm-flag-enable-toggle-${postId}`;
+    },
+    enableCommentToggle(postId: number) {
+        return `socm-comment-enable-toggle-${postId}`;
+    },
+    enableLogToggle(postId: number) {
+        return `socm-log-nuked-post-toggle-${postId}`;
+    },
+    flagLinkTextarea(postId: number) {
+        return `socm-nuke-flag-link-area-${postId}`;
+    },
+    flagDetailTextarea(postId: number) {
+        return `socm-nuke-flag-detail-area-${postId}`;
+    },
+    commentTextarea(postId: number) {
+        return `socm-nuke-comment-area-${postId}`;
+    }
 };
 
 const data = {
@@ -26,6 +41,7 @@ const data = {
         enableLogToggle: 'log-enable-toggle',
         flagControlFields: 'flag-info-area',
         commentControlFields: 'comment-info-area',
+        flagLinkTextarea: 'flag-link-area',
         flagDetailTextarea: 'flag-detail-area',
         commentTextarea: 'comment-area'
     },
@@ -79,10 +95,6 @@ function buildTextarea(
 </div>`;
 }
 
-function getNukePostModalId(postId: number): string {
-    return `${ids.modal}-${postId}`;
-}
-
 // Builder Modal
 function buildModal(modalId: string, postId: number, postOwnerId: number) {
     const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
@@ -98,9 +110,9 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
             <div class="d-flex fd-column g8">
                 <div>
                     <div class="d-flex ai-center g8">
-                        <label class="s-label" for="${ids.enableFlagToggle}-${postId}">Flag before deletion:</label>
+                        <label class="s-label" for="${ids.enableFlagToggle(postId)}">Flag before deletion:</label>
                         <input class="s-toggle-switch" 
-                               id="${ids.enableFlagToggle}-${postId}"
+                               id="${ids.enableFlagToggle(postId)}"
                                data-${data.controller}-target="${data.target.enableFlagToggle}" 
                                data-${data.controller}-${data.params.controls}-param="${data.target.flagControlFields}"
                                data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
@@ -108,20 +120,28 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                     </div>
                     <div${nukePostConfig.flag ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.flagControlFields}">${
         buildTextarea(
-            `${ids.flagDetailTextarea}-${postId}`,
-            'flag detail text',
-            nukePostConfig.flagDetailText ?? '',
-            5,
-            data.target.flagDetailTextarea,
-            'Flag Detail Text:',
-            validationBounds.flagDetailTextarea)}
+            `${ids.flagLinkTextarea(postId)}`,
+            'flag link text',
+            '',
+            2,
+            data.target.flagLinkTextarea,
+            'Link to source:',
+            validationBounds.flagLinkTextarea)}
+       ${buildTextarea(
+        `${ids.flagDetailTextarea(postId)}`,
+        'flag detail text',
+        nukePostConfig.flagDetailText ?? '',
+        5,
+        data.target.flagDetailTextarea,
+        'Flag Detail Text:',
+        validationBounds.flagDetailTextarea)}
                     </div>
                 </div>
                 <div>
                     <div class="d-flex ai-center g8">
-                        <label class="s-label" for="${ids.enableCommentToggle}-${postId}">Comment after deletion:</label>
+                        <label class="s-label" for="${ids.enableCommentToggle(postId)}">Comment after deletion:</label>
                         <input class="s-toggle-switch" 
-                              id="${ids.enableCommentToggle}-${postId}" 
+                              id="${ids.enableCommentToggle(postId)}" 
                               data-${data.controller}-target="${data.target.enableCommentToggle}" 
                               data-${data.controller}-${data.params.controls}-param="${data.target.commentControlFields}"
                               data-action="change->${data.controller}#${data.action.handleUpdateControlledField}"
@@ -129,7 +149,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                     </div>
                     <div${nukePostConfig.comment ? '' : ' class="d-none"'} data-${data.controller}-target="${data.target.commentControlFields}">${
         buildTextarea(
-            `${ids.commentTextarea}-${postId}`,
+            `${ids.commentTextarea(postId)}`,
             'comment text',
             nukePostConfig.commentText ?? '',
             5,
@@ -139,9 +159,9 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
                     </div>
                 </div>
                 <div class="d-flex ai-center g8">
-                    <label class="s-label" for="${ids.enableLogToggle}-${postId}">Log post in Case Manager:</label>
+                    <label class="s-label" for="${ids.enableLogToggle(postId)}">Log post in Case Manager:</label>
                     <input class="s-toggle-switch" 
-                           id="${ids.enableLogToggle}-${postId}"
+                           id="${ids.enableLogToggle(postId)}"
                            data-${data.controller}-target="${data.target.enableLogToggle}" 
                            type="checkbox"${nukePostConfig.log ? ' checked' : ''}>
                 </div>
@@ -166,7 +186,7 @@ function buildModal(modalId: string, postId: number, postOwnerId: number) {
 }
 
 function handleNukePostButtonClick(postId: number, postOwnerId: number) {
-    const modalId = getNukePostModalId(postId);
+    const modalId = ids.modal(postId);
     const modal: HTMLElement | null | JQuery = document.getElementById(modalId);
     if (modal !== null) {
         Stacks.showModal(modal);
@@ -201,6 +221,9 @@ export function registerNukePostStacksController() {
         get commentText(): string {
             return (this[`${data.target.commentTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
         },
+        get flagLinkText(): string {
+            return (this[`${data.target.flagLinkTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
+        },
         get flagDetailText(): string {
             return (this[`${data.target.flagDetailTextarea}Target`] as unknown as HTMLTextAreaElement).value ?? '';
         },
@@ -210,6 +233,7 @@ export function registerNukePostStacksController() {
             void nukePostAsPlagiarism(
                 postId,
                 postOwner,
+                this.flagLinkText,
                 this.flagDetailText,
                 this.commentText,
                 this.shouldFlag,
@@ -220,7 +244,7 @@ export function registerNukePostStacksController() {
         [data.action.handleCancelActions](ev: ActionEvent) {
             ev.preventDefault();
             const {postId} = ev.params;
-            const existingModal = document.getElementById(getNukePostModalId(postId));
+            const existingModal = document.getElementById(ids.modal(postId));
             if (existingModal !== null) {
                 existingModal.remove();
             }
@@ -238,13 +262,18 @@ export function registerNukePostStacksController() {
     Stacks.addController(data.controller, controllerConfig);
 }
 
-async function nukePostAsPlagiarism(answerId: number, ownerId: number, flagText: string, commentText: string,
+async function nukePostAsPlagiarism(answerId: number, ownerId: number,
+                                    flagLinkText: string, flagText: string,
+                                    commentText: string,
                                     flagPost = false, commentPost = true, logWithAws = true) {
+    if (flagPost && (flagLinkText.length < validationBounds.flagLinkTextarea.min || flagLinkText.length > validationBounds.flagLinkTextarea.max)) {
+        StackExchange.helpers.showToast(`Flags must be between ${validationBounds.flagLinkTextarea.min} and ${validationBounds.flagLinkTextarea.max} characters. Either add text or disable the flagging option.`, {type: 'danger'});
+        return;
+    }
     if (flagPost && (flagText.length < validationBounds.flagDetailTextarea.min || flagText.length > validationBounds.flagDetailTextarea.max)) {
         StackExchange.helpers.showToast(`Flags must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either add text or disable the flagging option.`, {type: 'danger'});
         return;
     }
-
     if (commentPost && (commentText.length < validationBounds.commentTextarea.min || commentText.length > validationBounds.commentTextarea.max)) {
         StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either add text or disable the comment option.`, {type: 'danger'});
         return;
@@ -253,6 +282,7 @@ async function nukePostAsPlagiarism(answerId: number, ownerId: number, flagText:
     console.log({
         answerId,
         ownerId,
+        flagLinkText,
         flagText,
         commentText,
         flagPost,
@@ -260,7 +290,7 @@ async function nukePostAsPlagiarism(answerId: number, ownerId: number, flagText:
         logWithAws
     });
     //
-    //
+    // TODO Update new flag type and fields
     // if (flagPost) {
     //     const flagFd = new FormData();
     //     flagFd.set('fkey', StackExchange.options.user.fkey);
@@ -274,7 +304,7 @@ async function nukePostAsPlagiarism(answerId: number, ownerId: number, flagText:
     //         return; // don't continue
     //     }
     // }
-    //
+    // TODO This will need re-written "Delete as plagiarism" is a different delete type!!
     // const deleteFd = new FormData();
     // deleteFd.set('fkey', StackExchange.options.user.fkey);
     // const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
