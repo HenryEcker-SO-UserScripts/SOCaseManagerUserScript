@@ -1,58 +1,71 @@
+import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
-import {buildNukeOptionElements, getCheckboxValuesFromInput} from '../../PostControlPanel/PostModTools';
 import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
 
 export function buildNukeConfigControls(): JQuery {
+    registerNukeConfigSettingsController();
     return $('<div></div>')
         .append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>')
-        .append(buildTemplateForm());
+        .append(SAVE_NUKE_CONFIG.FORM);
 }
 
-function buildTemplateForm() {
-    const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-    const templateForm = $('<form class="d-flex fd-column g8"></form>');
-    const {
-        textareaLabel,
-        textarea,
-        checkboxContainer,
-        shouldFlagCheckbox,
-        shouldCommentCheckbox,
-        shouldLogCheckbox
-    } = buildNukeOptionElements('nuke-config', nukePostConfig);
+function registerNukeConfigSettingsController() {
+    Stacks.addController(SAVE_NUKE_CONFIG.CONTROLLER, {
+        targets: SAVE_NUKE_CONFIG.DATA_TARGETS,
+        get shouldFlag(): boolean {
+            return this[SAVE_NUKE_CONFIG.SHOULD_FLAG_TARGET].checked as boolean;
+        },
+        get shouldComment(): boolean {
+            return this[SAVE_NUKE_CONFIG.SHOULD_COMMENT_TARGET].checked as boolean;
+        },
+        get shouldLog(): boolean {
+            return this[SAVE_NUKE_CONFIG.SHOULD_LOG_TARGET].checked;
+        },
+        get commentTemplate(): string {
+            return this[SAVE_NUKE_CONFIG.COMMENT_TARGET].value ?? '';
+        },
+        get flagTemplate(): string {
+            return this[SAVE_NUKE_CONFIG.FLAG_DETAIL_TARGET].value ?? '';
+        },
+        setValues(config: CmNukePostConfig) {
+            this[SAVE_NUKE_CONFIG.SHOULD_FLAG_TARGET].checked = config.flag;
+            this[SAVE_NUKE_CONFIG.SHOULD_COMMENT_TARGET].checked = config.comment;
+            this[SAVE_NUKE_CONFIG.SHOULD_LOG_TARGET].checked = config.log;
 
-    templateForm.on('submit', function (ev: JQuery.Event) {
-        ev.preventDefault();
-        try {
-            const [
-                isFlagChecked,
-                isCommentChecked,
-                isLogChecked
-            ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
+            this[SAVE_NUKE_CONFIG.FLAG_DETAIL_TARGET].value = config.flagDetailText ?? '';
+            this[SAVE_NUKE_CONFIG.COMMENT_TARGET].value = config.commentText ?? '';
+        },
+        connect() {
+            const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+            this.setValues(nukePostConfig);
+        },
+        [SAVE_NUKE_CONFIG.HANDLE_SAVE](ev: ActionEvent) {
+            ev.preventDefault();
+            try {
+                const newConfig: CmNukePostConfig = {
+                    flagDetailText: this.flagTemplate,
+                    commentText: this.commentTemplate,
+                    flag: this.shouldFlag,
+                    comment: this.shouldComment,
+                    log: this.shouldLog
+                };
+                GM_setValue(nukePostOptions, JSON.stringify(newConfig));
 
-            const newConfig: CmNukePostConfig = {
-                detailText: (textarea.val() as string | undefined) || '',
-                flag: isFlagChecked,
-                comment: isCommentChecked,
-                log: isLogChecked,
-            };
-            GM_setValue(nukePostOptions, JSON.stringify(newConfig));
-
-            StackExchange.helpers.showToast('Config updated successfully!', {
-                type: 'success',
-                transientTimeout: 3000
-            });
-        } catch (e: unknown) {
-            StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
-                type: 'danger',
-                transientTimeout: 5000
-            });
+                StackExchange.helpers.showToast('Config updated successfully!', {
+                    type: 'success',
+                    transientTimeout: 3000
+                });
+            } catch (e: unknown) {
+                StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
+                    type: 'danger',
+                    transientTimeout: 5000
+                });
+            }
+        },
+        [SAVE_NUKE_CONFIG.HANDLE_RESET](ev: ActionEvent) {
+            ev.preventDefault();
+            const defaultConfig: CmNukePostConfig = JSON.parse(nukePostDefaultConfigString);
+            this.setValues(defaultConfig);
         }
     });
-
-    return templateForm
-        .append(textareaLabel)
-        .append(textarea)
-        .append(checkboxContainer)
-        .append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
 }
-

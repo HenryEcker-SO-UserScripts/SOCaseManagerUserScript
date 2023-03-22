@@ -31,3 +31,37 @@ declare const Feedback: {
     Deleted: number;
     Suspicious: number;
 };
+
+// Pre Built HTML Components
+declare const NUKE_POST: {
+    FORM: string;
+    FORM_MODAL_ID: string;
+    FORM_CONTROLLER: string;
+    DATA_TARGETS: string[];
+    ENABLE_FLAG_TOGGLE_TARGET: string;
+    ENABLE_COMMENT_TOGGLE_TARGET: string;
+    ENABLE_LOG_TOGGLE_TARGET: string;
+    COMMENT_TEXT_TARGET: string;
+    FLAG_ORIGINAL_SOURCE_TEXT_TARGET: string;
+    FLAG_DETAIL_TEXT_TARGET: string;
+    FLAG_CONTROL_FIELDS_TARGET: string;
+    COMMENT_CONTROL_FIELDS_TARGET: string;
+    HANDLE_SUBMIT: string;
+    HANDLE_CANCEL: string;
+    HANDLE_UPDATE_CONTROLLED_FIELD: string;
+};
+
+
+declare const SAVE_NUKE_CONFIG: {
+    CONTROLLER: string;
+    FORM: string;
+    DATA_TARGETS: string[];
+    SHOULD_FLAG_TARGET: string;
+    SHOULD_COMMENT_TARGET: string;
+    SHOULD_LOG_TARGET: string;
+    FLAG_DETAIL_TARGET: string;
+    COMMENT_TARGET: string;
+    HANDLE_SAVE: string;
+    HANDLE_RESET: string;
+};
+

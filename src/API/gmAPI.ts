@@ -3,16 +3,18 @@ export const seApiToken = 'se_api_token';
 
 
 export interface CmNukePostConfig {
-    detailText: string;
+    flagDetailText: string;
+    commentText: string;
     flag: boolean;
     comment: boolean;
     log: boolean;
 }
 
 export const nukePostDefaultConfigString = JSON.stringify({
-    detailText: '',
+    flagDetailText: '',
+    commentText: '',
     flag: false,
-    comment: true,
+    comment: false,
     log: true
-});
+} as CmNukePostConfig);
 export const nukePostOptions = 'cm_nuke_post_config';

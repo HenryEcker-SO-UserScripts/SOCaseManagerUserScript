@@ -1,176 +1,135 @@
-import {fetchFromAWS} from '../../API/AWSAPI';
+import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import type {FlagOtherResponse, PostDeleteResponse} from '../../API/SEAPI';
-import {getModMenuPopoverId} from './ElementIdGenerators';
+import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
+import type {FlagPlagiarismResponse} from '../../API/SEAPI';
+import {fetchFromAWS} from '../../API/AWSAPI';
 
-
-export function buildModTools(isDeleted: boolean, answerId: number, postOwnerId: number) {
-    const baseId = getModMenuPopoverId(answerId);
-    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-    if (isDeleted) {
-        // Don't bother building the popover for deleted posts
-        return button;
-    }
-    return $(document.createDocumentFragment())
-        .append(button)
-        .append(buildPopOver(baseId, answerId, postOwnerId));
+function getModalId(postId: number) {
+    return NUKE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
 }
 
-
-function buildPopOver(baseId: string, answerId: number, postOwnerId: number) {
-    // Build JQuery Elements For Popover
-    const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-    const {
-        textareaLabel,
-        textarea,
-        checkboxContainer,
-        shouldFlagCheckbox,
-        shouldCommentCheckbox,
-        shouldLogCheckbox
-    } = buildNukeOptionElements(baseId, nukePostConfig);
-    const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
-    const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-
-    // Configure Behaviour for form elements
-
-    nukeButton.on('click', (ev) => {
-        ev.preventDefault();
-        const [
-            isFlagChecked,
-            isCommentChecked,
-            isLogChecked
-        ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-        void nukePostAsPlagiarism(
-            answerId,
-            postOwnerId,
-            textarea.val() as string,
-            isFlagChecked,
-            isCommentChecked,
-            isLogChecked
-        );
-    });
-
-    function updateDisplayBasedOnSelections(ev: JQuery.Event) {
-        ev.preventDefault();
-        const [
-            isFlagChecked,
-            isCommentChecked,
-            isLogChecked
-        ] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-
-        // Disable textarea field when not needed
-        if (!isFlagChecked && !isCommentChecked) {
-            textarea.prop('disabled', true);
-        } else {
-            textarea.removeProp('disabled');
-        }
-        nukeButton.attr(
-            'title',
-            (isFlagChecked ? 'Flags the post, ' : '') +
-            (isFlagChecked ? 'deletes' : 'Deletes') + ' the post' +
-            (isCommentChecked ? ', adds a comment' : '') +
-            (isLogChecked ? ', logs feedback in Case manager' : '')
-        );
-    }
-
-    shouldCommentCheckbox.on('input', updateDisplayBasedOnSelections);
-    shouldFlagCheckbox.on('input', updateDisplayBasedOnSelections);
-    shouldLogCheckbox.on('input', updateDisplayBasedOnSelections);
-
-    textarea.on('input', (ev) => {
-        ev.preventDefault();
-        const length = (ev.target.value as string).length;
-        lengthSpan.text(length);
-    });
-
-    // Compose JQuery Elements
-    return (
-        $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`)
+function handleNukePostButtonClick(postId: number, postOwnerId: number) {
+    const modalId = getModalId(postId);
+    const modal = document.getElementById(modalId);
+    if (modal !== null) {
+        Stacks.showModal(modal);
+    } else {
+        $('body')
             .append(
-                $('<div class="d-grid g8 ai-center grid__1 ws4"></div>')
-                    .append(
-                        // Header with text area label to left and link to config on right
-                        $('<div class="d-flex fd-row jc-space-between"></div>')
-                            .append(textareaLabel)
-                            .append(`<a class="fs-fine" href="/users/current${tabIdentifiers.settings}" target="_blank">Configure default options</a>`)
-                    )
-                    .append(
-                        // Input textarea for flag/comment text
-                        textarea
-                    )
-                    .append(
-                        // Characters: Length of Textarea text
-                        $('<div></div>') // needs to be a div so that the children appear side-by-side instead of vertical grid
-                            .append('<span>Characters: </span>')
-                            .append(lengthSpan)
-                    )
-                    .append(
-                        // Checkbox container and nuke button
-                        $('<div class="d-flex fd-row flex__fl-equal g8"></div>')
-                            .append(checkboxContainer)
-                            .append(nukeButton)
-                    )
-            )
-    );
+                NUKE_POST.FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId})
+            );
+    }
 }
 
-export function getCheckboxValuesFromInput(...checkboxes: JQuery[]): boolean[] {
-    return checkboxes.map(checkbox => checkbox.is(':checked'));
+export function buildNukePostButton(isDeleted: boolean, answerId: number, postOwnerId: number) {
+    const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined" type="button">Nuke as plagiarism</button>`);
+    button.on('click', () => {
+        handleNukePostButtonClick(answerId, postOwnerId);
+    });
+    return button;
 }
 
-export function buildNukeOptionElements(baseId: string, nukePostConfig: CmNukePostConfig) {
-    const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
-    const textarea: JQuery<HTMLTextAreaElement> = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
-    textarea.val(nukePostConfig.detailText);
+// Controller Logic
+export function registerNukePostStacksController() {
+    Stacks.addController(NUKE_POST.FORM_CONTROLLER, {
+        targets: NUKE_POST.DATA_TARGETS,
+        get shouldFlag(): boolean {
+            return this[NUKE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked as boolean;
+        },
+        get shouldComment(): boolean {
+            return this[NUKE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked as boolean;
+        },
+        get shouldLog(): boolean {
+            return this[NUKE_POST.ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
+        },
+        get commentText(): string {
+            return this[NUKE_POST.COMMENT_TEXT_TARGET].value ?? '';
+        },
+        get flagOriginalSourceText(): string {
+            return this[NUKE_POST.FLAG_ORIGINAL_SOURCE_TEXT_TARGET].value ?? '';
+        },
+        get flagDetailText(): string {
+            return this[NUKE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
+        },
+        connect() {
+            const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
 
-    const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-    const shouldFlagCheckbox = $(`<input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? ' checked' : ''}/>`);
-    const shouldCommentCheckbox = $(`<input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? ' checked' : ''}/>`);
-    const shouldLogCheckbox = $(`<input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? ' checked' : ''}/>`);
+            this[NUKE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked = nukePostConfig.flag;
+            this[NUKE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked = nukePostConfig.comment;
+            this[NUKE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = nukePostConfig.log;
 
-    checkboxContainer
-        .append(
-            $('<div class="s-check-control"></div>')
-                .append(shouldFlagCheckbox)
-                .append(`<label class="s-label" for="${baseId}-cb-flag">Flag</label>`)
-        )
-        .append(
-            $('<div class="s-check-control"></div>')
-                .append(shouldCommentCheckbox)
-                .append(`<label class="s-label" for="${baseId}-cb-comment">Comment</label>`)
-        )
-        .append(
-            $('<div class="s-check-control"></div>')
-                .append(shouldLogCheckbox)
-                .append(`<label class="s-label" for="${baseId}-cb-log">Log</label>`)
-        );
-    return {
-        textareaLabel,
-        textarea,
-        checkboxContainer,
-        shouldFlagCheckbox,
-        shouldCommentCheckbox,
-        shouldLogCheckbox
-    };
+            if (!nukePostConfig.flag) {
+                $(this[NUKE_POST.FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
+            }
+
+            if (!nukePostConfig.comment) {
+                $(this[NUKE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
+            }
+
+            this[NUKE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
+            this[NUKE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
+        },
+        [NUKE_POST.HANDLE_SUBMIT](ev: ActionEvent) {
+            ev.preventDefault();
+            const {postOwner, postId} = ev.params;
+            void nukePostAsPlagiarism(
+                postId,
+                postOwner,
+                this.flagOriginalSourceText,
+                this.flagDetailText,
+                this.commentText,
+                this.shouldFlag,
+                this.shouldComment,
+                this.shouldLog
+            );
+        },
+        [NUKE_POST.HANDLE_CANCEL](ev: ActionEvent) {
+            ev.preventDefault();
+            const {postId} = ev.params;
+            const existingModal = document.getElementById(getModalId(postId));
+            if (existingModal !== null) {
+                existingModal.remove();
+            }
+        },
+        [NUKE_POST.HANDLE_UPDATE_CONTROLLED_FIELD](ev: ActionEvent) {
+            const {controls} = ev.params;
+            if ((<HTMLInputElement>ev.target).checked) {
+                $(this[`${controls}Target`]).removeClass('d-none');
+            } else {
+                $(this[`${controls}Target`]).addClass('d-none');
+            }
+        }
+    });
 }
 
-async function nukePostAsPlagiarism(answerId: number, ownerId: number, message: string, flagPost = false, commentPost = true, logWithAws = true) {
-    // Flag limit is 10-500
-    if (flagPost && (message.length < 10 || message.length > 500)) {
-        StackExchange.helpers.showToast('Flags must be between 10 and 500 characters. Either add text or disable the flagging option.', {type: 'danger'});
+
+async function nukePostAsPlagiarism(
+    answerId: number, ownerId: number,
+    flagOriginalSourceText: string, flagDetailText: string,
+    commentText: string,
+    shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true
+) {
+    if (shouldFlagPost && isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
+        StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagOriginalSourceTextarea.min} and ${validationBounds.flagOriginalSourceTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
     }
-    // Comment limit is 15-600
-    if (commentPost && (message.length < 15 || message.length > 600)) {
-        StackExchange.helpers.showToast('Comments must be between 10 and 600 characters. Either add text or disable the comment option.', {type: 'danger'});
+    if (shouldFlagPost && isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
+        StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
-
     }
-    if (flagPost) {
+
+    if (shouldCommentPost && isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
+        StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {type: 'danger'});
+        return;
+    }
+
+    if (shouldFlagPost) {
         const flagFd = new FormData();
         flagFd.set('fkey', StackExchange.options.user.fkey);
-        flagFd.set('otherText', message);
-        const flagFetch: FlagOtherResponse = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
+        flagFd.set('otherText', flagDetailText);
+        flagFd.set('customData', JSON.stringify({plagiarizedSource: flagOriginalSourceText}));
+        flagFd.set('overrideWarning', 'false');
+        const flagFetch: FlagPlagiarismResponse = await fetch(`/flags/posts/${answerId}/add/PlagiarizedContent`, {
             body: flagFd,
             method: 'POST'
         }).then(res => res.json());
@@ -179,24 +138,24 @@ async function nukePostAsPlagiarism(answerId: number, ownerId: number, message: 
             return; // don't continue
         }
     }
-
     const deleteFd = new FormData();
     deleteFd.set('fkey', StackExchange.options.user.fkey);
-    const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
+    const deleteFetch = await fetch(`/admin/posts/${answerId}/delete-as-plagiarism`, {
         body: deleteFd,
         method: 'POST'
-    }).then(res => res.json());
+    });
 
-    if (!deleteFetch.Success) {
+    if (deleteFetch.status !== 200) {
         return; // Deletion failed don't continue
     }
-    if (commentPost) {
+
+    if (shouldCommentPost) {
         const commentFd = new FormData();
         commentFd.set('fkey', StackExchange.options.user.fkey);
-        commentFd.set('comment', message);
+        commentFd.set('comment', commentText);
         await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
     }
-    if (logWithAws) {
+    if (shouldLogWithAws) {
         const body: {
             postOwnerId?: number;
             actionIds?: number[];
