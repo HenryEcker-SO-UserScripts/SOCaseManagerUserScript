@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.7
+// @version     0.3.0
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -267,6 +267,23 @@
             }));
         };
     }
+    const validationBounds = {
+        flagDetailTextarea: {
+            min: 10,
+            max: 500
+        },
+        flagOriginalSourceTextarea: {
+            min: 10,
+            max: 500
+        },
+        commentTextarea: {
+            min: 15,
+            max: 600
+        }
+    };
+    function isInValidationBounds(textLength, vB) {
+        return textLength < vB.min || textLength > vB.max;
+    }
     function getModalId(postId) {
         return "socm-nuke-post-form-{postId}".formatUnicorn({
             postId: postId
@@ -351,16 +368,74 @@
         });
     }
     async function nukePostAsPlagiarism(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true) {
-        console.log({
-            answerId: answerId,
-            ownerId: ownerId,
-            flagOriginalSourceText: flagOriginalSourceText,
-            flagDetailText: flagDetailText,
-            commentText: commentText,
-            shouldFlagPost: shouldFlagPost,
-            shouldCommentPost: shouldCommentPost,
-            shouldLogWithAws: shouldLogWithAws
+        if (shouldFlagPost && isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
+            StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagOriginalSourceTextarea.min} and ${validationBounds.flagOriginalSourceTextarea.max} characters. Either update the text or disable the flagging option.`, {
+                type: "danger"
+            });
+            return;
+        }
+        if (shouldFlagPost && isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
+            StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {
+                type: "danger"
+            });
+            return;
+        }
+        if (shouldCommentPost && isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
+            StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {
+                type: "danger"
+            });
+            return;
+        }
+        if (shouldFlagPost) {
+            const flagFd = new FormData;
+            flagFd.set("fkey", StackExchange.options.user.fkey);
+            flagFd.set("otherText", flagDetailText);
+            flagFd.set("customData", JSON.stringify({
+                plagiarizedSource: flagOriginalSourceText
+            }));
+            flagFd.set("overrideWarning", "false");
+            const flagFetch = await fetch(`/flags/posts/${answerId}/add/PlagiarizedContent`, {
+                body: flagFd,
+                method: "POST"
+            }).then((res => res.json()));
+            if (!flagFetch.Success) {
+                StackExchange.helpers.showToast(flagFetch.Message);
+                return;
+            }
+        }
+        const deleteFd = new FormData;
+        deleteFd.set("fkey", StackExchange.options.user.fkey);
+        const deleteFetch = await fetch(`/admin/posts/${answerId}/delete-as-plagiarism`, {
+            body: deleteFd,
+            method: "POST"
         });
+        if (200 !== deleteFetch.status) {
+            return;
+        }
+        if (shouldCommentPost) {
+            const commentFd = new FormData;
+            commentFd.set("fkey", StackExchange.options.user.fkey);
+            commentFd.set("comment", commentText);
+            await void fetch(`/posts/${answerId}/comments`, {
+                body: commentFd,
+                method: "POST"
+            });
+        }
+        if (shouldLogWithAws) {
+            const body = {};
+            if (-1 !== ownerId) {
+                body.postOwnerId = ownerId;
+            }
+            body.actionIds = [ 3, 4 ];
+            await fetchFromAWS(`/handle/post/${answerId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            });
+        }
+        window.location.reload();
     }
     function buildAnswerControlPanel() {
         const answers = $("div.answer");
