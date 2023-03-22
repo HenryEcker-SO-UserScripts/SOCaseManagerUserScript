@@ -52,18 +52,16 @@ export function registerNukePostStacksController() {
         connect() {
             const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
 
-            if (nukePostConfig.flag) {
-                this[NUKE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked = true;
-            } else {
+            this[NUKE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked = nukePostConfig.flag;
+            this[NUKE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked = nukePostConfig.comment;
+            this[NUKE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = nukePostConfig.log;
+
+            if (!nukePostConfig.flag) {
                 $(this[NUKE_POST.FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
             }
-            if (nukePostConfig.comment) {
-                this[NUKE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked = true;
-            } else {
+
+            if (!nukePostConfig.comment) {
                 $(this[NUKE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
-            }
-            if (nukePostConfig.log) {
-                this[NUKE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             }
 
             this[NUKE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
