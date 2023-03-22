@@ -77,7 +77,7 @@ const nukePostForm = `
             data.controller,
             data.target.flagLinkTextarea,
             'Link(s) to original content',
-            validationBounds.flagLinkTextarea)
+            validationBounds.flagOriginalSourceTextarea)
         + '\n' +
         buildTextarea(
             ids.flagDetailTextarea,
@@ -138,7 +138,7 @@ export default {
     ENABLE_COMMENT_TOGGLE_TARGET: `${data.target.enableCommentToggle}Target`,
     ENABLE_LOG_TOGGLE_TARGET: `${data.target.enableLogToggle}Target`,
     COMMENT_TEXT_TARGET: `${data.target.commentTextarea}Target`,
-    FLAG_LINK_TEXT_TARGET: `${data.target.flagLinkTextarea}Target`,
+    FLAG_ORIGINAL_SOURCE_TEXT_TARGET: `${data.target.flagLinkTextarea}Target`,
     FLAG_DETAIL_TEXT_TARGET: `${data.target.flagDetailTextarea}Target`,
     FLAG_CONTROL_FIELDS_TARGET: `${data.target.flagControlFields}Target`,
     COMMENT_CONTROL_FIELDS_TARGET: `${data.target.commentControlFields}Target`,

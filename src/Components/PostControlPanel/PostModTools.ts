@@ -45,8 +45,8 @@ export function registerNukePostStacksController() {
         get commentText(): string {
             return this[NUKE_POST.COMMENT_TEXT_TARGET].value ?? '';
         },
-        get flagLinkText(): string {
-            return this[NUKE_POST.FLAG_LINK_TEXT_TARGET].value ?? '';
+        get flagOriginalSourceText(): string {
+            return this[NUKE_POST.FLAG_ORIGINAL_SOURCE_TEXT_TARGET].value ?? '';
         },
         get flagDetailText(): string {
             return this[NUKE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
@@ -75,7 +75,7 @@ export function registerNukePostStacksController() {
             void nukePostAsPlagiarism(
                 postId,
                 postOwner,
-                this.flagLinkText,
+                this.flagOriginalSourceText,
                 this.flagDetailText,
                 this.commentText,
                 this.shouldFlag,
@@ -105,12 +105,12 @@ export function registerNukePostStacksController() {
 
 async function nukePostAsPlagiarism(
     answerId: number, ownerId: number,
-    flagLinkText: string, flagDetailText: string,
+    flagOriginalSourceText: string, flagDetailText: string,
     commentText: string,
     shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true
 ) {
-    if (shouldFlagPost && isInValidationBounds(flagLinkText.length, validationBounds.flagLinkTextarea)) {
-        StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagLinkTextarea.min} and ${validationBounds.flagLinkTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
+    if (shouldFlagPost && isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
+        StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagOriginalSourceTextarea.min} and ${validationBounds.flagOriginalSourceTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
     }
     if (shouldFlagPost && isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
@@ -127,7 +127,7 @@ async function nukePostAsPlagiarism(
         const flagFd = new FormData();
         flagFd.set('fkey', StackExchange.options.user.fkey);
         flagFd.set('otherText', flagDetailText);
-        flagFd.set('customData', JSON.stringify({plagiarizedSource: flagLinkText}));
+        flagFd.set('customData', JSON.stringify({plagiarizedSource: flagOriginalSourceText}));
         flagFd.set('overrideWarning', 'false');
         const flagFetch: FlagPlagiarismResponse = await fetch(`/flags/posts/${answerId}/add/PlagiarizedContent`, {
             body: flagFd,
