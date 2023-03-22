@@ -26,29 +26,32 @@ const data = {
 };
 
 
-const nukeConfigSaveForm = `<form class="d-flex fd-column g12" data-controller="${data.controller}" data-action="submit->${data.controller}#${data.action.handleSaveConfig} reset->${data.controller}#${data.action.handleResetConfig}">${
-    buildCheckbox('Should Flag', ids.shouldFlagCheckbox, data.controller, data.target.shouldFlagCheckbox)
-}${
-    buildCheckbox('Should Comment', ids.shouldCommentCheckbox, data.controller, data.target.shouldCommentCheckbox)
-}${
-    buildCheckbox('Should Log', ids.shouldLogCheckbox, data.controller, data.target.shouldLogCheckbox)
-}${
-    buildTextarea(
+const nukeConfigSaveForm = `
+<form class="d-flex fd-column g12" 
+      data-controller="${data.controller}"
+      data-action="submit->${data.controller}#${data.action.handleSaveConfig} reset->${data.controller}#${data.action.handleResetConfig}">
+    ${buildCheckbox('Should Flag', ids.shouldFlagCheckbox, data.controller, data.target.shouldFlagCheckbox)}
+    ${buildCheckbox('Should Comment', ids.shouldCommentCheckbox, data.controller, data.target.shouldCommentCheckbox)}
+    ${buildCheckbox('Should Log', ids.shouldLogCheckbox, data.controller, data.target.shouldLogCheckbox)}
+    ${buildTextarea(
         ids.flagDetailTemplateTextarea, 'flag detail template', 5,
         data.controller, data.target.flagDetailTemplateTextarea,
         'Flag Detail Text Template:',
         validationBounds.flagDetailTextarea
-    )
-}${
-    buildTextarea(
+    )}
+    ${buildTextarea(
         ids.commentTemplateTextarea,
         'comment template',
         5,
         data.controller, data.target.commentTemplateTextarea,
         'Comment Text Template:',
         validationBounds.commentTextarea
-    )
-}<div class="d-flex fd-row g8"><button class="s-btn s-btn__primary" type="submit">Save Config</button><button class="s-btn s-btn__muted" type="reset">Reset To Default</button></div></form>`;
+    )}
+    <div class="d-flex fd-row g8">
+        <button class="s-btn s-btn__primary" type="submit">Save Config</button>
+        <button class="s-btn s-btn__muted" type="reset">Reset To Default</button>
+    </div>
+</form>`;
 
 export default {
     CONTROLLER: data.controller,
