@@ -1,21 +1,13 @@
 import {seApiToken} from './gmAPI';
 
-// TODO Update this to reflect "Delete as plagiarism" response because it may differ!!
-export interface PostDeleteResponse {
-    Success: boolean;
-    Reason: number;
-    Warning: boolean;
-    NewScore: number;
-    Message: string;
-    CanOverrideMessageWithResearchPrompt: boolean;
-    Refresh: boolean;
-    Transient: boolean;
-    Info: boolean;
-    HasAcceptedByModRights: boolean;
-}
+// Currently relying on 200 status code since it sometimes returns an HTML response and sometimes JSON
+// Depending on if the CM escalate message was displayed or not.
+// export interface PostDeleteAsPlagiarismResponse {
+//     success: boolean;
+//     message: string;
+// }
 
-// TODO Update With Flag Plagiarism Response as it is no longer FlagOther!!
-export interface FlagOtherResponse {
+export interface FlagPlagiarismResponse {
     FlagType: number;
     Message: string;
     Outcome: number;
