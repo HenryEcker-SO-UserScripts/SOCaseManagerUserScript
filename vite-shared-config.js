@@ -2,6 +2,8 @@ import banner from 'vite-plugin-banner';
 import {buildTamperMonkeyPreamble} from './build_utils';
 import path from 'path';
 import filterReplace from 'vite-plugin-filter-replace';
+import nukePostFormComponents from './pre-buildable-stimulus-components/NukePostFormComponents';
+import nukePostSaveComponents from './pre-buildable-stimulus-components/NukePostSaveConfigComponents';
 
 // Defined variables
 export const awsApiRoute = 'https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod';
@@ -36,7 +38,9 @@ const defObj = {
         Plagiarised: 3,
         Deleted: 4,
         Suspicious: 5
-    }
+    },
+    NUKE_POST: nukePostFormComponents,
+    SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
 
 export default (fileName) => {
@@ -48,7 +52,7 @@ export default (fileName) => {
                     {
                         replace:
                             {
-                                from: /\n+\s{2,}/gi,
+                                from: /\s*\n+\s{2,}/gi,
                                 to: '\n'
                             }
                     }

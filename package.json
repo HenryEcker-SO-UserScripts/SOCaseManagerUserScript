@@ -1,6 +1,6 @@
 {
   "name": "so-case-manager-userscript",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "author": "Henry Ecker (https://github.com/HenryEcker)",
   "description": "Help facilitate and track collaborative plagiarism cleanup efforts",
   "repository": {
@@ -17,6 +17,7 @@
     "bump-minor": "npm --no-git-tag-version version minor && npm run build"
   },
   "devDependencies": {
+    "@types/format-unicorn": "^1.1.2",
     "@types/jquery": "^3.5.16",
     "@types/node": "^18.15.3",
     "@types/tampermonkey": "^4.0.10",

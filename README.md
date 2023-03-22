@@ -199,14 +199,19 @@ Clicking on the tab will bring you to the [UserScript Settings page][settings pa
 
 Moderators gain access to an additional button on each post, which allows the post to easily be removed and feedback provided to the Case Manager.
 
-[![][19]][19]
+<a href="./readme-images/ModOnly/nuke-plagiarism-button.png"><img src="./readme-images/ModOnly/nuke-plagiarism-button.png" width="450px"></a>
+
+Clicking this button opens a modal with options:
+
+<a href="./readme-images/ModOnly/nuke-plagiarism-console.png"><img src="./readme-images/ModOnly/nuke-plagiarism-console.png" width="450px"></a>
+
 
 There are three options available and up to 4 actions will be taken. The post **will always be deleted** even if all options are unchecked.
 
 When the Nuke button is pressed:
-1. The character count is validated depending on which options are selected. Comments and Flags have different length requirements, both limits are validated based on the selected options.
-2. If the Flag option is selected, the post is flagged using the text in the textarea. If the flag operation fails no further actions are taken (an error is displayed).
-3. A "delete" vote is added to the post. If the delete operation fails, no further action is taken.
+1. The character count is validated depending on which options are selected. Comments, Flag Source, and Flag details have different length requirements, all limits are validated based on the selected options.
+2. If the Flag option is selected, the post is flagged using the text in the flag source and flag detail textareas. If the flag operation fails no further actions are taken (an error is displayed).
+3. A "Delete as plagiarism" vote is added to the post which will mark the plagiarism flag helpful and apply plagiarism penalties. If the delete operation fails, no further action is taken.
 4. If the Comment option is selected, a comment is added to the post.
 5. If the Log option is selected, feedback is logged in the Case Manager. The post is marked as "Plagiarised" and "Deleted".
 
@@ -215,15 +220,16 @@ When the Nuke button is pressed:
 
 Moderators also have an additional option in their [settings page] to specify what the default form values for nuking posts.
 
-| Field       | Default      | Description                                                                                                                                                                           |
-|-------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Detail Text | Empty String | Populates the textarea with a string to easily flag and comment on posts                                                                                                              |
-| Flag        | Unchecked    | Flag post by default. This is false by default because many instances of plagiarism are brought to moderator attention via custom flag, and would not normally require a second flag. |
-| Comment     | Checked      | Leave a comment on the post by default. This is true by default to explain why a moderator deleted the post.                                                                          |
-| Log         | Checked      | Log feedback with Case Manager. This is true by default to help to record patterns of behaviour.                                                                                      |
+| Field                 | Default      | Description                                                                                                                                                                           |
+|-----------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Flag Template Text    | Empty String | Populates the textarea with a string to easily provide flag details                                                                                                                   |
+| Comment Template Text | Empty String | Populates the textarea with a string to easily comment on posts                                                                                                                       |
+| Should Flag           | Unchecked    | Flag post by default. This is false by default because many instances of plagiarism are brought to moderator attention via custom flag, and would not normally require a second flag. |
+| Should Comment        | Unchecked    | Leave a comment on the post by default. This is false by default since "Delete as plagiarism" now causes the UI to show the reason for deletion.                                      |
+| Should Log            | Checked      | Log feedback with Case Manager. This is true by default to help to record patterns of behaviour.                                                                                      |
 
 
-[![][20]][20]
+<a href="./readme-images/ModOnly/edit-nuke-post-default-settings.png"><img src="./readme-images/ModOnly/edit-nuke-post-default-settings.png" width="450px"></a>
 
 
 [settings page]: https://stackoverflow.com/users/current?tab=case-manager-settings
@@ -263,6 +269,3 @@ Moderators also have an additional option in their [settings page] to specify wh
 [17]: ./readme-images/UserSummary/user-detail-stats-filtered.png
 
 [18]: ./readme-images/UserSummary/user-detail-stats-filtered-multiple.png
-
-[19]: ./readme-images/ModOnly/nuke-plagiarism-console.png
-[20]: ./readme-images/ModOnly/edit-nuke-post-default-settings.png

@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.2.6
+// @version     0.2.7
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -32,9 +32,10 @@
     const accessToken = "access_token";
     const seApiToken = "se_api_token";
     const nukePostDefaultConfigString = JSON.stringify({
-        detailText: "",
+        flagDetailText: "",
+        commentText: "",
         flag: false,
-        comment: true,
+        comment: false,
         log: true
     });
     const nukePostOptions = "cm_nuke_post_config";
@@ -72,24 +73,21 @@
         return fetch(`https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions).then((res => {
             if (401 === res.status) {
                 return requestNewJwt().then((() => fetchFromAWS(path, options)));
-            } else {
-                return res;
             }
+            return res;
         }));
     }
     function getSummaryPostInfoFromIds(ids) {
         if (ids.length <= 0) {
             return Promise.resolve(new Set);
-        } else {
-            return fetchFromAWS(`/summary/posts/${ids.join(";")}`).then((res => res.json())).then((postIds => Promise.resolve(new Set(postIds))));
         }
+        return fetchFromAWS(`/summary/posts/${ids.join(";")}`).then((res => res.json())).then((postIds => Promise.resolve(new Set(postIds))));
     }
     function getSummaryPostActionsFromIds(ids) {
         if (ids.length <= 0) {
             return Promise.resolve({});
-        } else {
-            return fetchFromAWS(`/summary/posts/${ids.join(";")}/actions`).then((res => res.json())).then((postActionData => Promise.resolve(postActionData)));
         }
+        return fetchFromAWS(`/summary/posts/${ids.join(";")}/actions`).then((res => res.json())).then((postActionData => Promise.resolve(postActionData)));
     }
     const seTokenAuthRoute = "https://stackoverflow.com/oauth?client_id=24380&scope=no_expiry&redirect_uri=https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod/auth/se/oauth";
     function buildClientSideAuthModal() {
@@ -128,128 +126,6 @@
     }
     function getActionsPopoverId(answerId) {
         return `case-manager-answer-popover-${answerId}`;
-    }
-    function getModMenuPopoverId(answerId) {
-        return `case-manager-mod-menu-popover-${answerId}`;
-    }
-    function buildModTools(isDeleted, answerId, postOwnerId) {
-        const baseId = getModMenuPopoverId(answerId);
-        const button = $(`<button ${isDeleted ? "disabled" : ""}  class="ml-auto s-btn s-btn__danger s-btn__outlined s-btn__dropdown" type="button" aria-controls="${baseId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Nuke as plagiarism</button>`);
-        if (isDeleted) {
-            return button;
-        } else {
-            return $(document.createDocumentFragment()).append(button).append(buildPopOver(baseId, answerId, postOwnerId));
-        }
-    }
-    function buildPopOver(baseId, answerId, postOwnerId) {
-        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionElements(baseId, nukePostConfig);
-        const lengthSpan = $(`<span>${nukePostConfig.detailText.length}</span>`);
-        const nukeButton = $('<button title="Deletes the post, adds a comment, and logs feedback in Case Manager" class="flex--item h32 s-btn s-btn__danger s-btn__outlined s-btn__xs">Nuke</button>');
-        nukeButton.on("click", (ev => {
-            ev.preventDefault();
-            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-            nukePostAsPlagiarism(answerId, postOwnerId, textarea.val(), isFlagChecked, isCommentChecked, isLogChecked);
-        }));
-        function updateDisplayBasedOnSelections(ev) {
-            ev.preventDefault();
-            const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-            if (!isFlagChecked && !isCommentChecked) {
-                textarea.prop("disabled", true);
-            } else {
-                textarea.removeProp("disabled");
-            }
-            nukeButton.attr("title", (isFlagChecked ? "Flags the post, " : "") + (isFlagChecked ? "deletes" : "Deletes") + " the post" + (isCommentChecked ? ", adds a comment" : "") + (isLogChecked ? ", logs feedback in Case manager" : ""));
-        }
-        shouldCommentCheckbox.on("input", updateDisplayBasedOnSelections);
-        shouldFlagCheckbox.on("input", updateDisplayBasedOnSelections);
-        shouldLogCheckbox.on("input", updateDisplayBasedOnSelections);
-        textarea.on("input", (ev => {
-            ev.preventDefault();
-            const length = ev.target.value.length;
-            lengthSpan.text(length);
-        }));
-        return $(`<div class="s-popover" id="${baseId}" role="menu" style="max-width: min-content"><div class="s-popover--arrow"/></div>`).append($('<div class="d-grid g8 ai-center grid__1 ws4"></div>').append($('<div class="d-flex fd-row jc-space-between"></div>').append(textareaLabel).append('<a class="fs-fine" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a>')).append(textarea).append($("<div></div>").append("<span>Characters: </span>").append(lengthSpan)).append($('<div class="d-flex fd-row flex__fl-equal g8"></div>').append(checkboxContainer).append(nukeButton)));
-    }
-    function getCheckboxValuesFromInput(...checkboxes) {
-        return checkboxes.map((checkbox => checkbox.is(":checked")));
-    }
-    function buildNukeOptionElements(baseId, nukePostConfig) {
-        const textareaLabel = $(`<label class="s-label" for="${baseId}-ta">Detail Text:</label>`);
-        const textarea = $(`<textarea id="${baseId}-ta" class="s-textarea js-comment-text-input" rows="5"/>`);
-        textarea.val(nukePostConfig.detailText);
-        const checkboxContainer = $('<div class="flex--item d-flex fd-column g8"></div>');
-        const shouldFlagCheckbox = $(`<input class="s-checkbox" type="checkbox" name="flag" id="${baseId}-cb-flag"${nukePostConfig.flag ? " checked" : ""}/>`);
-        const shouldCommentCheckbox = $(`<input class="s-checkbox" type="checkbox" name="comment" id="${baseId}-cb-comment"${nukePostConfig.comment ? " checked" : ""}/>`);
-        const shouldLogCheckbox = $(`<input class="s-checkbox" type="checkbox" name="log" id="${baseId}-cb-log"${nukePostConfig.log ? " checked" : ""}/>`);
-        checkboxContainer.append($('<div class="s-check-control"></div>').append(shouldFlagCheckbox).append(`<label class="s-label" for="${baseId}-cb-flag">Flag</label>`)).append($('<div class="s-check-control"></div>').append(shouldCommentCheckbox).append(`<label class="s-label" for="${baseId}-cb-comment">Comment</label>`)).append($('<div class="s-check-control"></div>').append(shouldLogCheckbox).append(`<label class="s-label" for="${baseId}-cb-log">Log</label>`));
-        return {
-            textareaLabel: textareaLabel,
-            textarea: textarea,
-            checkboxContainer: checkboxContainer,
-            shouldFlagCheckbox: shouldFlagCheckbox,
-            shouldCommentCheckbox: shouldCommentCheckbox,
-            shouldLogCheckbox: shouldLogCheckbox
-        };
-    }
-    async function nukePostAsPlagiarism(answerId, ownerId, message, flagPost = false, commentPost = true, logWithAws = true) {
-        if (flagPost && (message.length < 10 || message.length > 500)) {
-            StackExchange.helpers.showToast("Flags must be between 10 and 500 characters. Either add text or disable the flagging option.", {
-                type: "danger"
-            });
-            return;
-        }
-        if (commentPost && (message.length < 15 || message.length > 600)) {
-            StackExchange.helpers.showToast("Comments must be between 10 and 600 characters. Either add text or disable the comment option.", {
-                type: "danger"
-            });
-            return;
-        }
-        if (flagPost) {
-            const flagFd = new FormData;
-            flagFd.set("fkey", StackExchange.options.user.fkey);
-            flagFd.set("otherText", message);
-            const flagFetch = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
-                body: flagFd,
-                method: "POST"
-            }).then((res => res.json()));
-            if (!flagFetch.Success) {
-                StackExchange.helpers.showToast(flagFetch.Message);
-                return;
-            }
-        }
-        const deleteFd = new FormData;
-        deleteFd.set("fkey", StackExchange.options.user.fkey);
-        const deleteFetch = await fetch(`/posts/${answerId}/vote/10`, {
-            body: deleteFd,
-            method: "POST"
-        }).then((res => res.json()));
-        if (deleteFetch.Success) {
-            if (commentPost) {
-                const commentFd = new FormData;
-                commentFd.set("fkey", StackExchange.options.user.fkey);
-                commentFd.set("comment", message);
-                await void fetch(`/posts/${answerId}/comments`, {
-                    body: commentFd,
-                    method: "POST"
-                });
-            }
-            if (logWithAws) {
-                const body = {};
-                if (-1 !== ownerId) {
-                    body.postOwnerId = ownerId;
-                }
-                body.actionIds = [ 3, 4 ];
-                await fetchFromAWS(`/handle/post/${answerId}`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-            }
-            window.location.reload();
-        }
     }
     function buildAlertSvg(dim = 18, viewBox = 18) {
         return `<svg aria-hidden="true" class="svg-icon iconAlert" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M7.95 2.71c.58-.94 1.52-.94 2.1 0l7.69 12.58c.58.94.15 1.71-.96 1.71H1.22C.1 17-.32 16.23.26 15.29L7.95 2.71ZM8 6v5h2V6H8Zm0 7v2h2v-2H8Z"></path></svg>`;
@@ -371,7 +247,9 @@
             }
             body.actionIds = actions.map(((i, e) => {
                 const id = $(e).attr("data-action-id");
-                if (void 0 !== id) {
+                if (void 0 === id) {
+                    return;
+                } else {
                     return Number(id);
                 }
             })).toArray();
@@ -389,17 +267,115 @@
             }));
         };
     }
+    function getModalId(postId) {
+        return "socm-nuke-post-form-{postId}".formatUnicorn({
+            postId: postId
+        });
+    }
+    function handleNukePostButtonClick(postId, postOwnerId) {
+        const modalId = getModalId(postId);
+        const modal = document.getElementById(modalId);
+        if (null !== modal) {
+            Stacks.showModal(modal);
+        } else {
+            $("body").append('<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"><div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" role="document" data-controller="socm-nuke-post-form"><h1 class="s-modal--header">Nuke Plagiarism</h1><div class="s-modal--body" style="margin-bottom: 0;"><div class="d-flex fd-column g8"><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-flag-enable-toggle-{postId}">Flag before deletion</label><input class="s-toggle-switch" id="socm-flag-enable-toggle-{postId}" data-socm-nuke-post-form-target="flag-enable-toggle" data-socm-nuke-post-form-controls-param="flag-info-area" data-action="change->socm-nuke-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-nuke-post-form-target="flag-info-area"><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-flag-link-area-{postId}">Link(s) to original content</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-flag-link-area-{postId}" name="flag source link" rows="1" data-socm-nuke-post-form-target="flag-link-area"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-flag-detail-area-{postId}">Why do you consider this answer to be plagiarized?</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-flag-detail-area-{postId}" name="flag detail text" rows="5" data-socm-nuke-post-form-target="flag-detail-area"></textarea><div data-se-char-counter-target="output"></div></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-comment-enable-toggle-{postId}">Comment after deletion</label><input class="s-toggle-switch" id="socm-comment-enable-toggle-{postId}" data-socm-nuke-post-form-target="comment-enable-toggle" data-socm-nuke-post-form-controls-param="comment-info-area" data-action="change->socm-nuke-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-nuke-post-form-target="comment-info-area"><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="15" data-se-char-counter-max="600"><label class="s-label flex--item" for="socm-nuke-comment-area-{postId}">Comment Text</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-comment-area-{postId}" name="comment text" rows="5" data-socm-nuke-post-form-target="comment-area"></textarea><div data-se-char-counter-target="output"></div></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-log-nuked-post-toggle-{postId}">Log post in Case Manager</label><input class="s-toggle-switch" id="socm-log-nuked-post-toggle-{postId}" data-socm-nuke-post-form-target="log-enable-toggle" type="checkbox"></div></div><div class="d-flex gx8 s-modal--footer ai-center"><button class="s-btn flex--item s-btn__filled s-btn__danger" type="button" data-socm-nuke-post-form-target="nuke-post-button" data-action="click->socm-nuke-post-form#handleSubmitActions" data-socm-nuke-post-form-post-id-param="{postId}" data-socm-nuke-post-form-post-owner-param="{postOwnerId}">Nuke Post</button><button class="s-btn flex--item s-btn__muted" type="button" data-action="click->socm-nuke-post-form#cancelNuke" data-socm-nuke-post-form-post-id-param="{postId}">Cancel</button><a class="fs-fine ml-auto" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a></div><button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div></aside>'.formatUnicorn({
+                modalId: modalId,
+                postId: postId,
+                postOwnerId: postOwnerId
+            }));
+        }
+    }
+    function buildNukePostButton(isDeleted, answerId, postOwnerId) {
+        const button = $(`<button ${isDeleted ? "disabled" : ""}  class="ml-auto s-btn s-btn__danger s-btn__outlined" type="button">Nuke as plagiarism</button>`);
+        button.on("click", (() => {
+            handleNukePostButtonClick(answerId, postOwnerId);
+        }));
+        return button;
+    }
+    function registerNukePostStacksController() {
+        Stacks.addController("socm-nuke-post-form", {
+            targets: [ "nuke-post-button", "cancel-button", "flag-enable-toggle", "comment-enable-toggle", "log-enable-toggle", "flag-info-area", "comment-info-area", "flag-link-area", "flag-detail-area", "comment-area" ],
+            get shouldFlag() {
+                return this["flag-enable-toggleTarget"].checked;
+            },
+            get shouldComment() {
+                return this["comment-enable-toggleTarget"].checked;
+            },
+            get shouldLog() {
+                return this["log-enable-toggleTarget"].checked;
+            },
+            get commentText() {
+                return this["comment-areaTarget"].value ?? "";
+            },
+            get flagOriginalSourceText() {
+                return this["flag-link-areaTarget"].value ?? "";
+            },
+            get flagDetailText() {
+                return this["flag-detail-areaTarget"].value ?? "";
+            },
+            connect() {
+                const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+                this["flag-enable-toggleTarget"].checked = nukePostConfig.flag;
+                this["comment-enable-toggleTarget"].checked = nukePostConfig.comment;
+                this["log-enable-toggleTarget"].checked = nukePostConfig.log;
+                if (!nukePostConfig.flag) {
+                    $(this["flag-info-areaTarget"]).addClass("d-none");
+                }
+                if (!nukePostConfig.comment) {
+                    $(this["comment-info-areaTarget"]).addClass("d-none");
+                }
+                this["flag-detail-areaTarget"].value = nukePostConfig.flagDetailText ?? "";
+                this["comment-areaTarget"].value = nukePostConfig.commentText ?? "";
+            },
+            handleSubmitActions(ev) {
+                ev.preventDefault();
+                const {postOwner: postOwner, postId: postId} = ev.params;
+                nukePostAsPlagiarism(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, this.shouldComment, this.shouldLog);
+            },
+            cancelNuke(ev) {
+                ev.preventDefault();
+                const {postId: postId} = ev.params;
+                const existingModal = document.getElementById(getModalId(postId));
+                if (null !== existingModal) {
+                    existingModal.remove();
+                }
+            },
+            handleUpdateControlledField(ev) {
+                const {controls: controls} = ev.params;
+                if (ev.target.checked) {
+                    $(this[`${controls}Target`]).removeClass("d-none");
+                } else {
+                    $(this[`${controls}Target`]).addClass("d-none");
+                }
+            }
+        });
+    }
+    async function nukePostAsPlagiarism(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true) {
+        console.log({
+            answerId: answerId,
+            ownerId: ownerId,
+            flagOriginalSourceText: flagOriginalSourceText,
+            flagDetailText: flagDetailText,
+            commentText: commentText,
+            shouldFlagPost: shouldFlagPost,
+            shouldCommentPost: shouldCommentPost,
+            shouldLogWithAws: shouldLogWithAws
+        });
+    }
     function buildAnswerControlPanel() {
         const answers = $("div.answer");
         const answerIds = answers.map(((i, e) => getAnswerIdFromAnswerDiv(e))).toArray();
         for (const {jAnswer: jAnswer, isDeleted: isDeleted, answerId: answerId, postOwnerId: postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
             const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
             controlPanel.append(buildBaseTimelineButtons(answerId));
-            if (StackExchange.options.user.isModerator) {
-                controlPanel.append(buildModTools(isDeleted, answerId, postOwnerId));
+            if (true === StackExchange.options.user.isModerator) {
+                controlPanel.append(buildNukePostButton(isDeleted, answerId, postOwnerId));
             }
             controlPanel.append(buildActionsComponent(answerId, postOwnerId));
             jAnswer.append(controlPanel);
+        }
+        if (true === StackExchange.options.user.isModerator) {
+            registerNukePostStacksController();
         }
         delayPullSummaryPostInfo(answerIds);
     }
@@ -412,14 +388,15 @@
             const isDeleted = jAnswer.hasClass("deleted-answer");
             const answerId = answerIds[i];
             const postOwnerId = getPostOwnerIdFromAuthorDiv(jAnswer.find('div[itemprop="author"]'));
-            if (void 0 !== answerId && postOwnerId !== StackExchange.options.user.userId) {
-                yield {
-                    jAnswer: jAnswer,
-                    isDeleted: isDeleted,
-                    answerId: answerId,
-                    postOwnerId: postOwnerId
-                };
+            if (void 0 === answerId || postOwnerId === StackExchange.options.user.userId) {
+                continue;
             }
+            yield {
+                jAnswer: jAnswer,
+                isDeleted: isDeleted,
+                answerId: answerId,
+                postOwnerId: postOwnerId
+            };
         }
     }
     function delayPullSummaryPostInfo(answerIds) {
@@ -443,9 +420,8 @@
         const match = href.match(/\/users\/(\d+)\/.*/);
         if (null === match) {
             return -1;
-        } else {
-            return Number(match[1]);
         }
+        return Number(match[1]);
     }
     function buildExistingTokensControls() {
         return $("<div></div>").append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>').append(buildTokenList()).append(buildDeAuthoriseButton());
@@ -514,35 +490,66 @@
         }
     }
     function buildNukeConfigControls() {
-        return $("<div></div>").append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>').append(buildTemplateForm());
+        registerNukeConfigSettingsController();
+        return $("<div></div>").append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>').append('<form class="d-flex fd-column g12" data-controller="socm-nuke-config-settings" data-action="submit->socm-nuke-config-settings#handleSaveConfig reset->socm-nuke-config-settings#handleResetConfig"><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-flag" data-socm-nuke-config-settings-target="nuke-config-should-flag"/><label class="s-label" for="socm-nuke-config-should-flag">Should Flag</label></div><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-comment" data-socm-nuke-config-settings-target="nuke-config-should-comment"/><label class="s-label" for="socm-nuke-config-should-comment">Should Comment</label></div><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-log" data-socm-nuke-config-settings-target="nuke-config-should-log"/><label class="s-label" for="socm-nuke-config-should-log">Should Log</label></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-config-flag-template">Flag Detail Text Template:</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-config-flag-template" name="flag detail template" rows="5" data-socm-nuke-config-settings-target="nuke-config-flag-template"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="15" data-se-char-counter-max="600"><label class="s-label flex--item" for="socm-nuke-config-comment-template">Comment Text Template:</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-config-comment-template" name="comment template" rows="5" data-socm-nuke-config-settings-target="nuke-config-comment-template"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex fd-row g8"><button class="s-btn s-btn__primary" type="submit">Save Config</button><button class="s-btn s-btn__muted" type="reset">Reset To Default</button></div></form>');
     }
-    function buildTemplateForm() {
-        const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-        const templateForm = $('<form class="d-flex fd-column g8"></form>');
-        const {textareaLabel: textareaLabel, textarea: textarea, checkboxContainer: checkboxContainer, shouldFlagCheckbox: shouldFlagCheckbox, shouldCommentCheckbox: shouldCommentCheckbox, shouldLogCheckbox: shouldLogCheckbox} = buildNukeOptionElements("nuke-config", nukePostConfig);
-        templateForm.on("submit", (function(ev) {
-            ev.preventDefault();
-            try {
-                const [isFlagChecked, isCommentChecked, isLogChecked] = getCheckboxValuesFromInput(shouldFlagCheckbox, shouldCommentCheckbox, shouldLogCheckbox);
-                const newConfig = {
-                    detailText: textarea.val() || "",
-                    flag: isFlagChecked,
-                    comment: isCommentChecked,
-                    log: isLogChecked
-                };
-                GM_setValue(nukePostOptions, JSON.stringify(newConfig));
-                StackExchange.helpers.showToast("Config updated successfully!", {
-                    type: "success",
-                    transientTimeout: 3e3
-                });
-            } catch (e) {
-                StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
-                    type: "danger",
-                    transientTimeout: 5e3
-                });
+    function registerNukeConfigSettingsController() {
+        Stacks.addController("socm-nuke-config-settings", {
+            targets: [ "nuke-config-should-flag", "nuke-config-should-comment", "nuke-config-should-log", "nuke-config-flag-template", "nuke-config-comment-template" ],
+            get shouldFlag() {
+                return this["nuke-config-should-flagTarget"].checked;
+            },
+            get shouldComment() {
+                return this["nuke-config-should-commentTarget"].checked;
+            },
+            get shouldLog() {
+                return this["nuke-config-should-logTarget"].checked;
+            },
+            get commentTemplate() {
+                return this["nuke-config-comment-templateTarget"].value ?? "";
+            },
+            get flagTemplate() {
+                return this["nuke-config-flag-templateTarget"].value ?? "";
+            },
+            setValues(config) {
+                this["nuke-config-should-flagTarget"].checked = config.flag;
+                this["nuke-config-should-commentTarget"].checked = config.comment;
+                this["nuke-config-should-logTarget"].checked = config.log;
+                this["nuke-config-flag-templateTarget"].value = config.flagDetailText ?? "";
+                this["nuke-config-comment-templateTarget"].value = config.commentText ?? "";
+            },
+            connect() {
+                const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+                this.setValues(nukePostConfig);
+            },
+            handleSaveConfig(ev) {
+                ev.preventDefault();
+                try {
+                    const newConfig = {
+                        flagDetailText: this.flagTemplate,
+                        commentText: this.commentTemplate,
+                        flag: this.shouldFlag,
+                        comment: this.shouldComment,
+                        log: this.shouldLog
+                    };
+                    GM_setValue(nukePostOptions, JSON.stringify(newConfig));
+                    StackExchange.helpers.showToast("Config updated successfully!", {
+                        type: "success",
+                        transientTimeout: 3e3
+                    });
+                } catch (e) {
+                    StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
+                        type: "danger",
+                        transientTimeout: 5e3
+                    });
+                }
+            },
+            handleResetConfig(ev) {
+                ev.preventDefault();
+                const defaultConfig = JSON.parse(nukePostDefaultConfigString);
+                this.setValues(defaultConfig);
             }
-        }));
-        return templateForm.append(textareaLabel).append(textarea).append(checkboxContainer).append('<div><button class="s-btn s-btn__primary" type="submit">Save Config</button></div>');
+        });
     }
     function buildUserScriptSettingsPanel() {
         const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
@@ -948,9 +955,10 @@
     function getAnswerIdsOnFlagPage() {
         return new Set($(".flagged-post .answer-link a").map(((i, e) => {
             const href = e.getAttribute("href");
-            if (null !== href && href.includes("#")) {
-                return href.split("#").at(-1);
+            if (null === href || !href.includes("#")) {
+                return;
             }
+            return href.split("#").at(-1);
         })).toArray());
     }
     function renderFlagSummaryIndicators(summaryPostActions) {
@@ -1208,18 +1216,18 @@
         }
     }
     function UserScript() {
-        if (null !== GM_getValue(accessToken, null)) {
-            if (null !== window.location.pathname.match(/^\/questions\/.*/)) {
-                buildAnswerControlPanel();
-            } else if (null !== window.location.pathname.match(/^\/users$/)) {
-                buildPlagiaristTab();
-            } else if (null !== window.location.pathname.match(new RegExp(`^/users/(account-info/)?${StackExchange.options.user.userId}.*`))) {
-                buildUserScriptSettingsNav();
-            } else if (null !== window.location.pathname.match(/^\/users\/.*/)) {
-                buildProfilePage();
-            }
-        } else {
+        if (null === GM_getValue(accessToken, null)) {
             buildClientSideAuthModal();
+            return;
+        }
+        if (null !== window.location.pathname.match(/^\/questions\/.*/)) {
+            buildAnswerControlPanel();
+        } else if (null !== window.location.pathname.match(/^\/users$/)) {
+            buildPlagiaristTab();
+        } else if (null !== window.location.pathname.match(new RegExp(`^/users/(account-info/)?${StackExchange.options.user.userId}.*`))) {
+            buildUserScriptSettingsNav();
+        } else if (null !== window.location.pathname.match(/^\/users\/.*/)) {
+            buildProfilePage();
         }
     }
     StackExchange.ready((() => {
