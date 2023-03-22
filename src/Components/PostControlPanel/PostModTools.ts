@@ -2,26 +2,22 @@ import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
 
-
-// Builder Modal
-function buildNukePostModal(modalId: string, postId: number, postOwnerId: number) {
-    return NUKE_POST.FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId});
-}
-
 function getModalId(postId: number) {
     return NUKE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
 }
 
 function handleNukePostButtonClick(postId: number, postOwnerId: number) {
     const modalId = getModalId(postId);
-    const modal: HTMLElement | null | JQuery = document.getElementById(modalId);
+    const modal = document.getElementById(modalId);
     if (modal !== null) {
         Stacks.showModal(modal);
     } else {
-        $('body').append(buildNukePostModal(modalId, postId, postOwnerId));
+        $('body')
+            .append(
+                NUKE_POST.FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId})
+            );
     }
 }
-
 
 export function buildNukePostButton(isDeleted: boolean, answerId: number, postOwnerId: number) {
     const button = $(`<button ${isDeleted ? 'disabled' : ''}  class="ml-auto s-btn s-btn__danger s-btn__outlined" type="button">Nuke as plagiarism</button>`);
