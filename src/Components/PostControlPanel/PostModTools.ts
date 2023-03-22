@@ -1,6 +1,8 @@
 import {type ActionEvent} from '@hotwired/stimulus';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
+import type {FlagPlagiarismResponse} from '../../API/SEAPI';
+import {fetchFromAWS} from '../../API/AWSAPI';
 
 function getModalId(postId: number) {
     return NUKE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
@@ -121,64 +123,54 @@ async function nukePostAsPlagiarism(
         return;
     }
 
-    console.log({
-        answerId,
-        ownerId,
-        flagLinkText,
-        flagDetailText,
-        commentText,
-        flagPost: shouldFlagPost,
-        commentPost: shouldCommentPost,
-        logWithAws: shouldLogWithAws
+    if (shouldFlagPost) {
+        const flagFd = new FormData();
+        flagFd.set('fkey', StackExchange.options.user.fkey);
+        flagFd.set('otherText', flagDetailText);
+        flagFd.set('customData', JSON.stringify({plagiarizedSource: flagLinkText}));
+        flagFd.set('overrideWarning', 'false');
+        const flagFetch: FlagPlagiarismResponse = await fetch(`/flags/posts/${answerId}/add/PlagiarizedContent`, {
+            body: flagFd,
+            method: 'POST'
+        }).then(res => res.json());
+        if (!flagFetch.Success) {
+            StackExchange.helpers.showToast(flagFetch.Message);
+            return; // don't continue
+        }
+    }
+    const deleteFd = new FormData();
+    deleteFd.set('fkey', StackExchange.options.user.fkey);
+    const deleteFetch = await fetch(`/admin/posts/${answerId}/delete-as-plagiarism`, {
+        body: deleteFd,
+        method: 'POST'
     });
-    //
-    // TODO Update new flag type and fields
-    // if (flagPost) {
-    //     const flagFd = new FormData();
-    //     flagFd.set('fkey', StackExchange.options.user.fkey);
-    //     flagFd.set('otherText', flagText);
-    //     const flagFetch: FlagOtherResponse = await fetch(`/flags/posts/${answerId}/add/PostOther`, {
-    //         body: flagFd,
-    //         method: 'POST'
-    //     }).then(res => res.json());
-    //     if (!flagFetch.Success) {
-    //         StackExchange.helpers.showToast(flagFetch.Message);
-    //         return; // don't continue
-    //     }
-    // }
-    // TODO This will need re-written "Delete as plagiarism" is a different delete type!!
-    // const deleteFd = new FormData();
-    // deleteFd.set('fkey', StackExchange.options.user.fkey);
-    // const deleteFetch: PostDeleteResponse = await fetch(`/posts/${answerId}/vote/10`, {
-    //     body: deleteFd,
-    //     method: 'POST'
-    // }).then(res => res.json());
-    //
-    // if (!deleteFetch.Success) {
-    //     return; // Deletion failed don't continue
-    // }
-    // if (commentPost) {
-    //     const commentFd = new FormData();
-    //     commentFd.set('fkey', StackExchange.options.user.fkey);
-    //     commentFd.set('comment', commentText);
-    //     await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
-    // }
-    // if (logWithAws) {
-    //     const body: {
-    //         postOwnerId?: number;
-    //         actionIds?: number[];
-    //     } = {};
-    //     if (ownerId !== -1) {
-    //         body['postOwnerId'] = ownerId;
-    //     }
-    //     body['actionIds'] = [Feedback.Plagiarised, Feedback.Deleted];
-    //     void await fetchFromAWS(`/handle/post/${answerId}`, {
-    //         'method': 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify(body)
-    //     });
-    // }
-    // window.location.reload();
+
+    if (deleteFetch.status !== 200) {
+        return; // Deletion failed don't continue
+    }
+
+    if (shouldCommentPost) {
+        const commentFd = new FormData();
+        commentFd.set('fkey', StackExchange.options.user.fkey);
+        commentFd.set('comment', commentText);
+        await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
+    }
+    if (shouldLogWithAws) {
+        const body: {
+            postOwnerId?: number;
+            actionIds?: number[];
+        } = {};
+        if (ownerId !== -1) {
+            body['postOwnerId'] = ownerId;
+        }
+        body['actionIds'] = [Feedback.Plagiarised, Feedback.Deleted];
+        void await fetchFromAWS(`/handle/post/${answerId}`, {
+            'method': 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        });
+    }
+    window.location.reload();
 }
