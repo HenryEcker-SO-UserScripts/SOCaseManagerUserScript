@@ -11,7 +11,7 @@ export const validationBounds = {
     } as ValidationBounds,
     flagLinkTextarea: {
         min: 10,
-        max: 500
+        max: 500 // 500 is a best guess (https://chat.stackoverflow.com/transcript/message/56121710), but there's no character counter here so it's unknown
     } as ValidationBounds,
     commentTextarea: {
         min: 15,
