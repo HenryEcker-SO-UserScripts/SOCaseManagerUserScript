@@ -59,11 +59,11 @@ const nukePostForm = `
          role="document" 
          data-controller="${data.controller}">
         <h1 class="s-modal--header">Nuke Plagiarism</h1>
-        <div class="s-modal--body">
+        <div class="s-modal--body" style="margin-bottom: 0;">
             <div class="d-flex fd-column g8">
             ${
     buildFieldControlToggle(
-        'Flag before deletion:',
+        'Flag before deletion',
         ids.enableFlagToggle,
         data.target.enableFlagToggle,
         data.target.flagControlFields
@@ -72,11 +72,11 @@ const nukePostForm = `
         data.target.flagControlFields,
         buildTextarea(
             ids.flagLinkTextarea,
-            'flag link text',
-            2,
+            'flag source link',
+            1,
             data.controller,
             data.target.flagLinkTextarea,
-            'Link to source:',
+            'Link(s) to original content',
             validationBounds.flagLinkTextarea)
         + '\n' +
         buildTextarea(
@@ -85,10 +85,10 @@ const nukePostForm = `
             5,
             data.controller,
             data.target.flagDetailTextarea,
-            'Flag Detail Text:',
+            'Why do you consider this answer to be plagiarized?',
             validationBounds.flagDetailTextarea))}${modalDivider}${
     buildFieldControlToggle(
-        'Comment after deletion:',
+        'Comment after deletion',
         ids.enableCommentToggle,
         data.target.enableCommentToggle,
         data.target.commentControlFields
@@ -101,11 +101,11 @@ const nukePostForm = `
             5,
             data.controller,
             data.target.commentTextarea,
-            'Comment Text:',
+            'Comment Text',
             validationBounds.commentTextarea)
     )}${modalDivider}${
     buildToggle(
-        'Log post in Case Manager:',
+        'Log post in Case Manager',
         ids.enableLogToggle,
         data.controller,
         data.target.enableLogToggle
