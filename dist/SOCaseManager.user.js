@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.3.0
+// @version     0.3.1
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -273,8 +273,7 @@
             max: 500
         },
         flagOriginalSourceTextarea: {
-            min: 10,
-            max: 500
+            min: 10
         },
         commentTextarea: {
             min: 15,
@@ -282,7 +281,11 @@
         }
     };
     function isInValidationBounds(textLength, vB) {
-        return textLength < vB.min || textLength > vB.max;
+        const min = vB.min ?? 0;
+        if (void 0 === vB.max) {
+            return min <= textLength;
+        }
+        return min <= textLength && textLength <= vB.max;
     }
     function getModalId(postId) {
         return "socm-nuke-post-form-{postId}".formatUnicorn({
@@ -295,7 +298,7 @@
         if (null !== modal) {
             Stacks.showModal(modal);
         } else {
-            $("body").append('<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"><div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" role="document" data-controller="socm-nuke-post-form"><h1 class="s-modal--header">Nuke Plagiarism</h1><div class="s-modal--body" style="margin-bottom: 0;"><div class="d-flex fd-column g8"><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-flag-enable-toggle-{postId}">Flag before deletion</label><input class="s-toggle-switch" id="socm-flag-enable-toggle-{postId}" data-socm-nuke-post-form-target="flag-enable-toggle" data-socm-nuke-post-form-controls-param="flag-info-area" data-action="change->socm-nuke-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-nuke-post-form-target="flag-info-area"><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-flag-link-area-{postId}">Link(s) to original content</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-flag-link-area-{postId}" name="flag source link" rows="1" data-socm-nuke-post-form-target="flag-link-area"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-flag-detail-area-{postId}">Why do you consider this answer to be plagiarized?</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-flag-detail-area-{postId}" name="flag detail text" rows="5" data-socm-nuke-post-form-target="flag-detail-area"></textarea><div data-se-char-counter-target="output"></div></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-comment-enable-toggle-{postId}">Comment after deletion</label><input class="s-toggle-switch" id="socm-comment-enable-toggle-{postId}" data-socm-nuke-post-form-target="comment-enable-toggle" data-socm-nuke-post-form-controls-param="comment-info-area" data-action="change->socm-nuke-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-nuke-post-form-target="comment-info-area"><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="15" data-se-char-counter-max="600"><label class="s-label flex--item" for="socm-nuke-comment-area-{postId}">Comment Text</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-comment-area-{postId}" name="comment text" rows="5" data-socm-nuke-post-form-target="comment-area"></textarea><div data-se-char-counter-target="output"></div></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-log-nuked-post-toggle-{postId}">Log post in Case Manager</label><input class="s-toggle-switch" id="socm-log-nuked-post-toggle-{postId}" data-socm-nuke-post-form-target="log-enable-toggle" type="checkbox"></div></div><div class="d-flex gx8 s-modal--footer ai-center"><button class="s-btn flex--item s-btn__filled s-btn__danger" type="button" data-socm-nuke-post-form-target="nuke-post-button" data-action="click->socm-nuke-post-form#handleSubmitActions" data-socm-nuke-post-form-post-id-param="{postId}" data-socm-nuke-post-form-post-owner-param="{postOwnerId}">Nuke Post</button><button class="s-btn flex--item s-btn__muted" type="button" data-action="click->socm-nuke-post-form#cancelNuke" data-socm-nuke-post-form-post-id-param="{postId}">Cancel</button><a class="fs-fine ml-auto" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a></div><button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div></aside>'.formatUnicorn({
+            $("body").append('<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal"><div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" role="document" data-controller="socm-nuke-post-form"><h1 class="s-modal--header">Nuke Plagiarism</h1><div class="s-modal--body" style="margin-bottom: 0;"><div class="d-flex fd-column g8"><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-flag-enable-toggle-{postId}">Flag before deletion</label><input class="s-toggle-switch" id="socm-flag-enable-toggle-{postId}" data-socm-nuke-post-form-target="flag-enable-toggle" data-socm-nuke-post-form-controls-param="flag-info-area" data-action="change->socm-nuke-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-nuke-post-form-target="flag-info-area"><div class="d-flex ff-column-nowrap gs4 gsy"><div class="flex--item"><label class="d-block s-label" for="socm-nuke-flag-original-source-area-{postId}">Link(s) to original content</label></div><div class="d-flex ps-relative"><input type="text" id="socm-nuke-flag-original-source-area-{postId}" class="s-input" name="flag source link" data-socm-nuke-post-form-target="flag-original-source-area"></div></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-flag-detail-area-{postId}">Why do you consider this answer to be plagiarized?</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-flag-detail-area-{postId}" name="flag detail text" rows="5" data-socm-nuke-post-form-target="flag-detail-area"></textarea><div data-se-char-counter-target="output"></div></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-comment-enable-toggle-{postId}">Comment after deletion</label><input class="s-toggle-switch" id="socm-comment-enable-toggle-{postId}" data-socm-nuke-post-form-target="comment-enable-toggle" data-socm-nuke-post-form-controls-param="comment-info-area" data-action="change->socm-nuke-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-nuke-post-form-target="comment-info-area"><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="15" data-se-char-counter-max="600"><label class="s-label flex--item" for="socm-nuke-comment-area-{postId}">Comment Text</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-comment-area-{postId}" name="comment text" rows="5" data-socm-nuke-post-form-target="comment-area"></textarea><div data-se-char-counter-target="output"></div></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-log-nuked-post-toggle-{postId}">Log post in Case Manager</label><input class="s-toggle-switch" id="socm-log-nuked-post-toggle-{postId}" data-socm-nuke-post-form-target="log-enable-toggle" type="checkbox"></div></div><div class="d-flex gx8 s-modal--footer ai-center"><button class="s-btn flex--item s-btn__filled s-btn__danger" type="button" data-socm-nuke-post-form-target="nuke-post-button" data-action="click->socm-nuke-post-form#handleSubmitActions" data-socm-nuke-post-form-post-id-param="{postId}" data-socm-nuke-post-form-post-owner-param="{postOwnerId}">Nuke Post</button><button class="s-btn flex--item s-btn__muted" type="button" data-action="click->socm-nuke-post-form#cancelNuke" data-socm-nuke-post-form-post-id-param="{postId}">Cancel</button><a class="fs-fine ml-auto" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a></div><button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div></aside>'.formatUnicorn({
                 modalId: modalId,
                 postId: postId,
                 postOwnerId: postOwnerId
@@ -311,7 +314,7 @@
     }
     function registerNukePostStacksController() {
         Stacks.addController("socm-nuke-post-form", {
-            targets: [ "nuke-post-button", "cancel-button", "flag-enable-toggle", "comment-enable-toggle", "log-enable-toggle", "flag-info-area", "comment-info-area", "flag-link-area", "flag-detail-area", "comment-area" ],
+            targets: [ "nuke-post-button", "cancel-button", "flag-enable-toggle", "comment-enable-toggle", "log-enable-toggle", "flag-info-area", "comment-info-area", "flag-original-source-area", "flag-detail-area", "comment-area" ],
             get shouldFlag() {
                 return this["flag-enable-toggleTarget"].checked;
             },
@@ -325,7 +328,7 @@
                 return this["comment-areaTarget"].value ?? "";
             },
             get flagOriginalSourceText() {
-                return this["flag-link-areaTarget"].value ?? "";
+                return this["flag-original-source-areaTarget"].value ?? "";
             },
             get flagDetailText() {
                 return this["flag-detail-areaTarget"].value ?? "";
@@ -368,19 +371,19 @@
         });
     }
     async function nukePostAsPlagiarism(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true) {
-        if (shouldFlagPost && isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-            StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagOriginalSourceTextarea.min} and ${validationBounds.flagOriginalSourceTextarea.max} characters. Either update the text or disable the flagging option.`, {
+        if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
+            StackExchange.helpers.showToast(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`, {
                 type: "danger"
             });
             return;
         }
-        if (shouldFlagPost && isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
+        if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
             StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {
                 type: "danger"
             });
             return;
         }
-        if (shouldCommentPost && isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
+        if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
             StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {
                 type: "danger"
             });
