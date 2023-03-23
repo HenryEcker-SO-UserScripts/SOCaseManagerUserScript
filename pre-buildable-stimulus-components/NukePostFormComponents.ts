@@ -1,4 +1,4 @@
-import {buildTextarea, buildToggle} from './StimulusComponentBuilder';
+import {buildTextarea, buildTextInput, buildToggle} from './StimulusComponentBuilder';
 import {validationBounds} from '../src/Utils/ValidationHelpers';
 import {cleanWhitespace} from './StimulusPackageUtils';
 
@@ -7,7 +7,7 @@ const ids = {
     enableFlagToggle: 'socm-flag-enable-toggle-{postId}',
     enableCommentToggle: 'socm-comment-enable-toggle-{postId}',
     enableLogToggle: 'socm-log-nuked-post-toggle-{postId}',
-    flagLinkTextarea: 'socm-nuke-flag-link-area-{postId}',
+    flagOriginalSourceTextarea: 'socm-nuke-flag-original-source-area-{postId}',
     flagDetailTextarea: 'socm-nuke-flag-detail-area-{postId}',
     commentTextarea: 'socm-nuke-comment-area-{postId}'
 };
@@ -27,7 +27,7 @@ const data = {
         enableLogToggle: 'log-enable-toggle',
         flagControlFields: 'flag-info-area',
         commentControlFields: 'comment-info-area',
-        flagLinkTextarea: 'flag-link-area',
+        flagOriginalSourceTextarea: 'flag-original-source-area',
         flagDetailTextarea: 'flag-detail-area',
         commentTextarea: 'comment-area'
     },
@@ -70,15 +70,13 @@ const nukePostForm = `
     )}${
     buildFieldControlArea(
         data.target.flagControlFields,
-        buildTextarea(
-            ids.flagLinkTextarea,
-            'flag source link',
-            1,
-            data.controller,
-            data.target.flagLinkTextarea,
+        buildTextInput(
             'Link(s) to original content',
-            validationBounds.flagOriginalSourceTextarea)
-        + '\n' +
+            ids.flagOriginalSourceTextarea,
+            'flag source link',
+            data.controller,
+            data.target.flagOriginalSourceTextarea
+        ) + '\n' +
         buildTextarea(
             ids.flagDetailTextarea,
             'flag detail text',
@@ -138,7 +136,7 @@ export default {
     ENABLE_COMMENT_TOGGLE_TARGET: `${data.target.enableCommentToggle}Target`,
     ENABLE_LOG_TOGGLE_TARGET: `${data.target.enableLogToggle}Target`,
     COMMENT_TEXT_TARGET: `${data.target.commentTextarea}Target`,
-    FLAG_ORIGINAL_SOURCE_TEXT_TARGET: `${data.target.flagLinkTextarea}Target`,
+    FLAG_ORIGINAL_SOURCE_TEXT_TARGET: `${data.target.flagOriginalSourceTextarea}Target`,
     FLAG_DETAIL_TEXT_TARGET: `${data.target.flagDetailTextarea}Target`,
     FLAG_CONTROL_FIELDS_TARGET: `${data.target.flagControlFields}Target`,
     COMMENT_CONTROL_FIELDS_TARGET: `${data.target.commentControlFields}Target`,
