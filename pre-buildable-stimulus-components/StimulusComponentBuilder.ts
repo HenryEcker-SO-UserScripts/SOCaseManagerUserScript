@@ -1,5 +1,18 @@
 import type {ValidationBounds} from '../src/Utils/ValidationHelpers';
 
+
+export function buildTextInput(labelText: string, inputId: string, name: string, dataController: string, dataTarget: string) {
+    return `
+<div class="d-flex ff-column-nowrap gs4 gsy">
+    <div class="flex--item">
+        <label class="d-block s-label" for="${inputId}">${labelText}</label>
+    </div>
+    <div class="d-flex ps-relative">
+        <input type="text" id="${inputId}" class="s-input" name="${name}" data-${dataController}-target="${dataTarget}">
+    </div>
+</div>`;
+}
+
 export function buildCheckbox(labelText: string, inputId: string, dataController: string, dataTarget: string) {
     return `
 <div class="s-check-control">
