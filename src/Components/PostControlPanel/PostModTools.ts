@@ -1,8 +1,8 @@
 import {type ActionEvent} from '@hotwired/stimulus';
-import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
-import type {FlagPlagiarismResponse} from '../../API/SEAPI';
 import {fetchFromAWS} from '../../API/AWSAPI';
+import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
+import type {FlagPlagiarismResponse} from '../../API/SEAPI';
+import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
 
 function getModalId(postId: number) {
     return NUKE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
@@ -109,16 +109,16 @@ async function nukePostAsPlagiarism(
     commentText: string,
     shouldFlagPost = false, shouldCommentPost = true, shouldLogWithAws = true
 ) {
-    if (shouldFlagPost && isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-        StackExchange.helpers.showToast(`Plagiarism flag source must be between ${validationBounds.flagOriginalSourceTextarea.min} and ${validationBounds.flagOriginalSourceTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
+    if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
+        StackExchange.helpers.showToast(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
     }
-    if (shouldFlagPost && isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
+    if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
         StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
         return;
     }
 
-    if (shouldCommentPost && isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
+    if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
         StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {type: 'danger'});
         return;
     }
