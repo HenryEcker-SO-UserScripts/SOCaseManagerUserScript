@@ -13,11 +13,17 @@ function handleNukePostButtonClick(postId: number, postOwnerId: number) {
     const modal = document.getElementById(modalId);
     if (modal !== null) {
         Stacks.showModal(modal);
+
     } else {
         $('body')
             .append(
                 NUKE_POST.FORM.formatUnicorn({modalId: modalId, postId: postId, postOwnerId: postOwnerId})
             );
+
+        setTimeout(() => {
+            // Should be guaranteed to not be null since it was just added above
+            Stacks.showModal(<HTMLElement>document.getElementById(modalId));
+        }, 50);
     }
 }
 

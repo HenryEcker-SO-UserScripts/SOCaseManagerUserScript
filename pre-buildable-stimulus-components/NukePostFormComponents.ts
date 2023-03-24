@@ -54,7 +54,9 @@ function buildFieldControlArea(target: string, innerHTML: string) {
 const modalDivider = '<div class="my6 bb bc-black-400"></div>';
 
 const nukePostForm = `
-<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="false" data-controller="s-modal" data-s-modal-target="modal">
+<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="true" 
+       data-controller="s-modal" 
+       data-s-modal-target="modal">
     <div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" 
          role="document" 
          data-controller="${data.controller}">
