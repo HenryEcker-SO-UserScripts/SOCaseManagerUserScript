@@ -17,7 +17,8 @@ export function buildAnswerControlPanel() {
         jAnswer.append(controlPanel);
     }
     if (StackExchange.options.user.isModerator === true) {
-        registerNukePostStacksController(); // Only need to do this once per page
+        // Only need to do this once per page
+        registerNukePostStacksController();
     }
     delayPullSummaryPostInfo(answerIds);
 }
