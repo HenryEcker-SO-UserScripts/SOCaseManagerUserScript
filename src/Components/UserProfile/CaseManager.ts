@@ -8,6 +8,7 @@ import {
 } from '../../API/AWSAPI';
 import {fetchFromSEAPI, type SEAPIResponse} from '../../API/SEAPI';
 import {buildCheckmarkSvg} from '../../Utils/SVGBuilders';
+import {toStackExchangeDateFormat} from '../../Utils/DateFormatter';
 
 
 export function buildAndAttachCaseManagerControlPanel(userId: number) {
@@ -410,7 +411,7 @@ function buildCaseHistoryPane(caseTimeline: CaseSummaryCaseTimeline) {
     const timeline = $('<div class="d-flex fd-column g4"></div>');
     caseTimeline.forEach(entry => {
         timeline.append(
-            $(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry['case_event_id']}"><a href="/users/${entry['account_id']}">${entry['display_name']}</a><span data-event-type-id="${entry['case_event_type_id']}">${entry['case_event_description']}</span><span>${new Date(entry['event_creation_date']).toLocaleString()}</span></div>`)
+            $(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry['case_event_id']}"><a href="/users/${entry['account_id']}">${entry['display_name']}</a><span data-event-type-id="${entry['case_event_type_id']}">${entry['case_event_description']}</span><span title="${entry['event_creation_date']}">${toStackExchangeDateFormat(entry['event_creation_date'])}</span></div>`)
         );
     });
     container.append(timeline);

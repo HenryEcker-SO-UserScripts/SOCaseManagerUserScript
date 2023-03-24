@@ -1,6 +1,6 @@
 {
   "name": "so-case-manager-userscript",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "author": "Henry Ecker (https://github.com/HenryEcker)",
   "description": "Help facilitate and track collaborative plagiarism cleanup efforts",
   "repository": {
@@ -14,7 +14,8 @@
     "build": "npm run lint && vite build -c vite.config.js && vite build -c vite-min.config.js",
     "build-quick-dev": "vite build -c vite-min.config.js",
     "bump-patch": "npm --no-git-tag-version version patch && npm run build",
-    "bump-minor": "npm --no-git-tag-version version minor && npm run build"
+    "bump-minor": "npm --no-git-tag-version version minor && npm run build",
+    "bump-major": "npm --no-git-tag-version version major && npm run build"
   },
   "devDependencies": {
     "@types/format-unicorn": "^1.1.2",

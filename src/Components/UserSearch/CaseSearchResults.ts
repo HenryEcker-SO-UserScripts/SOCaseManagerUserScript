@@ -5,6 +5,7 @@ import {
     type UserCaseSummaryEntry
 } from '../../API/AWSAPI';
 import {buildSearchSvg} from '../../Utils/SVGBuilders';
+import {toStackExchangeDateFormat} from '../../Utils/DateFormatter';
 
 
 function buildUserTile(account_id: number, profile_image: null | string, display_name: string, number_of_plagiarised_posts: number, current_state: string, event_date: string) {
@@ -20,7 +21,7 @@ function buildUserTile(account_id: number, profile_image: null | string, display
                         </div>
                         <div class="d-flex fd-column mt6">
                             <span>Case ${current_state} on</span>
-                            <span>${new Date(event_date).toLocaleString()}</span>
+                            <span title="${event_date}">${toStackExchangeDateFormat(event_date)}</span>
                         </div>
                     </div>
                 </div>`);
