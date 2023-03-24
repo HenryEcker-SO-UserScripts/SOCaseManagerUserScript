@@ -5,6 +5,7 @@ import {
     getTimelinePopoverId,
     popoverMountPointClass
 } from './ElementIdGenerators';
+import {toStackExchangeDateFormat} from '../../Utils/DateFormatter';
 
 
 export function buildBaseTimelineButtons(answerId: number) {
@@ -37,7 +38,7 @@ function buildActiveTimelineButton(buttonId: string, answerId: number) {
                     const timelineEventContainer = $('<div class="d-grid ws-nowrap" style="grid-template-columns: repeat(3, min-content); grid-gap: var(--su8);"></div>');
                     for (const event of timelineEvents) {
                         timelineEventContainer.append(
-                            $(`<a href="/users/${event['account_id']}">${event['display_name']}</a><span data-event-type-id="${event['timeline_event_type']}">${event['timeline_event_description']}</span><span>${new Date(event['event_creation_date']).toLocaleString()}</span>`)
+                            $(`<a href="/users/${event['account_id']}">${event['display_name']}</a><span data-event-type-id="${event['timeline_event_type']}">${event['timeline_event_description']}</span><span title="${event['event_creation_date']}">${toStackExchangeDateFormat(event['event_creation_date'])}</span>`)
                         );
                     }
                     eventPane.append(timelineEventContainer);

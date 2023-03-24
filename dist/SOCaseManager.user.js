@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.3.2
+// @version     0.3.3
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -143,6 +143,20 @@
     function buildSearchSvg(dim = 18, viewBox = 18) {
         return `<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>`;
     }
+    const stackExchangeDateTimeFormat = new Intl.DateTimeFormat(void 0, {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+        hour12: false
+    });
+    function toStackExchangeDateFormat(dateString) {
+        const parts = stackExchangeDateTimeFormat.formatToParts(new Date(dateString));
+        parts[5].value = " at ";
+        return parts.map((v => v.value)).join("");
+    }
     function buildBaseTimelineButtons(answerId) {
         const controlButton = $(`<button id="${getTimelineButtonId(answerId)}" class="flex--item s-btn s-btn__danger ws-nowrap" type="button" disabled>Post Timeline</button>`);
         const popOver = $(`<div class="s-popover" style="max-width: max-content;" id="${getTimelinePopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
@@ -163,7 +177,7 @@
                     eventPane.append($("<h3>Case Manager Post Timeline</h3>"));
                     const timelineEventContainer = $('<div class="d-grid ws-nowrap" style="grid-template-columns: repeat(3, min-content); grid-gap: var(--su8);"></div>');
                     for (const event of timelineEvents) {
-                        timelineEventContainer.append($(`<a href="/users/${event.account_id}">${event.display_name}</a><span data-event-type-id="${event.timeline_event_type}">${event.timeline_event_description}</span><span>${new Date(event.event_creation_date).toLocaleString()}</span>`));
+                        timelineEventContainer.append($(`<a href="/users/${event.account_id}">${event.display_name}</a><span data-event-type-id="${event.timeline_event_type}">${event.timeline_event_description}</span><span title="${event.event_creation_date}">${toStackExchangeDateFormat(event.event_creation_date)}</span>`));
                     }
                     eventPane.append(timelineEventContainer);
                     $(`#${timelinePopoverId} > .${popoverMountPointClass}`).empty().append(eventPane);
@@ -976,7 +990,7 @@
         const container = $('<div class="grid--item p8"><h3 class="fs-title mb8">Investigation History</h3></div>');
         const timeline = $('<div class="d-flex fd-column g4"></div>');
         caseTimeline.forEach((entry => {
-            timeline.append($(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry.case_event_id}"><a href="/users/${entry.account_id}">${entry.display_name}</a><span data-event-type-id="${entry.case_event_type_id}">${entry.case_event_description}</span><span>${new Date(entry.event_creation_date).toLocaleString()}</span></div>`));
+            timeline.append($(`<div class="flex--item d-flex fd-row jc-space-between ai-center" data-timeline-id="${entry.case_event_id}"><a href="/users/${entry.account_id}">${entry.display_name}</a><span data-event-type-id="${entry.case_event_type_id}">${entry.case_event_description}</span><span title="${entry.event_creation_date}">${toStackExchangeDateFormat(entry.event_creation_date)}</span></div>`));
         }));
         container.append(timeline);
         return container;
@@ -1099,7 +1113,7 @@
     }
     function buildUserTile(account_id, profile_image, display_name, number_of_plagiarised_posts, current_state, event_date) {
         const link = `/users/${account_id}?tab=case-manager`;
-        return $(`<div class="grid--item user-info">\n${null !== profile_image ? `<div class="user-gravatar48">\n<a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>\n</div>` : ""}\n<div class="user-details">\n<a href="${link}">${display_name}</a>\n<div class="-flair">\n<span title="the number of posts marked as plagiairsm for this user" dir="ltr">${number_of_plagiarised_posts} Plagiarised posts</span>\n</div>\n<div class="d-flex fd-column mt6">\n<span>Case ${current_state} on</span>\n<span>${new Date(event_date).toLocaleString()}</span>\n</div>\n</div>\n</div>`);
+        return $(`<div class="grid--item user-info">\n${null !== profile_image ? `<div class="user-gravatar48">\n<a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>\n</div>` : ""}\n<div class="user-details">\n<a href="${link}">${display_name}</a>\n<div class="-flair">\n<span title="the number of posts marked as plagiairsm for this user" dir="ltr">${number_of_plagiarised_posts} Plagiarised posts</span>\n</div>\n<div class="d-flex fd-column mt6">\n<span>Case ${current_state} on</span>\n<span title="${event_date}">${toStackExchangeDateFormat(event_date)}</span>\n</div>\n</div>\n</div>`);
     }
     class CasesUserList {
         needsTotalPages;
