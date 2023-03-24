@@ -3,7 +3,7 @@ const userscriptInfo = require('./package.json');
 
 module.exports = {
     buildTamperMonkeyPreamble: (fileName) => {
-        const userscript_config = {
+        const userscriptConfig = {
             'name': 'SO Plagiarism Case Manager',
             'description': userscriptInfo.description,
             'homepage': userscriptInfo.repository.homepage,
@@ -28,7 +28,8 @@ module.exports = {
                 '*://stackoverflow.com/users/teams/*',
                 '*://stackoverflow.com/users/mylogins/*',
                 '*://stackoverflow.com/users/apps/*',
-                '*://stackoverflow.com/users/message/*'
+                '*://stackoverflow.com/users/message/*',
+                '*://stackoverflow.com/users/saves/*'
             ],
             'grant': ['GM_getValue', 'GM_setValue', 'GM_deleteValue']
         };
@@ -39,7 +40,7 @@ module.exports = {
 
         const acc = [];
         let maxKeyLength = 0;
-        Object.entries(userscript_config).forEach(([key, value]) => {
+        Object.entries(userscriptConfig).forEach(([key, value]) => {
             if (value instanceof Array) {
                 value.sort((a, b) => a.localeCompare(b)).forEach(v => acc.push([key, v]));
             } else {
