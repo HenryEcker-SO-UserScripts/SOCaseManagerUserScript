@@ -2,7 +2,7 @@ import banner from 'vite-plugin-banner';
 import {buildTamperMonkeyPreamble} from './build_utils';
 import path from 'path';
 import filterReplace from 'vite-plugin-filter-replace';
-import nukePostFormComponents from './pre-buildable-stimulus-components/NukePostFormComponents';
+import handlePostFormComponents from './pre-buildable-stimulus-components/HandlePostFormComponents';
 import nukePostSaveComponents from './pre-buildable-stimulus-components/NukePostSaveConfigComponents';
 
 // Defined variables
@@ -39,7 +39,7 @@ const defObj = {
         Deleted: 4,
         Suspicious: 5
     },
-    NUKE_POST: nukePostFormComponents,
+    HANDLE_POST: handlePostFormComponents,
     SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
 
