@@ -1,6 +1,7 @@
 import {type ActionEvent} from '@hotwired/stimulus';
-import {addComment} from 'se-ts-userscript-utilities/Utilities/Comments';
-import {deleteAsPlagiarism, flagPlagiarizedContent} from 'se-ts-userscript-utilities/Utilities/PostFlagsAndVotes';
+import {addComment} from 'se-ts-userscript-utilities/Comments/Comments';
+import {flagPlagiarizedContent} from 'se-ts-userscript-utilities/FlaggingAndVoting/PostFlags';
+import {deleteAsPlagiarism} from 'se-ts-userscript-utilities/Moderators/HandleFlags';
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
