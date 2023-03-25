@@ -26,7 +26,7 @@
     "@typescript-eslint/parser": "^5.56.0",
     "@userscripters/stackexchange-global-types": "^2.6.1",
     "eslint": "^8.36.0",
-    "se-ts-userscript-utilities": "github:HenryEcker/SE-TS-UserScript-Utilities#semver:1.0.3",
+    "se-ts-userscript-utilities": "github:HenryEcker/SE-TS-UserScript-Utilities#semver:1.1.0",
     "terser": "^5.16.8",
     "typescript": "^5.0.2",
     "vite": "^4.2.1",

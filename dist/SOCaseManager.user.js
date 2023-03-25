@@ -303,19 +303,22 @@
             comment: commentText
         });
     }
-    function flagPost(flagType, postId, otherText, overrideWarning, extraInfo) {
-        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/${flagType}`, {
+    function flagPost(flagType, postId, otherText, overrideWarning, customData) {
+        const data = {
             fkey: StackExchange.options.user.fkey,
-            otherText: otherText,
-            overrideWarning: overrideWarning,
-            ...extraInfo
-        });
+            otherText: otherText ?? ""
+        };
+        if (void 0 !== overrideWarning) {
+            data.overrideWarning = overrideWarning;
+        }
+        if (void 0 !== customData) {
+            data.customData = JSON.stringify(customData);
+        }
+        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/${flagType}`, data);
     }
     function flagPlagiarizedContent(postId, originalSource, detailText) {
         return flagPost("PlagiarizedContent", postId, detailText, false, {
-            customData: JSON.stringify({
-                plagiarizedSource: originalSource
-            })
+            plagiarizedSource: originalSource
         });
     }
     function deleteAsPlagiarism(postId) {
