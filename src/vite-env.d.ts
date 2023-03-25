@@ -1,4 +1,5 @@
 // Should match the "define:" section of vite-shared-config.js
+
 declare const tabIdentifiers: {
     settings: string;
     userSummary: string;
@@ -33,11 +34,14 @@ declare const Feedback: {
 };
 
 // Pre Built HTML Components
-declare const NUKE_POST: {
-    FORM: string;
-    FORM_MODAL_ID: string;
+declare const HANDLE_POST: {
+    MOD_FORM: string;
+    NON_MOD_FORM: string;
+    MOD_FORM_MODAL_ID: string;
+    NON_MOD_FORM_MODAL_ID: string;
     FORM_CONTROLLER: string;
-    DATA_TARGETS: string[];
+    MOD_DATA_TARGETS: string[];
+    NON_MOD_DATA_TARGETS: string[];
     ENABLE_FLAG_TOGGLE_TARGET: string;
     ENABLE_COMMENT_TOGGLE_TARGET: string;
     ENABLE_LOG_TOGGLE_TARGET: string;
@@ -46,7 +50,8 @@ declare const NUKE_POST: {
     FLAG_DETAIL_TEXT_TARGET: string;
     FLAG_CONTROL_FIELDS_TARGET: string;
     COMMENT_CONTROL_FIELDS_TARGET: string;
-    HANDLE_SUBMIT: string;
+    HANDLE_NUKE_SUBMIT: string;
+    HANDLE_FLAG_SUBMIT: string;
     HANDLE_CANCEL: string;
     HANDLE_UPDATE_CONTROLLED_FIELD: string;
 };

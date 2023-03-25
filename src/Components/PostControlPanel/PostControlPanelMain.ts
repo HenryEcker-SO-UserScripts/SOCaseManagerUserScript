@@ -1,25 +1,22 @@
 import {getSummaryPostInfoFromIds} from '../../API/AWSAPI';
+import {buildHandlePostButton, registerHandlePostStacksController} from './HandlePostTools';
 import {buildActionsComponent} from './PostActionForm';
-import {buildNukePostButton, registerNukePostStacksController} from './PostModTools';
 import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
 
 
 export function buildAnswerControlPanel() {
     const answers = $('div.answer');
     const answerIds = answers.map((i, e) => getAnswerIdFromAnswerDiv(e)).toArray();
+    const isModerator = StackExchange.options.user.isModerator === true;
     for (const {jAnswer, isDeleted, answerId, postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
         const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
         controlPanel.append(buildBaseTimelineButtons(answerId));
-        if (StackExchange.options.user.isModerator === true) {
-            controlPanel.append(buildNukePostButton(isDeleted, answerId, postOwnerId));
-        }
+        controlPanel.append(buildHandlePostButton(isModerator, isDeleted, answerId, postOwnerId));
         controlPanel.append(buildActionsComponent(answerId, postOwnerId));
         jAnswer.append(controlPanel);
     }
-    if (StackExchange.options.user.isModerator === true) {
-        // Only need to do this once per page
-        registerNukePostStacksController();
-    }
+    // Only need to do this once per page
+    registerHandlePostStacksController(isModerator);
     delayPullSummaryPostInfo(answerIds);
 }
 
