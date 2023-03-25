@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.3.4
+// @version     0.3.5
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -303,14 +303,19 @@
             comment: commentText
         });
     }
-    function flagPlagiarizedContent(postId, originalSource, detailText) {
-        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/PlagiarizedContent`, {
+    function flagPost(flagType, postId, otherText, overrideWarning, extraInfo) {
+        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/${flagType}`, {
             fkey: StackExchange.options.user.fkey,
-            otherText: detailText,
+            otherText: otherText,
+            overrideWarning: overrideWarning,
+            ...extraInfo
+        });
+    }
+    function flagPlagiarizedContent(postId, originalSource, detailText) {
+        return flagPost("PlagiarizedContent", postId, detailText, false, {
             customData: JSON.stringify({
                 plagiarizedSource: originalSource
-            }),
-            overrideWarning: false
+            })
         });
     }
     function deleteAsPlagiarism(postId) {
