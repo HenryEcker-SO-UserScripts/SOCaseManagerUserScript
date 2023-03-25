@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.3.3
+// @version     0.3.4
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -282,6 +282,42 @@
             }));
         };
     }
+    function getFormDataFromObject(obj) {
+        return Object.entries(obj).reduce(((acc, [key, value]) => {
+            acc.set(key, value);
+            return acc;
+        }), new FormData);
+    }
+    function fetchPostFormData(endPoint, data) {
+        return fetch(endPoint, {
+            method: "POST",
+            body: getFormDataFromObject(data)
+        });
+    }
+    function fetchPostFormDataBodyJsonResponse(endPoint, data) {
+        return fetchPostFormData(endPoint, data).then((res => res.json()));
+    }
+    function addComment(postId, commentText) {
+        return fetchPostFormData(`/posts/${postId}/comments`, {
+            fkey: StackExchange.options.user.fkey,
+            comment: commentText
+        });
+    }
+    function flagPlagiarizedContent(postId, originalSource, detailText) {
+        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/PlagiarizedContent`, {
+            fkey: StackExchange.options.user.fkey,
+            otherText: detailText,
+            customData: JSON.stringify({
+                plagiarizedSource: originalSource
+            }),
+            overrideWarning: false
+        });
+    }
+    function deleteAsPlagiarism(postId) {
+        return fetchPostFormData(`/admin/posts/${postId}/delete-as-plagiarism`, {
+            fkey: StackExchange.options.user.fkey
+        });
+    }
     const validationBounds = {
         flagDetailTextarea: {
             min: 10,
@@ -408,39 +444,18 @@
             return;
         }
         if (shouldFlagPost) {
-            const flagFd = new FormData;
-            flagFd.set("fkey", StackExchange.options.user.fkey);
-            flagFd.set("otherText", flagDetailText);
-            flagFd.set("customData", JSON.stringify({
-                plagiarizedSource: flagOriginalSourceText
-            }));
-            flagFd.set("overrideWarning", "false");
-            const flagFetch = await fetch(`/flags/posts/${answerId}/add/PlagiarizedContent`, {
-                body: flagFd,
-                method: "POST"
-            }).then((res => res.json()));
+            const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
             if (!flagFetch.Success) {
                 StackExchange.helpers.showToast(flagFetch.Message);
                 return;
             }
         }
-        const deleteFd = new FormData;
-        deleteFd.set("fkey", StackExchange.options.user.fkey);
-        const deleteFetch = await fetch(`/admin/posts/${answerId}/delete-as-plagiarism`, {
-            body: deleteFd,
-            method: "POST"
-        });
+        const deleteFetch = await deleteAsPlagiarism(answerId);
         if (200 !== deleteFetch.status) {
             return;
         }
         if (shouldCommentPost) {
-            const commentFd = new FormData;
-            commentFd.set("fkey", StackExchange.options.user.fkey);
-            commentFd.set("comment", commentText);
-            await void fetch(`/posts/${answerId}/comments`, {
-                body: commentFd,
-                method: "POST"
-            });
+            await void addComment(answerId, commentText);
         }
         if (shouldLogWithAws) {
             const body = {};

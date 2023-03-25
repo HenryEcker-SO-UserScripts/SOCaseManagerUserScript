@@ -1,7 +1,8 @@
 import {type ActionEvent} from '@hotwired/stimulus';
+import {addComment} from 'se-ts-userscript-utilities/Utilities/Comments';
+import {deleteAsPlagiarism, flagPlagiarizedContent} from 'se-ts-userscript-utilities/Utilities/PostFlagsAndVotes';
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import type {FlagPlagiarismResponse} from '../../API/SEAPI';
 import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
 
 function getModalId(postId: number) {
@@ -130,36 +131,20 @@ async function nukePostAsPlagiarism(
     }
 
     if (shouldFlagPost) {
-        const flagFd = new FormData();
-        flagFd.set('fkey', StackExchange.options.user.fkey);
-        flagFd.set('otherText', flagDetailText);
-        flagFd.set('customData', JSON.stringify({plagiarizedSource: flagOriginalSourceText}));
-        flagFd.set('overrideWarning', 'false');
-        const flagFetch: FlagPlagiarismResponse = await fetch(`/flags/posts/${answerId}/add/PlagiarizedContent`, {
-            body: flagFd,
-            method: 'POST'
-        }).then(res => res.json());
+        const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
         if (!flagFetch.Success) {
             StackExchange.helpers.showToast(flagFetch.Message);
             return; // don't continue
         }
     }
-    const deleteFd = new FormData();
-    deleteFd.set('fkey', StackExchange.options.user.fkey);
-    const deleteFetch = await fetch(`/admin/posts/${answerId}/delete-as-plagiarism`, {
-        body: deleteFd,
-        method: 'POST'
-    });
 
+    const deleteFetch = await deleteAsPlagiarism(answerId);
     if (deleteFetch.status !== 200) {
         return; // Deletion failed don't continue
     }
 
     if (shouldCommentPost) {
-        const commentFd = new FormData();
-        commentFd.set('fkey', StackExchange.options.user.fkey);
-        commentFd.set('comment', commentText);
-        await void fetch(`/posts/${answerId}/comments`, {body: commentFd, method: 'POST'});
+        await void addComment(answerId, commentText);
     }
     if (shouldLogWithAws) {
         const body: {
