@@ -182,13 +182,13 @@
         }
         return min <= textLength && textLength <= vB.max;
     }
-    function getModalId(isModerator, postId) {
-        return (isModerator ? "socm-nuke-post-form-{postId}" : "socm-flag-post-form-{postId}").formatUnicorn({
+    function getModalId(postId) {
+        return "socm-handle-post-form-{postId}".formatUnicorn({
             postId: postId
         });
     }
     function handleHandlePostButtonClick(isModerator, postId, postOwnerId) {
-        const modalId = getModalId(isModerator, postId);
+        const modalId = getModalId(postId);
         const modal = document.getElementById(modalId);
         if (null !== modal) {
             Stacks.showModal(modal);
@@ -210,8 +210,8 @@
         }));
         return button;
     }
-    function registerHandlePostStacksController(isModerator) {
-        Stacks.addController("socm-handle-post-form", isModerator ? {
+    function registerModHandlePostStacksController() {
+        Stacks.addController("socm-handle-post-form", {
             targets: [ "flag-enable-toggle", "comment-enable-toggle", "log-enable-toggle", "flag-info-area", "comment-info-area", "flag-original-source-area", "flag-detail-area", "comment-area" ],
             get shouldFlag() {
                 return this["flag-enable-toggleTarget"].checked;
@@ -258,7 +258,7 @@
             cancelHandleForm(ev) {
                 ev.preventDefault();
                 const {postId: postId} = ev.params;
-                const existingModal = document.getElementById(getModalId(isModerator, postId));
+                const existingModal = document.getElementById(getModalId(postId));
                 if (null !== existingModal) {
                     existingModal.remove();
                 }
@@ -271,7 +271,10 @@
                     $(this[`${controls}Target`]).addClass("d-none");
                 }
             }
-        } : {
+        });
+    }
+    function registerNonModHandlePostStacksController() {
+        Stacks.addController("socm-handle-post-form", {
             targets: [ "flag-original-source-area", "flag-detail-area", "log-enable-toggle" ],
             get shouldLog() {
                 return this["log-enable-toggleTarget"].checked;
@@ -293,7 +296,7 @@
             cancelHandleForm(ev) {
                 ev.preventDefault();
                 const {postId: postId} = ev.params;
-                const existingModal = document.getElementById(getModalId(isModerator, postId));
+                const existingModal = document.getElementById(getModalId(postId));
                 if (null !== existingModal) {
                     existingModal.remove();
                 }
@@ -528,7 +531,11 @@
             controlPanel.append(buildActionsComponent(answerId, postOwnerId));
             jAnswer.append(controlPanel);
         }
-        registerHandlePostStacksController(isModerator);
+        if (isModerator) {
+            registerModHandlePostStacksController();
+        } else {
+            registerNonModHandlePostStacksController();
+        }
         delayPullSummaryPostInfo(answerIds);
     }
     function getAnswerIdFromAnswerDiv(answerDiv) {

@@ -1,5 +1,9 @@
 import {getSummaryPostInfoFromIds} from '../../API/AWSAPI';
-import {buildHandlePostButton, registerHandlePostStacksController} from './HandlePostTools';
+import {
+    buildHandlePostButton,
+    registerModHandlePostStacksController,
+    registerNonModHandlePostStacksController
+} from './HandlePostTools';
 import {buildActionsComponent} from './PostActionForm';
 import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
 
@@ -16,7 +20,11 @@ export function buildAnswerControlPanel() {
         jAnswer.append(controlPanel);
     }
     // Only need to do this once per page
-    registerHandlePostStacksController(isModerator);
+    if (isModerator) {
+        registerModHandlePostStacksController();
+    } else {
+        registerNonModHandlePostStacksController();
+    }
     delayPullSummaryPostInfo(answerIds);
 }
 
