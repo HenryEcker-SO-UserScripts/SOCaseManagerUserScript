@@ -174,10 +174,10 @@ export default {
     FORM_CONTROLLER: data.controller,
     MOD_DATA_TARGETS: [...Object.values(data.target)],
     NON_MOD_DATA_TARGETS: [
-        data.target.submitButton,
         data.target.flagOriginalSourceTextarea,
         data.target.flagDetailTextarea,
-        data.target.enableLogToggle
+        data.target.enableLogToggle,
+        data.target.submitButton
     ],
     ENABLE_FLAG_TOGGLE_TARGET: `${data.target.enableFlagToggle}Target`,
     ENABLE_COMMENT_TOGGLE_TARGET: `${data.target.enableCommentToggle}Target`,

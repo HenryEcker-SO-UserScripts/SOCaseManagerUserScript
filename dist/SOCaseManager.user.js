@@ -275,7 +275,7 @@
     }
     function registerNonModHandlePostStacksController() {
         Stacks.addController("socm-handle-post-form", {
-            targets: [ "submit-button", "flag-original-source-area", "flag-detail-area", "log-enable-toggle" ],
+            targets: [ "flag-original-source-area", "flag-detail-area", "log-enable-toggle", "submit-button" ],
             get shouldLog() {
                 return this["log-enable-toggleTarget"].checked;
             },
