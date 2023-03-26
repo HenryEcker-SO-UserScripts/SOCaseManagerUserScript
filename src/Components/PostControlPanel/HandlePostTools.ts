@@ -152,8 +152,11 @@ export function registerNonModHandlePostStacksController() {
                     false,
                     false,
                     this.shouldLog,
-                ).then(() => {
+                ).then((resolveMessage: undefined | string) => {
                     this._removeModal(postId);
+                    if (resolveMessage !== undefined) {
+                        StackExchange.helpers.showToast(resolveMessage);
+                    }
                 }).catch(() => {
                     this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
                 });
@@ -194,6 +197,8 @@ async function handlePlagiarisedPost(
         return Promise.reject();
     }
 
+    let resolveMessage: undefined | string = undefined;
+
     if (shouldFlagPost) {
         const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
         if (!flagFetch.Success) {
@@ -201,8 +206,9 @@ async function handlePlagiarisedPost(
             return Promise.reject(); // don't continue
         }
         // If post isn't going to be deleted show the "Thanks for flagging" toast
+        // Save message for later (it's confusing when the message shows up well before logging with AWS finishes)
         if (!shouldDeletePost) {
-            StackExchange.helpers.showToast(flagFetch.Message);
+            resolveMessage = flagFetch.Message;
         }
     }
 
@@ -235,5 +241,5 @@ async function handlePlagiarisedPost(
             body: JSON.stringify(body)
         });
     }
-    return Promise.resolve();
+    return Promise.resolve(resolveMessage);
 }
