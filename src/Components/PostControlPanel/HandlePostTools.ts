@@ -97,7 +97,8 @@ export function registerModHandlePostStacksController() {
                     this.shouldLog
                 ).then(() => {
                     window.location.reload();
-                }).catch(() => {
+                }).catch((errorMessage) => {
+                    StackExchange.helpers.showToast(errorMessage, {type: 'danger'});
                     this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
                 });
             },
@@ -157,7 +158,8 @@ export function registerNonModHandlePostStacksController() {
                     if (resolveMessage !== undefined) {
                         StackExchange.helpers.showToast(resolveMessage);
                     }
-                }).catch(() => {
+                }).catch((errorMessage) => {
+                    StackExchange.helpers.showToast(errorMessage, {type: 'danger'});
                     this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
                 });
             },
@@ -184,17 +186,14 @@ async function handlePlagiarisedPost(
     shouldFlagPost: boolean, shouldDeletePost: boolean, shouldCommentPost: boolean, shouldLogWithAws: boolean
 ) {
     if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-        StackExchange.helpers.showToast(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
-        return Promise.reject();
+        return Promise.reject(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
     }
     if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
-        StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
-        return Promise.reject();
+        return Promise.reject(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
     }
 
     if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
-        StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {type: 'danger'});
-        return Promise.reject();
+        return Promise.reject(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
     }
 
     let resolveMessage: undefined | string = undefined;
@@ -202,8 +201,7 @@ async function handlePlagiarisedPost(
     if (shouldFlagPost) {
         const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
         if (!flagFetch.Success) {
-            StackExchange.helpers.showToast(flagFetch.Message, {type: 'danger'});
-            return Promise.reject(); // don't continue
+            return Promise.reject(flagFetch.Message); // don't continue
         }
         // If post isn't going to be deleted show the "Thanks for flagging" toast
         // Save message for later (it's confusing when the message shows up well before logging with AWS finishes)
@@ -215,7 +213,7 @@ async function handlePlagiarisedPost(
     if (shouldDeletePost) {
         const deleteFetch = await deleteAsPlagiarism(answerId);
         if (deleteFetch.status !== 200) {
-            return Promise.reject(); // Deletion failed don't continue
+            return Promise.reject('Something went wrong when deleting "as plagiarism"!'); // Deletion failed don't continue
         }
     }
 
