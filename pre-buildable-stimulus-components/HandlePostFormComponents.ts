@@ -3,8 +3,7 @@ import {buildTextarea, buildTextInput, buildToggle} from './StimulusComponentBui
 import {cleanWhitespace} from './StimulusPackageUtils';
 
 const ids = {
-    modModal: 'socm-nuke-post-form-{postId}',
-    nonModModal: 'socm-flag-post-form-{postId}',
+    modal: 'socm-handle-post-form-{postId}',
     enableFlagToggle: 'socm-flag-enable-toggle-{postId}',
     enableCommentToggle: 'socm-comment-enable-toggle-{postId}',
     enableLogToggle: 'socm-log-post-toggle-{postId}',
@@ -169,8 +168,7 @@ const flagPostForm = buildHandleForm(
 export default {
     MOD_FORM: cleanWhitespace(nukePostForm),
     NON_MOD_FORM: cleanWhitespace(flagPostForm),
-    MOD_FORM_MODAL_ID: ids.modModal,
-    NON_MOD_FORM_MODAL_ID: ids.nonModModal,
+    FORM_MODAL_ID: ids.modal,
     FORM_CONTROLLER: data.controller,
     MOD_DATA_TARGETS: [...Object.values(data.target)],
     NON_MOD_DATA_TARGETS: [

@@ -6,12 +6,12 @@ import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
 
-function getModalId(isModerator: boolean, postId: number) {
-    return (isModerator ? HANDLE_POST.MOD_FORM_MODAL_ID : HANDLE_POST.NON_MOD_FORM_MODAL_ID).formatUnicorn({postId: postId});
+function getModalId(postId: number) {
+    return HANDLE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
 }
 
 function handleHandlePostButtonClick(isModerator: boolean, postId: number, postOwnerId: number) {
-    const modalId = getModalId(isModerator, postId);
+    const modalId = getModalId(postId);
     const modal = document.getElementById(modalId);
     if (modal !== null) {
         Stacks.showModal(modal);
@@ -41,134 +41,137 @@ export function buildHandlePostButton(isModerator: boolean, isDeleted: boolean, 
     return button;
 }
 
-// Controller Logic
-export function registerHandlePostStacksController(isModerator: boolean) {
+export function registerModHandlePostStacksController() {
     Stacks.addController(HANDLE_POST.FORM_CONTROLLER,
-        isModerator ?
-            {
-                targets: HANDLE_POST.MOD_DATA_TARGETS,
-                get shouldFlag(): boolean {
-                    return this[HANDLE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked as boolean;
-                },
-                get shouldComment(): boolean {
-                    return this[HANDLE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked as boolean;
-                },
-                get shouldLog(): boolean {
-                    return this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
-                },
-                get commentText(): string {
-                    return this[HANDLE_POST.COMMENT_TEXT_TARGET].value ?? '';
-                },
-                get flagOriginalSourceText(): string {
-                    return this[HANDLE_POST.FLAG_ORIGINAL_SOURCE_TEXT_TARGET].value ?? '';
-                },
-                get flagDetailText(): string {
-                    return this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
-                },
-                connect() {
-                    const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+        {
+            targets: HANDLE_POST.MOD_DATA_TARGETS,
+            get shouldFlag(): boolean {
+                return this[HANDLE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked as boolean;
+            },
+            get shouldComment(): boolean {
+                return this[HANDLE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked as boolean;
+            },
+            get shouldLog(): boolean {
+                return this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
+            },
+            get commentText(): string {
+                return this[HANDLE_POST.COMMENT_TEXT_TARGET].value ?? '';
+            },
+            get flagOriginalSourceText(): string {
+                return this[HANDLE_POST.FLAG_ORIGINAL_SOURCE_TEXT_TARGET].value ?? '';
+            },
+            get flagDetailText(): string {
+                return this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
+            },
+            connect() {
+                const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
 
-                    this[HANDLE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked = nukePostConfig.flag;
-                    this[HANDLE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked = nukePostConfig.comment;
-                    this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = nukePostConfig.log;
+                this[HANDLE_POST.ENABLE_FLAG_TOGGLE_TARGET].checked = nukePostConfig.flag;
+                this[HANDLE_POST.ENABLE_COMMENT_TOGGLE_TARGET].checked = nukePostConfig.comment;
+                this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = nukePostConfig.log;
 
-                    if (!nukePostConfig.flag) {
-                        $(this[HANDLE_POST.FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
-                    }
+                if (!nukePostConfig.flag) {
+                    $(this[HANDLE_POST.FLAG_CONTROL_FIELDS_TARGET]).addClass('d-none');
+                }
 
-                    if (!nukePostConfig.comment) {
-                        $(this[HANDLE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
-                    }
+                if (!nukePostConfig.comment) {
+                    $(this[HANDLE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
+                }
 
-                    this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
-                    this[HANDLE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
-                },
-                [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
-                    ev.preventDefault();
-                    const {postOwner, postId} = ev.params;
-                    void handlePlagiarisedPost(
-                        postId,
-                        postOwner,
-                        this.flagOriginalSourceText,
-                        this.flagDetailText,
-                        this.commentText,
-                        this.shouldFlag,
-                        true,
-                        this.shouldComment,
-                        this.shouldLog
-                    );
-                },
-                [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
-                    ev.preventDefault();
-                    const {postOwner, postId} = ev.params;
-                    void handlePlagiarisedPost(
-                        postId,
-                        postOwner,
-                        this.flagOriginalSourceText,
-                        this.flagDetailText,
-                        '',
-                        true,
-                        false,
-                        false,
-                        this.shouldLog
-                    );
-                },
-                [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
-                    ev.preventDefault();
-                    const {postId} = ev.params;
-                    const existingModal = document.getElementById(getModalId(isModerator, postId));
-                    if (existingModal !== null) {
-                        existingModal.remove();
-                    }
-                },
-                [HANDLE_POST.HANDLE_UPDATE_CONTROLLED_FIELD](ev: ActionEvent) {
-                    const {controls} = ev.params;
-                    if ((<HTMLInputElement>ev.target).checked) {
-                        $(this[`${controls}Target`]).removeClass('d-none');
-                    } else {
-                        $(this[`${controls}Target`]).addClass('d-none');
-                    }
+                this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
+                this[HANDLE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
+            },
+            [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
+                ev.preventDefault();
+                const {postOwner, postId} = ev.params;
+                void handlePlagiarisedPost(
+                    postId,
+                    postOwner,
+                    this.flagOriginalSourceText,
+                    this.flagDetailText,
+                    this.commentText,
+                    this.shouldFlag,
+                    true,
+                    this.shouldComment,
+                    this.shouldLog
+                );
+            },
+            [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
+                ev.preventDefault();
+                const {postOwner, postId} = ev.params;
+                void handlePlagiarisedPost(
+                    postId,
+                    postOwner,
+                    this.flagOriginalSourceText,
+                    this.flagDetailText,
+                    '',
+                    true,
+                    false,
+                    false,
+                    this.shouldLog
+                );
+            },
+            [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
+                ev.preventDefault();
+                const {postId} = ev.params;
+                const existingModal = document.getElementById(getModalId(postId));
+                if (existingModal !== null) {
+                    existingModal.remove();
+                }
+            },
+            [HANDLE_POST.HANDLE_UPDATE_CONTROLLED_FIELD](ev: ActionEvent) {
+                const {controls} = ev.params;
+                if ((<HTMLInputElement>ev.target).checked) {
+                    $(this[`${controls}Target`]).removeClass('d-none');
+                } else {
+                    $(this[`${controls}Target`]).addClass('d-none');
                 }
             }
-            : // Non Mods
-            {
-                targets: HANDLE_POST.NON_MOD_DATA_TARGETS,
-                get shouldLog(): boolean {
-                    return this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
-                },
-                get flagOriginalSourceText(): string {
-                    return this[HANDLE_POST.FLAG_ORIGINAL_SOURCE_TEXT_TARGET].value ?? '';
-                },
-                get flagDetailText(): string {
-                    return this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
-                },
-                connect() {
-                    this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
-                },
-                [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
-                    ev.preventDefault();
-                    const {postOwner, postId} = ev.params;
-                    void handlePlagiarisedPost(
-                        postId,
-                        postOwner,
-                        this.flagOriginalSourceText,
-                        this.flagDetailText,
-                        '',
-                        true,
-                        false,
-                        false,
-                        this.shouldLog
-                    );
-                },
-                [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
-                    ev.preventDefault();
-                    const {postId} = ev.params;
-                    const existingModal = document.getElementById(getModalId(isModerator, postId));
-                    if (existingModal !== null) {
-                        existingModal.remove();
-                    }
+        }
+    );
+}
+
+// Controller Logic
+export function registerNonModHandlePostStacksController() {
+    Stacks.addController(HANDLE_POST.FORM_CONTROLLER,
+        {
+            targets: HANDLE_POST.NON_MOD_DATA_TARGETS,
+            get shouldLog(): boolean {
+                return this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked as boolean;
+            },
+            get flagOriginalSourceText(): string {
+                return this[HANDLE_POST.FLAG_ORIGINAL_SOURCE_TEXT_TARGET].value ?? '';
+            },
+            get flagDetailText(): string {
+                return this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
+            },
+            connect() {
+                this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
+            },
+            [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
+                ev.preventDefault();
+                const {postOwner, postId} = ev.params;
+                void handlePlagiarisedPost(
+                    postId,
+                    postOwner,
+                    this.flagOriginalSourceText,
+                    this.flagDetailText,
+                    '',
+                    true,
+                    false,
+                    false,
+                    this.shouldLog
+                );
+            },
+            [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
+                ev.preventDefault();
+                const {postId} = ev.params;
+                const existingModal = document.getElementById(getModalId(postId));
+                if (existingModal !== null) {
+                    existingModal.remove();
                 }
             }
+        }
     );
 }
 

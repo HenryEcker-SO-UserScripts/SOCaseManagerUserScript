@@ -37,8 +37,7 @@ declare const Feedback: {
 declare const HANDLE_POST: {
     MOD_FORM: string;
     NON_MOD_FORM: string;
-    MOD_FORM_MODAL_ID: string;
-    NON_MOD_FORM_MODAL_ID: string;
+    FORM_MODAL_ID: string;
     FORM_CONTROLLER: string;
     MOD_DATA_TARGETS: string[];
     NON_MOD_DATA_TARGETS: string[];
