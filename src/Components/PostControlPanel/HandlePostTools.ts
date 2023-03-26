@@ -83,8 +83,9 @@ export function registerModHandlePostStacksController() {
             },
             [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
                 ev.preventDefault();
+                this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = true;
                 const {postOwner, postId} = ev.params;
-                void handlePlagiarisedPost(
+                handlePlagiarisedPost(
                     postId,
                     postOwner,
                     this.flagOriginalSourceText,
@@ -94,22 +95,11 @@ export function registerModHandlePostStacksController() {
                     true,
                     this.shouldComment,
                     this.shouldLog
-                );
-            },
-            [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
-                ev.preventDefault();
-                const {postOwner, postId} = ev.params;
-                void handlePlagiarisedPost(
-                    postId,
-                    postOwner,
-                    this.flagOriginalSourceText,
-                    this.flagDetailText,
-                    '',
-                    true,
-                    false,
-                    false,
-                    this.shouldLog
-                );
+                ).then(() => {
+                    window.location.reload();
+                }).catch(() => {
+                    this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
+                });
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
                 ev.preventDefault();
@@ -150,8 +140,9 @@ export function registerNonModHandlePostStacksController() {
             },
             [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
                 ev.preventDefault();
+                this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = true;
                 const {postOwner, postId} = ev.params;
-                void handlePlagiarisedPost(
+                handlePlagiarisedPost(
                     postId,
                     postOwner,
                     this.flagOriginalSourceText,
@@ -160,16 +151,23 @@ export function registerNonModHandlePostStacksController() {
                     true,
                     false,
                     false,
-                    this.shouldLog
-                );
+                    this.shouldLog,
+                ).then(() => {
+                    this._removeModal(postId);
+                }).catch(() => {
+                    this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
+                });
             },
-            [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
-                ev.preventDefault();
-                const {postId} = ev.params;
+            _removeModal(postId: number) {
                 const existingModal = document.getElementById(getModalId(postId));
                 if (existingModal !== null) {
                     existingModal.remove();
                 }
+            },
+            [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
+                ev.preventDefault();
+                const {postId} = ev.params;
+                this._removeModal(postId);
             }
         }
     );
@@ -184,30 +182,34 @@ async function handlePlagiarisedPost(
 ) {
     if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
         StackExchange.helpers.showToast(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
-        return;
+        return Promise.reject();
     }
     if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
         StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {type: 'danger'});
-        return;
+        return Promise.reject();
     }
 
     if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
         StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {type: 'danger'});
-        return;
+        return Promise.reject();
     }
 
     if (shouldFlagPost) {
         const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
         if (!flagFetch.Success) {
+            StackExchange.helpers.showToast(flagFetch.Message, {type: 'danger'});
+            return Promise.reject(); // don't continue
+        }
+        // If post isn't going to be deleted show the "Thanks for flagging" toast
+        if (!shouldDeletePost) {
             StackExchange.helpers.showToast(flagFetch.Message);
-            return; // don't continue
         }
     }
 
     if (shouldDeletePost) {
         const deleteFetch = await deleteAsPlagiarism(answerId);
         if (deleteFetch.status !== 200) {
-            return; // Deletion failed don't continue
+            return Promise.reject(); // Deletion failed don't continue
         }
     }
 
@@ -223,8 +225,9 @@ async function handlePlagiarisedPost(
         if (ownerId !== -1) {
             body['postOwnerId'] = ownerId;
         }
-        body['actionIds'] = [Feedback.Plagiarised, Feedback.Deleted];
-        void await fetchFromAWS(`/handle/post/${answerId}`, {
+        // Don't give Deleted feedback if post isn't being deleted
+        body['actionIds'] = shouldDeletePost ? [Feedback.Plagiarised, Feedback.Deleted] : [Feedback.Plagiarised];
+        await void fetchFromAWS(`/handle/post/${answerId}`, {
             'method': 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -232,7 +235,5 @@ async function handlePlagiarisedPost(
             body: JSON.stringify(body)
         });
     }
-    if (shouldDeletePost) {
-        window.location.reload();
-    }
+    return Promise.resolve();
 }

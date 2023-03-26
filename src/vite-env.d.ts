@@ -49,6 +49,7 @@ declare const HANDLE_POST: {
     FLAG_DETAIL_TEXT_TARGET: string;
     FLAG_CONTROL_FIELDS_TARGET: string;
     COMMENT_CONTROL_FIELDS_TARGET: string;
+    SUBMIT_BUTTON_TARGET: string;
     HANDLE_NUKE_SUBMIT: string;
     HANDLE_FLAG_SUBMIT: string;
     HANDLE_CANCEL: string;
