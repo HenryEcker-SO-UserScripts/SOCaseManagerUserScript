@@ -20,6 +20,7 @@ const data = {
         controls: 'controls'
     },
     target: {
+        submitButton: 'submit-button',
         enableFlagToggle: 'flag-enable-toggle',
         enableCommentToggle: 'comment-enable-toggle',
         enableLogToggle: 'log-enable-toggle',
@@ -68,6 +69,7 @@ function buildHandleForm(modalText: string, fields: string[], submitHandleAction
     <div class="d-flex gx8 s-modal--footer ai-center">
         <button class="s-btn flex--item s-btn__filled s-btn__danger" 
                 type="button"
+                data-${data.controller}-target="${data.target.submitButton}"
                 data-action="click->${data.controller}#${submitHandleAction}" 
                 data-${data.controller}-${data.params.postId}-param="{postId}" 
                 data-${data.controller}-${data.params.postOwner}-param="{postOwnerId}">${submitButtonText}</button>
@@ -172,6 +174,7 @@ export default {
     FORM_CONTROLLER: data.controller,
     MOD_DATA_TARGETS: [...Object.values(data.target)],
     NON_MOD_DATA_TARGETS: [
+        data.target.submitButton,
         data.target.flagOriginalSourceTextarea,
         data.target.flagDetailTextarea,
         data.target.enableLogToggle
@@ -184,6 +187,7 @@ export default {
     FLAG_DETAIL_TEXT_TARGET: `${data.target.flagDetailTextarea}Target`,
     FLAG_CONTROL_FIELDS_TARGET: `${data.target.flagControlFields}Target`,
     COMMENT_CONTROL_FIELDS_TARGET: `${data.target.commentControlFields}Target`,
+    SUBMIT_BUTTON_TARGET: `${data.target.submitButton}Target`,
     HANDLE_NUKE_SUBMIT: data.action.handleNukeSubmitActions,
     HANDLE_FLAG_SUBMIT: data.action.handleFlagSubmitActions,
     HANDLE_CANCEL: data.action.handleCancelActions,
