@@ -251,7 +251,10 @@
                 const {postOwner: postOwner, postId: postId} = ev.params;
                 handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, true, this.shouldComment, this.shouldLog).then((() => {
                     window.location.reload();
-                })).catch((() => {
+                })).catch((errorMessage => {
+                    StackExchange.helpers.showToast(errorMessage, {
+                        type: "danger"
+                    });
                     this["submit-buttonTarget"].disabled = false;
                 }));
             },
@@ -292,9 +295,15 @@
                 ev.preventDefault();
                 this["submit-buttonTarget"].disabled = true;
                 const {postOwner: postOwner, postId: postId} = ev.params;
-                handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog).then((() => {
+                handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog).then((resolveMessage => {
                     this._removeModal(postId);
-                })).catch((() => {
+                    if (void 0 !== resolveMessage) {
+                        StackExchange.helpers.showToast(resolveMessage);
+                    }
+                })).catch((errorMessage => {
+                    StackExchange.helpers.showToast(errorMessage, {
+                        type: "danger"
+                    });
                     this["submit-buttonTarget"].disabled = false;
                 }));
             },
@@ -313,39 +322,28 @@
     }
     async function handlePlagiarisedPost(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost, shouldDeletePost, shouldCommentPost, shouldLogWithAws) {
         if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-            StackExchange.helpers.showToast(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`, {
-                type: "danger"
-            });
-            return Promise.reject();
+            return Promise.reject(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
         }
         if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
-            StackExchange.helpers.showToast(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`, {
-                type: "danger"
-            });
-            return Promise.reject();
+            return Promise.reject(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
         }
         if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
-            StackExchange.helpers.showToast(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`, {
-                type: "danger"
-            });
-            return Promise.reject();
+            return Promise.reject(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
         }
+        let resolveMessage;
         if (shouldFlagPost) {
             const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
             if (!flagFetch.Success) {
-                StackExchange.helpers.showToast(flagFetch.Message, {
-                    type: "danger"
-                });
-                return Promise.reject();
+                return Promise.reject(flagFetch.Message);
             }
             if (!shouldDeletePost) {
-                StackExchange.helpers.showToast(flagFetch.Message);
+                resolveMessage = flagFetch.Message;
             }
         }
         if (shouldDeletePost) {
             const deleteFetch = await deleteAsPlagiarism(answerId);
             if (200 !== deleteFetch.status) {
-                return Promise.reject();
+                return Promise.reject('Something went wrong when deleting "as plagiarism"!');
             }
         }
         if (shouldCommentPost) {
@@ -365,7 +363,7 @@
                 body: JSON.stringify(body)
             });
         }
-        return Promise.resolve();
+        return Promise.resolve(resolveMessage);
     }
     const popoverMountPointClass = "popover-mount-point";
     function getTimelineButtonId(answerId) {
