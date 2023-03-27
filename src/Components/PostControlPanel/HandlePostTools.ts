@@ -173,7 +173,7 @@ export function registerNonModHandlePostStacksController() {
                     Stacks.hideModal(existingModal);
                     setTimeout(() => {
                         existingModal.remove();
-                    }, 50);
+                    }, 125);
                 }
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
