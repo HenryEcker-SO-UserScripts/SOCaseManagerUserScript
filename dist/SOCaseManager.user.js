@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.4.3
+// @version     0.4.4
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -162,25 +162,49 @@
             fkey: StackExchange.options.user.fkey
         });
     }
-    const validationBounds = {
-        flagDetailTextarea: {
-            min: 10,
-            max: 500
-        },
-        flagOriginalSourceTextarea: {
-            min: 10
-        },
-        commentTextarea: {
-            min: 15,
-            max: 600
+    function removeModalFromDOM(modalId) {
+        const existingModal = document.getElementById(modalId);
+        if (null !== existingModal) {
+            Stacks.hideModal(existingModal);
+            setTimeout((() => {
+                existingModal.remove();
+            }), 125);
         }
-    };
-    function isInValidationBounds(textLength, vB) {
-        const min = vB.min ?? 0;
-        if (void 0 === vB.max) {
+    }
+    function isInValidationBounds(textLength, bounds) {
+        const min = bounds.min ?? 0;
+        if (void 0 === bounds.max) {
             return min <= textLength;
         }
-        return min <= textLength && textLength <= vB.max;
+        return min <= textLength && textLength <= bounds.max;
+    }
+    const plagiarismFlagLengthBounds = {
+        source: {
+            min: 10
+        },
+        explanation: {
+            min: 10,
+            max: 500
+        }
+    };
+    function assertValidPlagiarismFlagTextLengths(sourceLength, explanationLength) {
+        if (!isInValidationBounds(sourceLength, plagiarismFlagLengthBounds.source)) {
+            throw new Error(`Plagiarism flag source must be more than ${plagiarismFlagLengthBounds.source.min} characters.`);
+        }
+        if (!isInValidationBounds(explanationLength, plagiarismFlagLengthBounds.explanation)) {
+            throw new Error(`Plagiarism flag explanation text must be between ${plagiarismFlagLengthBounds.explanation.min} and ${plagiarismFlagLengthBounds.explanation.max} characters.`);
+        }
+        return true;
+    }
+    const commentTextLengthBounds = {
+        min: 15,
+        max: 600
+    };
+    function assertValidCommentTextLength(commentLength) {
+        if (!isInValidationBounds(commentLength, commentTextLengthBounds)) {
+            throw new Error(`Comment text must be between ${commentTextLengthBounds.min} and ${commentTextLengthBounds.max} characters.`);
+        }
+        return true;
     }
     function getMessageFromCaughtElement(e) {
         if (e instanceof Error) {
@@ -256,27 +280,15 @@
                 this["comment-areaTarget"].value = nukePostConfig.commentText ?? "";
             },
             async handleNukeSubmitActions(ev) {
-                ev.preventDefault();
-                const jSubmitButton = $(this["submit-buttonTarget"]);
-                jSubmitButton.prop("disabled", true).addClass("is-loading");
-                const {postOwner: postOwner, postId: postId} = ev.params;
-                try {
+                await submitHandlerTemplate(ev, $(this["submit-buttonTarget"]), (async (postOwner, postId) => {
                     await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, true, this.shouldComment, this.shouldLog);
                     window.location.reload();
-                } catch (error) {
-                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
-                        type: "danger"
-                    });
-                    jSubmitButton.prop("disabled", false).removeClass("is-loading");
-                }
+                }));
             },
             cancelHandleForm(ev) {
                 ev.preventDefault();
                 const {postId: postId} = ev.params;
-                const existingModal = document.getElementById(getModalId(postId));
-                if (null !== existingModal) {
-                    existingModal.remove();
-                }
+                removeModalFromDOM(getModalId(postId));
             },
             handleUpdateControlledField(ev) {
                 const {controls: controls} = ev.params;
@@ -304,48 +316,40 @@
                 this["log-enable-toggleTarget"].checked = true;
             },
             async handleFlagSubmitActions(ev) {
-                ev.preventDefault();
-                const jSubmitButton = $(this["submit-buttonTarget"]);
-                jSubmitButton.prop("disabled", true).addClass("is-loading");
-                const {postOwner: postOwner, postId: postId} = ev.params;
-                try {
+                await submitHandlerTemplate(ev, $(this["submit-buttonTarget"]), (async (postOwner, postId) => {
                     const resolveMessage = await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog);
-                    this._removeModal(postId);
+                    removeModalFromDOM(getModalId(postId));
                     if (void 0 !== resolveMessage) {
                         StackExchange.helpers.showToast(resolveMessage);
                     }
-                } catch (error) {
-                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
-                        type: "danger"
-                    });
-                    jSubmitButton.prop("disabled", false).removeClass("is-loading");
-                }
-            },
-            _removeModal(postId) {
-                const existingModal = document.getElementById(getModalId(postId));
-                if (null !== existingModal) {
-                    Stacks.hideModal(existingModal);
-                    setTimeout((() => {
-                        existingModal.remove();
-                    }), 125);
-                }
+                }));
             },
             cancelHandleForm(ev) {
                 ev.preventDefault();
                 const {postId: postId} = ev.params;
-                this._removeModal(postId);
+                removeModalFromDOM(getModalId(postId));
             }
         });
     }
+    async function submitHandlerTemplate(ev, jSubmitButton, uniqueHandleActions) {
+        ev.preventDefault();
+        jSubmitButton.prop("disabled", true).addClass("is-loading");
+        const {postOwner: postOwner, postId: postId} = ev.params;
+        try {
+            await uniqueHandleActions(postOwner, postId);
+        } catch (error) {
+            StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
+                type: "danger"
+            });
+            jSubmitButton.prop("disabled", false).removeClass("is-loading");
+        }
+    }
     async function handlePlagiarisedPost(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost, shouldDeletePost, shouldCommentPost, shouldLogWithAws) {
-        if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-            throw new Error(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
+        if (shouldFlagPost) {
+            assertValidPlagiarismFlagTextLengths(flagOriginalSourceText.length, flagDetailText.length);
         }
-        if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
-            throw new Error(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
-        }
-        if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
-            throw new Error(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
+        if (shouldCommentPost) {
+            assertValidCommentTextLength(commentText.length);
         }
         let resolveMessage;
         if (shouldFlagPost) {
