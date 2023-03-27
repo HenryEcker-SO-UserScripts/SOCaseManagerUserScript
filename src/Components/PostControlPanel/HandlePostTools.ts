@@ -166,7 +166,10 @@ export function registerNonModHandlePostStacksController() {
             _removeModal(postId: number) {
                 const existingModal = document.getElementById(getModalId(postId));
                 if (existingModal !== null) {
-                    existingModal.remove();
+                    Stacks.hideModal(existingModal);
+                    setTimeout(() => {
+                        existingModal.remove();
+                    }, 50);
                 }
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {

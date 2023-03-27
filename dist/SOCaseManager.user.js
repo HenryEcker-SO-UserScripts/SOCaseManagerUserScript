@@ -310,7 +310,10 @@
             _removeModal(postId) {
                 const existingModal = document.getElementById(getModalId(postId));
                 if (null !== existingModal) {
-                    existingModal.remove();
+                    Stacks.hideModal(existingModal);
+                    setTimeout((() => {
+                        existingModal.remove();
+                    }), 50);
                 }
             },
             cancelHandleForm(ev) {
