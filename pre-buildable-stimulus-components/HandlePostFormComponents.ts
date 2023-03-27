@@ -1,4 +1,4 @@
-import {validationBounds} from '../src/Utils/ValidationHelpers';
+import {commentTextLengthBounds, plagiarismFlagLengthBounds} from 'se-ts-userscript-utilities/cjs/Validators/TextLengthValidators';
 import {buildTextarea, buildTextInput, buildToggle} from './StimulusComponentBuilder';
 import {cleanWhitespace} from './StimulusPackageUtils';
 
@@ -108,7 +108,7 @@ const nukePostForm = buildHandleForm(
                 data.controller,
                 data.target.flagDetailTextarea,
                 'Why do you consider this answer to be plagiarized?',
-                validationBounds.flagDetailTextarea)),
+                plagiarismFlagLengthBounds.explanation)),
         buildFieldControlToggle(
             'Comment after deletion',
             ids.enableCommentToggle,
@@ -123,7 +123,7 @@ const nukePostForm = buildHandleForm(
                 data.controller,
                 data.target.commentTextarea,
                 'Comment Text',
-                validationBounds.commentTextarea)
+                commentTextLengthBounds)
         ),
         buildToggle(
             'Log post in Case Manager',
@@ -155,7 +155,7 @@ const flagPostForm = buildHandleForm(
             data.controller,
             data.target.flagDetailTextarea,
             'Why do you consider this answer to be plagiarized?',
-            validationBounds.flagDetailTextarea),
+            plagiarismFlagLengthBounds.explanation),
         buildToggle(
             'Log post in Case Manager',
             ids.enableLogToggle,

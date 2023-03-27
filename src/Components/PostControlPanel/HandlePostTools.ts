@@ -2,9 +2,13 @@ import {type ActionEvent} from '@hotwired/stimulus';
 import {addComment} from 'se-ts-userscript-utilities/Comments/Comments';
 import {flagPlagiarizedContent} from 'se-ts-userscript-utilities/FlaggingAndVoting/PostFlags';
 import {deleteAsPlagiarism} from 'se-ts-userscript-utilities/Moderators/HandleFlags';
+import {removeModalFromDOM} from 'se-ts-userscript-utilities/StacksHelpers/StacksModal';
+import {
+    assertValidCommentTextLength,
+    assertValidPlagiarismFlagTextLengths
+} from 'se-ts-userscript-utilities/Validators/TextLengthValidators';
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
 import {getMessageFromCaughtElement} from '../../Utils/ErrorHandlingHelpers';
 
 function getModalId(postId: number) {
@@ -83,39 +87,28 @@ export function registerModHandlePostStacksController() {
                 this[HANDLE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
             },
             async [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
-                ev.preventDefault();
-                const jSubmitButton = $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]);
-                jSubmitButton
-                    .prop('disabled', true)
-                    .addClass('is-loading');
-                const {postOwner, postId} = ev.params;
-                try {
-                    await handlePlagiarisedPost(
-                        postId,
-                        postOwner,
-                        this.flagOriginalSourceText,
-                        this.flagDetailText,
-                        this.commentText,
-                        this.shouldFlag,
-                        true,
-                        this.shouldComment,
-                        this.shouldLog
-                    );
-                    window.location.reload();
-                } catch (error) {
-                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
-                    jSubmitButton
-                        .prop('disabled', false)
-                        .removeClass('is-loading');
-                }
+                await submitHandlerTemplate(
+                    ev,
+                    $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]),
+                    async (postOwner: number, postId: number) => {
+                        await handlePlagiarisedPost(
+                            postId,
+                            postOwner,
+                            this.flagOriginalSourceText,
+                            this.flagDetailText,
+                            this.commentText,
+                            this.shouldFlag,
+                            true,
+                            this.shouldComment,
+                            this.shouldLog
+                        );
+                        window.location.reload();
+                    });
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
                 ev.preventDefault();
                 const {postId} = ev.params;
-                const existingModal = document.getElementById(getModalId(postId));
-                if (existingModal !== null) {
-                    existingModal.remove();
-                }
+                removeModalFromDOM(getModalId(postId));
             },
             [HANDLE_POST.HANDLE_UPDATE_CONTROLLED_FIELD](ev: ActionEvent) {
                 const {controls} = ev.params;
@@ -147,52 +140,53 @@ export function registerNonModHandlePostStacksController() {
                 this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             },
             async [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
-                ev.preventDefault();
-                const jSubmitButton = $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]);
-                jSubmitButton
-                    .prop('disabled', true)
-                    .addClass('is-loading');
-                const {postOwner, postId} = ev.params;
-                try {
-                    const resolveMessage = await handlePlagiarisedPost(
-                        postId,
-                        postOwner,
-                        this.flagOriginalSourceText,
-                        this.flagDetailText,
-                        '',
-                        true,
-                        false,
-                        false,
-                        this.shouldLog,
-                    );
+                await submitHandlerTemplate(
+                    ev,
+                    $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]),
+                    async (postOwner: number, postId: number) => {
+                        const resolveMessage = await handlePlagiarisedPost(
+                            postId,
+                            postOwner,
+                            this.flagOriginalSourceText,
+                            this.flagDetailText,
+                            '',
+                            true,
+                            false,
+                            false,
+                            this.shouldLog,
+                        );
 
-                    this._removeModal(postId);
-                    if (resolveMessage !== undefined) {
-                        StackExchange.helpers.showToast(resolveMessage);
+                        removeModalFromDOM(getModalId(postId));
+                        if (resolveMessage !== undefined) {
+                            StackExchange.helpers.showToast(resolveMessage);
+                        }
                     }
-                } catch (error) {
-                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
-                    jSubmitButton
-                        .prop('disabled', false)
-                        .removeClass('is-loading');
-                }
-            },
-            _removeModal(postId: number) {
-                const existingModal = document.getElementById(getModalId(postId));
-                if (existingModal !== null) {
-                    Stacks.hideModal(existingModal);
-                    setTimeout(() => {
-                        existingModal.remove();
-                    }, 125);
-                }
+                );
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
                 ev.preventDefault();
                 const {postId} = ev.params;
-                this._removeModal(postId);
+                removeModalFromDOM(getModalId(postId));
             }
         }
     );
+}
+
+
+async function submitHandlerTemplate(ev: ActionEvent, jSubmitButton: JQuery, uniqueHandleActions: (postOwner: number, postId: number) => Promise<void>) {
+    ev.preventDefault();
+    jSubmitButton
+        .prop('disabled', true)
+        .addClass('is-loading');
+    const {postOwner, postId} = ev.params;
+    try {
+        await uniqueHandleActions(postOwner, postId);
+    } catch (error) {
+        StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
+        jSubmitButton
+            .prop('disabled', false)
+            .removeClass('is-loading');
+    }
 }
 
 
@@ -202,15 +196,12 @@ async function handlePlagiarisedPost(
     commentText: string,
     shouldFlagPost: boolean, shouldDeletePost: boolean, shouldCommentPost: boolean, shouldLogWithAws: boolean
 ) {
-    if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-        throw new Error(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
-    }
-    if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
-        throw new Error(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
+    if (shouldFlagPost) {
+        assertValidPlagiarismFlagTextLengths(flagOriginalSourceText.length, flagDetailText.length);
     }
 
-    if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
-        throw new Error(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
+    if (shouldCommentPost) {
+        assertValidCommentTextLength(commentText.length);
     }
 
     let resolveMessage: undefined | string = undefined;

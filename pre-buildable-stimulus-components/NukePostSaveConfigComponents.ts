@@ -1,4 +1,7 @@
-import {validationBounds} from '../src/Utils/ValidationHelpers';
+import {
+    commentTextLengthBounds,
+    plagiarismFlagLengthBounds
+} from 'se-ts-userscript-utilities/cjs/Validators/TextLengthValidators';
 import {buildCheckbox, buildTextarea} from './StimulusComponentBuilder';
 import {cleanWhitespace} from './StimulusPackageUtils';
 
@@ -34,19 +37,19 @@ const nukeConfigSaveForm = `
     ${buildCheckbox('Should Comment', ids.shouldCommentCheckbox, data.controller, data.target.shouldCommentCheckbox)}
     ${buildCheckbox('Should Log', ids.shouldLogCheckbox, data.controller, data.target.shouldLogCheckbox)}
     ${buildTextarea(
-        ids.flagDetailTemplateTextarea, 'flag detail template', 5,
-        data.controller, data.target.flagDetailTemplateTextarea,
-        'Flag Detail Text Template:',
-        validationBounds.flagDetailTextarea
-    )}
+    ids.flagDetailTemplateTextarea, 'flag detail template', 5,
+    data.controller, data.target.flagDetailTemplateTextarea,
+    'Flag Detail Text Template:',
+    plagiarismFlagLengthBounds.explanation
+)}
     ${buildTextarea(
-        ids.commentTemplateTextarea,
-        'comment template',
-        5,
-        data.controller, data.target.commentTemplateTextarea,
-        'Comment Text Template:',
-        validationBounds.commentTextarea
-    )}
+    ids.commentTemplateTextarea,
+    'comment template',
+    5,
+    data.controller, data.target.commentTemplateTextarea,
+    'Comment Text Template:',
+    commentTextLengthBounds
+)}
     <div class="d-flex fd-row g8">
         <button class="s-btn s-btn__primary" type="submit">Save Config</button>
         <button class="s-btn s-btn__muted" type="reset">Reset To Default</button>
