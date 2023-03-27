@@ -84,7 +84,10 @@ export function registerModHandlePostStacksController() {
             },
             async [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
                 ev.preventDefault();
-                this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = true;
+                const jSubmitButton = $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]);
+                jSubmitButton
+                    .prop('disabled', true)
+                    .addClass('is-loading');
                 const {postOwner, postId} = ev.params;
                 try {
                     await handlePlagiarisedPost(
@@ -101,7 +104,9 @@ export function registerModHandlePostStacksController() {
                     window.location.reload();
                 } catch (error) {
                     StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
-                    this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
+                    jSubmitButton
+                        .prop('disabled', false)
+                        .removeClass('is-loading');
                 }
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
@@ -143,7 +148,10 @@ export function registerNonModHandlePostStacksController() {
             },
             async [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
                 ev.preventDefault();
-                this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = true;
+                const jSubmitButton = $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]);
+                jSubmitButton
+                    .prop('disabled', true)
+                    .addClass('is-loading');
                 const {postOwner, postId} = ev.params;
                 try {
                     const resolveMessage = await handlePlagiarisedPost(
@@ -164,7 +172,9 @@ export function registerNonModHandlePostStacksController() {
                     }
                 } catch (error) {
                     StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
-                    this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
+                    jSubmitButton
+                        .prop('disabled', false)
+                        .removeClass('is-loading');
                 }
             },
             _removeModal(postId: number) {
