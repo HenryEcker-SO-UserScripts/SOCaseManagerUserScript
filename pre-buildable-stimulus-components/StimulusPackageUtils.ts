@@ -1,6 +1,6 @@
-export function cleanWhitespace(s: string) {
-    return s
-        .replace(/\s{2,}/gi, ' ')
-        .replace(/\s*<\s*/gi, '<')
-        .replace(/\s*>\s*/gi, '>');
+import {html_beautify} from 'js-beautify';
+
+export function cleanWhitespace(htmlStr: string) {
+    return html_beautify(htmlStr, {preserve_newlines: false})
+        .replace(/>\s*<\s*/gi, '><'); // Collapse all excess space between tags
 }
