@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.4.1
+// @version     0.4.2
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -182,6 +182,16 @@
         }
         return min <= textLength && textLength <= vB.max;
     }
+    function getMessageFromCaughtElement(e) {
+        if (e instanceof Error) {
+            return e.message;
+        } else if ("string" === typeof e) {
+            return e;
+        } else {
+            console.error(e);
+            return "Something went wrong!";
+        }
+    }
     function getModalId(postId) {
         return "socm-handle-post-form-{postId}".formatUnicorn({
             postId: postId
@@ -245,18 +255,19 @@
                 this["flag-detail-areaTarget"].value = nukePostConfig.flagDetailText ?? "";
                 this["comment-areaTarget"].value = nukePostConfig.commentText ?? "";
             },
-            handleNukeSubmitActions(ev) {
+            async handleNukeSubmitActions(ev) {
                 ev.preventDefault();
                 this["submit-buttonTarget"].disabled = true;
                 const {postOwner: postOwner, postId: postId} = ev.params;
-                handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, true, this.shouldComment, this.shouldLog).then((() => {
+                try {
+                    await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, true, this.shouldComment, this.shouldLog);
                     window.location.reload();
-                })).catch((errorMessage => {
-                    StackExchange.helpers.showToast(errorMessage, {
+                } catch (error) {
+                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
                         type: "danger"
                     });
                     this["submit-buttonTarget"].disabled = false;
-                }));
+                }
             },
             cancelHandleForm(ev) {
                 ev.preventDefault();
@@ -291,21 +302,22 @@
             connect() {
                 this["log-enable-toggleTarget"].checked = true;
             },
-            handleFlagSubmitActions(ev) {
+            async handleFlagSubmitActions(ev) {
                 ev.preventDefault();
                 this["submit-buttonTarget"].disabled = true;
                 const {postOwner: postOwner, postId: postId} = ev.params;
-                handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog).then((resolveMessage => {
+                try {
+                    const resolveMessage = await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog);
                     this._removeModal(postId);
                     if (void 0 !== resolveMessage) {
                         StackExchange.helpers.showToast(resolveMessage);
                     }
-                })).catch((errorMessage => {
-                    StackExchange.helpers.showToast(errorMessage, {
+                } catch (error) {
+                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
                         type: "danger"
                     });
                     this["submit-buttonTarget"].disabled = false;
-                }));
+                }
             },
             _removeModal(postId) {
                 const existingModal = document.getElementById(getModalId(postId));
@@ -313,7 +325,7 @@
                     Stacks.hideModal(existingModal);
                     setTimeout((() => {
                         existingModal.remove();
-                    }), 50);
+                    }), 125);
                 }
             },
             cancelHandleForm(ev) {
@@ -325,19 +337,19 @@
     }
     async function handlePlagiarisedPost(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost, shouldDeletePost, shouldCommentPost, shouldLogWithAws) {
         if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-            return Promise.reject(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
+            throw new Error(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
         }
         if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
-            return Promise.reject(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
+            throw new Error(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
         }
         if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
-            return Promise.reject(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
+            throw new Error(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
         }
         let resolveMessage;
         if (shouldFlagPost) {
             const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
             if (!flagFetch.Success) {
-                return Promise.reject(flagFetch.Message);
+                throw new Error(flagFetch.Message);
             }
             if (!shouldDeletePost) {
                 resolveMessage = flagFetch.Message;
@@ -346,7 +358,7 @@
         if (shouldDeletePost) {
             const deleteFetch = await deleteAsPlagiarism(answerId);
             if (200 !== deleteFetch.status) {
-                return Promise.reject('Something went wrong when deleting "as plagiarism"!');
+                throw new Error('Something went wrong when deleting "as plagiarism"!');
             }
         }
         if (shouldCommentPost) {
@@ -366,7 +378,7 @@
                 body: JSON.stringify(body)
             });
         }
-        return Promise.resolve(resolveMessage);
+        return resolveMessage;
     }
     const popoverMountPointClass = "popover-mount-point";
     function getTimelineButtonId(answerId) {
@@ -649,16 +661,6 @@
     }
     function buildTokenIssuer() {
         return $("<div></div>").append('<h3 class="fs-title mb12">Issue new token</h3>').append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>").append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
-    }
-    function getMessageFromCaughtElement(e) {
-        if (e instanceof Error) {
-            return e.message;
-        } else if ("string" === typeof e) {
-            return e;
-        } else {
-            console.error(e);
-            return "Something went wrong!";
-        }
     }
     function buildNukeConfigControls() {
         registerNukeConfigSettingsController();
