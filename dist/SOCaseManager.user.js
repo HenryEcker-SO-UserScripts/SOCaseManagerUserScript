@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.4.2
+// @version     0.4.3
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -257,7 +257,8 @@
             },
             async handleNukeSubmitActions(ev) {
                 ev.preventDefault();
-                this["submit-buttonTarget"].disabled = true;
+                const jSubmitButton = $(this["submit-buttonTarget"]);
+                jSubmitButton.prop("disabled", true).addClass("is-loading");
                 const {postOwner: postOwner, postId: postId} = ev.params;
                 try {
                     await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, true, this.shouldComment, this.shouldLog);
@@ -266,7 +267,7 @@
                     StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
                         type: "danger"
                     });
-                    this["submit-buttonTarget"].disabled = false;
+                    jSubmitButton.prop("disabled", false).removeClass("is-loading");
                 }
             },
             cancelHandleForm(ev) {
@@ -304,7 +305,8 @@
             },
             async handleFlagSubmitActions(ev) {
                 ev.preventDefault();
-                this["submit-buttonTarget"].disabled = true;
+                const jSubmitButton = $(this["submit-buttonTarget"]);
+                jSubmitButton.prop("disabled", true).addClass("is-loading");
                 const {postOwner: postOwner, postId: postId} = ev.params;
                 try {
                     const resolveMessage = await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog);
@@ -316,7 +318,7 @@
                     StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
                         type: "danger"
                     });
-                    this["submit-buttonTarget"].disabled = false;
+                    jSubmitButton.prop("disabled", false).removeClass("is-loading");
                 }
             },
             _removeModal(postId) {
