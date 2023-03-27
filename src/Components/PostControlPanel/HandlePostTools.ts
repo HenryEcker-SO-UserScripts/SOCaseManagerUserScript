@@ -5,6 +5,7 @@ import {deleteAsPlagiarism} from 'se-ts-userscript-utilities/Moderators/HandleFl
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {isInValidationBounds, validationBounds} from '../../Utils/ValidationHelpers';
+import {getMessageFromCaughtElement} from '../../Utils/ErrorHandlingHelpers';
 
 function getModalId(postId: number) {
     return HANDLE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
@@ -81,26 +82,27 @@ export function registerModHandlePostStacksController() {
                 this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
                 this[HANDLE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
             },
-            [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
+            async [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
                 ev.preventDefault();
                 this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = true;
                 const {postOwner, postId} = ev.params;
-                handlePlagiarisedPost(
-                    postId,
-                    postOwner,
-                    this.flagOriginalSourceText,
-                    this.flagDetailText,
-                    this.commentText,
-                    this.shouldFlag,
-                    true,
-                    this.shouldComment,
-                    this.shouldLog
-                ).then(() => {
+                try {
+                    await handlePlagiarisedPost(
+                        postId,
+                        postOwner,
+                        this.flagOriginalSourceText,
+                        this.flagDetailText,
+                        this.commentText,
+                        this.shouldFlag,
+                        true,
+                        this.shouldComment,
+                        this.shouldLog
+                    );
                     window.location.reload();
-                }).catch((errorMessage) => {
-                    StackExchange.helpers.showToast(errorMessage, {type: 'danger'});
+                } catch (error) {
+                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
                     this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
-                });
+                }
             },
             [HANDLE_POST.HANDLE_CANCEL](ev: ActionEvent) {
                 ev.preventDefault();
@@ -139,29 +141,31 @@ export function registerNonModHandlePostStacksController() {
             connect() {
                 this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             },
-            [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
+            async [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
                 ev.preventDefault();
                 this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = true;
                 const {postOwner, postId} = ev.params;
-                handlePlagiarisedPost(
-                    postId,
-                    postOwner,
-                    this.flagOriginalSourceText,
-                    this.flagDetailText,
-                    '',
-                    true,
-                    false,
-                    false,
-                    this.shouldLog,
-                ).then((resolveMessage: undefined | string) => {
+                try {
+                    const resolveMessage = await handlePlagiarisedPost(
+                        postId,
+                        postOwner,
+                        this.flagOriginalSourceText,
+                        this.flagDetailText,
+                        '',
+                        true,
+                        false,
+                        false,
+                        this.shouldLog,
+                    );
+
                     this._removeModal(postId);
                     if (resolveMessage !== undefined) {
                         StackExchange.helpers.showToast(resolveMessage);
                     }
-                }).catch((errorMessage) => {
-                    StackExchange.helpers.showToast(errorMessage, {type: 'danger'});
+                } catch (error) {
+                    StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
                     this[HANDLE_POST.SUBMIT_BUTTON_TARGET].disabled = false;
-                });
+                }
             },
             _removeModal(postId: number) {
                 const existingModal = document.getElementById(getModalId(postId));
@@ -189,14 +193,14 @@ async function handlePlagiarisedPost(
     shouldFlagPost: boolean, shouldDeletePost: boolean, shouldCommentPost: boolean, shouldLogWithAws: boolean
 ) {
     if (shouldFlagPost && !isInValidationBounds(flagOriginalSourceText.length, validationBounds.flagOriginalSourceTextarea)) {
-        return Promise.reject(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
+        throw new Error(`Plagiarism flag source must be more than ${validationBounds.flagOriginalSourceTextarea.min} characters. Either update the text or disable the flagging option.`);
     }
     if (shouldFlagPost && !isInValidationBounds(flagDetailText.length, validationBounds.flagDetailTextarea)) {
-        return Promise.reject(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
+        throw new Error(`Plagiarism flag detail text must be between ${validationBounds.flagDetailTextarea.min} and ${validationBounds.flagDetailTextarea.max} characters. Either update the text or disable the flagging option.`);
     }
 
     if (shouldCommentPost && !isInValidationBounds(commentText.length, validationBounds.commentTextarea)) {
-        return Promise.reject(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
+        throw new Error(`Comments must be between ${validationBounds.commentTextarea.min} and ${validationBounds.commentTextarea.max} characters. Either update the text or disable the comment option.`);
     }
 
     let resolveMessage: undefined | string = undefined;
@@ -204,7 +208,7 @@ async function handlePlagiarisedPost(
     if (shouldFlagPost) {
         const flagFetch = await flagPlagiarizedContent(answerId, flagOriginalSourceText, flagDetailText);
         if (!flagFetch.Success) {
-            return Promise.reject(flagFetch.Message); // don't continue
+            throw new Error(flagFetch.Message); // don't continue
         }
         // If post isn't going to be deleted show the "Thanks for flagging" toast
         // Save message for later (it's confusing when the message shows up well before logging with AWS finishes)
@@ -216,7 +220,7 @@ async function handlePlagiarisedPost(
     if (shouldDeletePost) {
         const deleteFetch = await deleteAsPlagiarism(answerId);
         if (deleteFetch.status !== 200) {
-            return Promise.reject('Something went wrong when deleting "as plagiarism"!'); // Deletion failed don't continue
+            throw new Error('Something went wrong when deleting "as plagiarism"!'); // Deletion failed don't continue
         }
     }
 
@@ -242,5 +246,5 @@ async function handlePlagiarisedPost(
             body: JSON.stringify(body)
         });
     }
-    return Promise.resolve(resolveMessage);
+    return resolveMessage;
 }
