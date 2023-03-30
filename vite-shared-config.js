@@ -34,11 +34,9 @@ const defObj = {
     },
     Feedback: {
         LooksOK: 1,
-        Edited: 2,
         Plagiarised: 3,
-        Deleted: 4,
         Suspicious: 5,
-        Flagged: 6
+        Deleted: 4
     },
     HANDLE_POST: handlePostFormComponents,
     SAVE_NUKE_CONFIG: nukePostSaveComponents

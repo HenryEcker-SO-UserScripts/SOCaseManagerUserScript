@@ -27,11 +27,9 @@ declare const searchParamKeys: {
 
 declare const Feedback: {
     LooksOK: number;
-    Edited: number;
     Plagiarised: number;
-    Deleted: number;
     Suspicious: number;
-    Flagged: number;
+    Deleted: number;
 };
 
 // Pre Built HTML Components

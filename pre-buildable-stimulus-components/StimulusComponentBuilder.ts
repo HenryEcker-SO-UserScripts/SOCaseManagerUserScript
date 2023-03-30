@@ -1,6 +1,3 @@
-import type {ValidationBounds} from '../src/Utils/ValidationHelpers';
-
-
 export function buildTextInput(labelText: string, inputId: string, name: string, dataController: string, dataTarget: string) {
     return `
 <div class="d-flex ff-column-nowrap gs4 gsy">
@@ -37,7 +34,7 @@ export function buildTextarea(
     textareaId: string | number, textareaName: string, rows: string | number,
     dataController: string, dataTarget: string,
     labelText: string,
-    vB: ValidationBounds
+    vB: { min: number; max: number; }
 ) {
     return `
 <div class="d-flex ff-column-nowrap gs4 gsy" 
