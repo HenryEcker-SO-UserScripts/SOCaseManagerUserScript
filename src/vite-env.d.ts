@@ -31,6 +31,7 @@ declare const Feedback: {
     Plagiarised: number;
     Deleted: number;
     Suspicious: number;
+    Flagged: number;
 };
 
 // Pre Built HTML Components

@@ -237,8 +237,15 @@ async function handlePlagiarisedPost(
         if (ownerId !== -1) {
             body['postOwnerId'] = ownerId;
         }
-        // Don't give Deleted feedback if post isn't being deleted
-        body['actionIds'] = shouldDeletePost ? [Feedback.Plagiarised, Feedback.Deleted] : [Feedback.Plagiarised];
+
+        const actions = [Feedback.Plagiarised];
+        if (shouldFlagPost) {
+            actions.push(Feedback.Flagged);
+        }
+        if (shouldDeletePost) {
+            actions.push(Feedback.Deleted);
+        }
+        body['actionIds'] = actions;
         await void fetchFromAWS(`/handle/post/${answerId}`, {
             'method': 'POST',
             headers: {
