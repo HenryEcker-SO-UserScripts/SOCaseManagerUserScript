@@ -17,22 +17,13 @@ There are two options "Record Post Action" and "Post Timeline".
 You can use "Record Post Action" to provide feedback to Case Manager. This will let others know that this
 post has been already been evaluated/handled in some way.
 
-Feedback types are broken into two categories "Status" and "Action". "Status" review types indicate the content of the
-post and "Action" review types are about how the post was handled.
-
-If the post is plagiarised, feedback should almost always consist of _both_ a "Status" and an "Action" review type. For
-example, "Plagiarised" + "Edited" (to include attribution), or "Plagiarised" + "Flagged", or "Plagiarised" + "Deleted".
-
 #### How to know which action to select
 
-| Action      | Review Type | Reason                                                                                                                                                                                      |
-|-------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Looks OK    | Status      | Indicates that the post is likely not plagiarised.                                                                                                                                          |
-| Edited      | Action      | Indicates the post was edited to include appropriate attribution rather than being removed.                                                                                                 |
-| Plagiarised | Status      | Indicates the post is plagiarised.                                                                                                                                                          |
-| Flagged     | Action      | Indicates the post has been flagged.                                                                                                                                                        |
-| Deleted     | Action      | Indicates the post was deleted.                                                                                                                                                             |
-| Suspicious  | Status      | "Looks OK" but it... doesn't. Indicates the post is likely plagiarised even though a source could not be found or the discovered source is not definitive enough to merit flagging/removal. |
+| Action      | Reason                                                                                                                                                                                      |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Looks OK    | Indicates that the post is likely not plagiarised.                                                                                                                                          |
+| Plagiarised | Indicates the post is plagiarised.                                                                                                                                                          |
+| Suspicious  | "Looks OK" but it... doesn't. Indicates the post is likely plagiarised even though a source could not be found or the discovered source is not definitive enough to merit flagging/removal. |
 
 <a href="./readme-images/PostSummary/post-action-panel.png"><img src="./readme-images/PostSummary/post-action-panel.png" width="450px"></a>
 
@@ -74,11 +65,10 @@ tab /user?tab=answers.
 There can be up to 4 different indicators on a post indicating actions taken.
 
 1. A checkmark indicates the post received feedback "Look OK"
-2. A pencil indicates the post has been edited to add attribution ("Edit" feedback)
-3. A red suitcase indicates the post is plagiarised and has been flagged ("Plagiarised" feedback)
-4. A yellow triangle alert indicates the post is suspicious ("Suspicious" feedback)
+2. A red suitcase indicates the post is plagiarised and has been flagged ("Plagiarised" feedback)
+3. A yellow triangle alert indicates the post is suspicious ("Suspicious" feedback)
 
-Here is what a post with all 4 indicators would look like:
+Here is what a post with all 3 indicators would look like:
 
 [![][5]][5]
 

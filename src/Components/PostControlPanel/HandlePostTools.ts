@@ -239,9 +239,6 @@ async function handlePlagiarisedPost(
         }
 
         const actions = [Feedback.Plagiarised];
-        if (shouldFlagPost) {
-            actions.push(Feedback.Flagged);
-        }
         if (shouldDeletePost) {
             actions.push(Feedback.Deleted);
         }
