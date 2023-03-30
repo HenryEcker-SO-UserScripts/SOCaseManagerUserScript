@@ -13,6 +13,9 @@ export function buildCheckmarkSvg(dim = 18, viewBox = 18) {
 export function buildEditPenSvg(dim = 18, viewBox = 18) {
     return `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
 }
+export function buildFlagSvg(dim=18, viewBox=18){
+    return `<svg aria-hidden="true" class="svg-icon iconFlag" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2H3Z"></path></svg>`;
+}
 
 export function buildSearchSvg(dim=18, viewBox=18){
     return `<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>`;
