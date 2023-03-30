@@ -8,7 +8,7 @@ export function getTimelinePopoverId(answerId: number): string {
     return `case-manager-timeline-popover-${answerId}`;
 }
 
-export function getActionsButtonId(answerId: number): string {
+export function getFeedbackButtonId(answerId: number): string {
     return `${answerId}-post-actions-button`;
 }
 

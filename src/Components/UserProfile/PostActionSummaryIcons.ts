@@ -1,4 +1,4 @@
-import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../../API/AWSAPI';
+import {getSummaryPostActionsFromIds, type SummaryPostFeedbackResponse} from '../../API/AWSAPI';
 import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 
 const iconAttrMap: Record<number, { desc: string; colourVar: string; svg: string; }> = {
@@ -25,7 +25,7 @@ function getAnswerIdsOnAnswerPage(): Set<string> {
     }).toArray());
 }
 
-function renderAnswerSummaryIndicators(summaryPostActions: SummaryPostActionResponse) {
+function renderAnswerSummaryIndicators(summaryPostActions: SummaryPostFeedbackResponse) {
     Object
         .entries(summaryPostActions)
         .forEach(
@@ -64,7 +64,7 @@ function getAnswerIdsOnFlagPage(): Set<string> {
     }).toArray());
 }
 
-function renderFlagSummaryIndicators(summaryPostActions: SummaryPostActionResponse) {
+function renderFlagSummaryIndicators(summaryPostActions: SummaryPostFeedbackResponse) {
     Object
         .entries(summaryPostActions)
         .forEach(

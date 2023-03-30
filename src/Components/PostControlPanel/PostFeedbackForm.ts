@@ -1,6 +1,6 @@
-import {fetchFromAWS, type PostActionType} from '../../API/AWSAPI';
+import {fetchFromAWS, type PostFeedbackType} from '../../API/AWSAPI';
 import {
-    getActionsButtonId,
+    getFeedbackButtonId,
     getFeedbackPopoverId,
     getTimelineButtonId,
     popoverMountPointClass
@@ -10,7 +10,7 @@ import {activateTimelineButton} from './PostTimeline';
 
 export function buildFeedbackComponent(answerId: number, ownerId: number, isDeleted: boolean) {
     const controlButton = $(
-        `<button id="${getActionsButtonId(answerId)}" title="Click to record your feedback on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getFeedbackPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Feedback</button>`
+        `<button id="${getFeedbackButtonId(answerId)}" title="Click to record your feedback on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getFeedbackPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Feedback</button>`
     );
 
     const popOver = $(
@@ -21,9 +21,9 @@ export function buildFeedbackComponent(answerId: number, ownerId: number, isDele
         ev.preventDefault();
         if (controlButton.attr('options-loaded') !== 'true') {
             void fetchFromAWS(`/handle/post/${answerId}`)
-                .then(res => res.json() as Promise<PostActionType[]>)
-                .then(actions => {
-                    buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions);
+                .then(res => res.json() as Promise<PostFeedbackType[]>)
+                .then(feedbacks => {
+                    buildFeedbackComponentFromFeedback(answerId, ownerId, isDeleted, feedbacks);
                     // Prevent multiple loads
                     controlButton.attr('options-loaded', 'true');
                 });
@@ -35,26 +35,26 @@ export function buildFeedbackComponent(answerId: number, ownerId: number, isDele
         .append(popOver);
 }
 
-function buildActionsComponentFromActions(answerId: number, ownerId: number, isDeleted: boolean, actions: PostActionType[]) {
+function buildFeedbackComponentFromFeedback(answerId: number, ownerId: number, isDeleted: boolean, feedbacks: PostFeedbackType[]) {
     const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Feedback Panel</h3></div>');
     const feedbackForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
     const radioGroupName = `radio-action-${answerId}`;
     let userHasAnyFeedback = false;
-    for (const action of actions) {
-        const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
+    for (const feedback of feedbacks) {
+        const feedbackItemRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
         // Build Radio Box
-        const radioId = getFeedbackRadioId(answerId, action['action_id']);
-        const radioButton = $(`<div class="flex--item s-check-control"><input class="s-radio" type="radio" name="${radioGroupName}" value="${action['action_description']}" data-action-id="${action['action_id']}" id="${radioId}"${action['user_acted'] ? ' checked' : ''}/><label class="flex--item s-label fw-normal" for="${radioId}">${action['action_description']}</label></div>`);
-        actionRow.append(radioButton);
+        const radioId = getFeedbackRadioId(answerId, feedback['feedback_id']);
+        const radioButton = $(`<div class="flex--item s-check-control"><input class="s-radio" type="radio" name="${radioGroupName}" value="${feedback['feedback_description']}" data-action-id="${feedback['feedback_id']}" id="${radioId}"${feedback['has_given_feedback'] ? ' checked' : ''}/><label class="flex--item s-label fw-normal" for="${radioId}">${feedback['feedback_description']}</label></div>`);
+        feedbackItemRow.append(radioButton);
         // Conditionally Build Clear Button
-        if (action['user_acted']) {
+        if (feedback['has_given_feedback']) {
             userHasAnyFeedback = true;
             const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
-            clearButton.on('click', clearMyActionHandler(action, answerId));
-            actionRow.append(clearButton);
+            clearButton.on('click', clearMyFeedbackHandler(feedback, answerId));
+            feedbackItemRow.append(clearButton);
         }
         // Add to Form
-        feedbackForm.append(actionRow);
+        feedbackForm.append(feedbackItemRow);
     }
     if (userHasAnyFeedback) {
         // Disable all radio buttons
@@ -68,7 +68,7 @@ function buildActionsComponentFromActions(answerId: number, ownerId: number, isD
 </div>
 `));
 
-    feedbackForm.on('submit', handleFormAction(feedbackForm, answerId, ownerId, isDeleted));
+    feedbackForm.on('submit', handleSubmitFeedback(feedbackForm, answerId, ownerId, isDeleted));
 
     popOverInnerContainer.append(feedbackForm);
 
@@ -77,13 +77,13 @@ function buildActionsComponentFromActions(answerId: number, ownerId: number, isD
         .append(popOverInnerContainer);
 }
 
-function getFeedbackRadioId(answerId: number, action_id: number): string {
-    return `radio-button-${answerId}-${action_id}`;
+function getFeedbackRadioId(answerId: number, feedback_id: number): string {
+    return `radio-button-${answerId}-${feedback_id}`;
 }
 
 
-function clearMyActionHandler(
-    action: PostActionType,
+function clearMyFeedbackHandler(
+    feedback: PostFeedbackType,
     answerId: number
 ) {
     return (ev: JQuery.Event) => {
@@ -91,18 +91,18 @@ function clearMyActionHandler(
         void StackExchange.helpers.showConfirmModal(
             {
                 title: 'Remove your feedback',
-                bodyHtml: `<span>Are you sure you want to remove your "${action['action_description']}" feedback from this post?</span>`,
+                bodyHtml: `<span>Are you sure you want to remove your "${feedback['feedback_description']}" feedback from this post?</span>`,
                 buttonLabel: 'Remove Feedback',
             }
         ).then((confirm: boolean) => {
             if (confirm) {
                 void fetchFromAWS(
-                    `/handle/post/${answerId}/${action['action_id']}`,
+                    `/handle/post/${answerId}/${feedback['feedback_id']}`,
                     {'method': 'DELETE'}
                 ).then(res => {
                     if (res.status === 200) {
                         // Mark options as unloaded (will re-fetch when opened next)
-                        $(`#${getActionsButtonId(answerId)}`).attr('options-loaded', 'false');
+                        $(`#${getFeedbackButtonId(answerId)}`).attr('options-loaded', 'false');
                         // Mark timeline button as unloaded (will re-fetch when opened the next time)
                         $(`#${getTimelineButtonId(answerId)}`).attr('timeline-loaded', 'false');
                     }
@@ -112,24 +112,24 @@ function clearMyActionHandler(
     };
 }
 
-function handleFormAction(form: JQuery, answerId: number, ownerId: number, isDeleted: boolean) {
+function handleSubmitFeedback(form: JQuery, answerId: number, ownerId: number, isDeleted: boolean) {
     return (ev: JQuery.Event) => {
         ev.preventDefault();
         const submitButton = form.find('button[type="submit"]');
         submitButton.prop('disabled', true); // disable button (to prevent multiple calls)
-        const actions = form.find('input[type="radio"]:checked:not(:disabled)');
-        if (actions.length === 0) {
+        const feedbacks = form.find('input[type="radio"]:checked:not(:disabled)');
+        if (feedbacks.length === 0) {
             submitButton.prop('disabled', false); // un-disable button (action is completed)
             return;
         }
         const body: {
             postOwnerId?: number;
-            actionIds?: number[];
+            feedbackIds?: number[];
         } = {};
         if (ownerId !== -1) {
             body['postOwnerId'] = ownerId;
         }
-        const parsedActions = actions.map((i, e) => {
+        const parsedFeedbacks = feedbacks.map((i, e) => {
             const id = $(e).attr('data-action-id');
             if (id === undefined) {
                 return undefined;
@@ -139,9 +139,9 @@ function handleFormAction(form: JQuery, answerId: number, ownerId: number, isDel
         }).toArray();
         // When providing feedback on deleted posts, automatically include Deleted feedback
         if (isDeleted) {
-            parsedActions.push(FeedbackIds.Deleted);
+            parsedFeedbacks.push(FeedbackIds.Deleted);
         }
-        body['actionIds'] = parsedActions;
+        body['feedbackIds'] = parsedFeedbacks;
 
         fetchFromAWS(`/handle/post/${answerId}`, {
             'method': 'POST',
@@ -150,12 +150,12 @@ function handleFormAction(form: JQuery, answerId: number, ownerId: number, isDel
             },
             body: JSON.stringify(body)
         })
-            .then(res => res.json() as Promise<PostActionType[]>)
-            .then(actions => {
+            .then(res => res.json() as Promise<PostFeedbackType[]>)
+            .then(feedbacks => {
                 // Rebuild timeline button (will enable button if it is disabled; will reset pull down state if already exists)
                 activateTimelineButton(answerId);
-                // Rebuild component from new actions (returned from server)
-                buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions);
+                // Rebuild component from new feedbacks (returned from server)
+                buildFeedbackComponentFromFeedback(answerId, ownerId, isDeleted, feedbacks);
             })
             .catch(() => {
                 // Attach listener again if errors

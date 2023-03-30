@@ -50,12 +50,12 @@ export interface OpenCasesSummaryPageResponse {
     cases: UserCaseSummaryEntry[];
 }
 
-export type SummaryPostActionResponse = Record<string, number[]>; // "postId": [1,2,3,4,5] <- array of action Ids
+export type SummaryPostFeedbackResponse = Record<string, number[]>; // "postId": [1,2,3,4,5] <- array of feedback Ids
 
-export interface PostActionType {
-    action_id: number;
-    action_description: string;
-    user_acted: boolean;
+export interface PostFeedbackType {
+    feedback_id: number;
+    feedback_description: string;
+    has_given_feedback: boolean;
 }
 
 
@@ -124,13 +124,13 @@ export function getSummaryPostInfoFromIds(ids: CollectionOfPostIds): Promise<Set
         });
 }
 
-export function getSummaryPostActionsFromIds(ids: CollectionOfPostIds): Promise<SummaryPostActionResponse> {
+export function getSummaryPostActionsFromIds(ids: CollectionOfPostIds): Promise<SummaryPostFeedbackResponse> {
     if (ids.length <= 0) {
         // Don't even try to fetch if there's nothing to pull; just resolve an empty object
         return Promise.resolve({});
     }
     return fetchFromAWS(`/summary/posts/${ids.join(';')}/actions`)
-        .then(res => res.json() as Promise<SummaryPostActionResponse>)
+        .then(res => res.json() as Promise<SummaryPostFeedbackResponse>)
         .then(postActionData => {
             return Promise.resolve(postActionData);
         });
