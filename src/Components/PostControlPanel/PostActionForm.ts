@@ -14,7 +14,7 @@ export function buildActionsComponent(answerId: number, ownerId: number, isDelet
     );
 
     const popOver = $(
-        `<div class="s-popover" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
+        `<div class="s-popover" style="width: 250px;" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
     );
 
     controlButton.on('click', (ev) => {
