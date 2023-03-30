@@ -10,7 +10,7 @@ On all posts (excepting those you authored) there is a control panel.
 
 <a href="./readme-images/PostSummary/blank-post-indicator.png"><img src="./readme-images/PostSummary/blank-post-indicator.png" width="650px"></a>
 
-There are two options "Record Post Action" and "Post Timeline".
+There are three options "Record Post Feedback," "Flag as plagiarism," and "Post Timeline".
 
 ### Recording Post Actions
 

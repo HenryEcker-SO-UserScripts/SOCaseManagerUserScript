@@ -1073,7 +1073,7 @@
     }
     function buildActionsSummaryPane(postSummary) {
         const container = $('<div class="grid--item p4 s-table-container"></div>');
-        const actionTable = $('<table class="s-table"><thead><tr><th scope="col">Post Action</th><th scope="col">Number of Posts</th></tr></thead></table>');
+        const actionTable = $('<table class="s-table"><thead><tr><th scope="col">Post Feedback</th><th scope="col">Number of Posts</th></tr></thead></table>');
         const actionTableBody = $("<tbody></tbody>");
         postSummary.forEach((post => {
             actionTableBody.append($(`<tr><td>${post.action_taken}</td><td>${post.number_of_posts}</td></tr>`));
