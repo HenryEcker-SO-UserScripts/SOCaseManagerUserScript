@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.4.4
+// @version     0.4.5
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -375,7 +375,14 @@
             if (-1 !== ownerId) {
                 body.postOwnerId = ownerId;
             }
-            body.actionIds = shouldDeletePost ? [ 3, 4 ] : [ 3 ];
+            const actions = [ 3 ];
+            if (shouldFlagPost) {
+                actions.push(6);
+            }
+            if (shouldDeletePost) {
+                actions.push(4);
+            }
+            body.actionIds = actions;
             await void fetchFromAWS(`/handle/post/${answerId}`, {
                 method: "POST",
                 headers: {
