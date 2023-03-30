@@ -25,7 +25,7 @@ declare const searchParamKeys: {
     tab: string;
 };
 
-declare const Feedback: {
+declare const FeedbackIds: {
     LooksOK: number;
     Plagiarised: number;
     Suspicious: number;

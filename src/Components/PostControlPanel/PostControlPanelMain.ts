@@ -4,7 +4,7 @@ import {
     registerModHandlePostStacksController,
     registerNonModHandlePostStacksController
 } from './HandlePostTools';
-import {buildActionsComponent} from './PostActionForm';
+import {buildFeedbackComponent} from './PostFeedbackForm';
 import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
 
 
@@ -16,7 +16,7 @@ export function buildAnswerControlPanel() {
         const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
         controlPanel.append(buildBaseTimelineButtons(answerId));
         controlPanel.append(buildHandlePostButton(isModerator, isDeleted, answerId, postOwnerId));
-        controlPanel.append(buildActionsComponent(answerId, postOwnerId, isDeleted));
+        controlPanel.append(buildFeedbackComponent(answerId, postOwnerId, isDeleted));
         jAnswer.append(controlPanel);
     }
     // Only need to do this once per page

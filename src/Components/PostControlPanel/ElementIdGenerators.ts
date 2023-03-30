@@ -12,6 +12,6 @@ export function getActionsButtonId(answerId: number): string {
     return `${answerId}-post-actions-button`;
 }
 
-export function getActionsPopoverId(answerId: number): string {
+export function getFeedbackPopoverId(answerId: number): string {
     return `case-manager-answer-popover-${answerId}`;
 }

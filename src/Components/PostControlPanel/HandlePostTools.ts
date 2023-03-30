@@ -20,7 +20,6 @@ function handleHandlePostButtonClick(isModerator: boolean, postId: number, postO
     const modal = document.getElementById(modalId);
     if (modal !== null) {
         Stacks.showModal(modal);
-
     } else {
         $('body')
             .append(
@@ -238,9 +237,9 @@ async function handlePlagiarisedPost(
             body['postOwnerId'] = ownerId;
         }
 
-        const actions = [Feedback.Plagiarised];
+        const actions = [FeedbackIds.Plagiarised];
         if (shouldDeletePost) {
-            actions.push(Feedback.Deleted);
+            actions.push(FeedbackIds.Deleted);
         }
         body['actionIds'] = actions;
         await void fetchFromAWS(`/handle/post/${answerId}`, {
