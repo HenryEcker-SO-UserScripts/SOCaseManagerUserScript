@@ -14,15 +14,22 @@ export function buildFeedbackComponent(answerId: number, ownerId: number, isDele
     );
 
     const popOver = $(
-        `<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
+        `<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"></div></div>`
     );
 
     controlButton.on('click', (ev) => {
         ev.preventDefault();
         if (controlButton.attr('options-loaded') !== 'true') {
+            // Empty mount point and add loading indicator
+            $(`#${getFeedbackPopoverId(answerId)} > .${popoverMountPointClass}`)
+                .empty()
+                .append('<div class="is-loading">Loading…</div>');
+
+            // Fetch current feedback
             void fetchFromAWS(`/handle/post/${answerId}`)
                 .then(res => res.json() as Promise<PostFeedbackType[]>)
                 .then(feedbacks => {
+                    // Build Component
                     buildFeedbackComponentFromFeedback(answerId, ownerId, isDeleted, feedbacks);
                     // Prevent multiple loads
                     controlButton.attr('options-loaded', 'true');
@@ -63,8 +70,8 @@ function buildFeedbackComponentFromFeedback(answerId: number, ownerId: number, i
 
     feedbackForm.append($(`
 <div class="d-flex fd-row jc-start">
-    <button class="s-btn s-btn__primary" type="submit">Save</button>
-    <button class="s-btn" type="reset">Reset</button>
+    <button class="s-btn s-btn__primary" type="submit"${userHasAnyFeedback ? ' disabled' : ''}>Save</button>
+    <button class="s-btn" type="reset"${userHasAnyFeedback ? ' disabled' : ''}>Reset</button>
 </div>
 `));
 
