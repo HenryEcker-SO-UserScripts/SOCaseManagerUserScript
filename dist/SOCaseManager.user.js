@@ -461,10 +461,11 @@
     }
     function buildFeedbackComponent(answerId, ownerId, isDeleted) {
         const controlButton = $(`<button id="${getFeedbackButtonId(answerId)}" title="Click to record your feedback on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getFeedbackPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Feedback</button>`);
-        const popOver = $(`<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
+        const popOver = $(`<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"></div></div>`);
         controlButton.on("click", (ev => {
             ev.preventDefault();
             if ("true" !== controlButton.attr("options-loaded")) {
+                $(`#${getFeedbackPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append('<div class="is-loading">Loading…</div>');
                 fetchFromAWS(`/handle/post/${answerId}`).then((res => res.json())).then((feedbacks => {
                     buildFeedbackComponentFromFeedback(answerId, ownerId, isDeleted, feedbacks);
                     controlButton.attr("options-loaded", "true");
@@ -494,7 +495,7 @@
         if (userHasAnyFeedback) {
             feedbackForm.find(`input[name="${radioGroupName}"]`).prop("disabled", true);
         }
-        feedbackForm.append($('\n<div class="d-flex fd-row jc-start">\n<button class="s-btn s-btn__primary" type="submit">Save</button>\n<button class="s-btn" type="reset">Reset</button>\n</div>\n'));
+        feedbackForm.append($(`\n<div class="d-flex fd-row jc-start">\n<button class="s-btn s-btn__primary" type="submit"${userHasAnyFeedback ? " disabled" : ""}>Save</button>\n<button class="s-btn" type="reset"${userHasAnyFeedback ? " disabled" : ""}>Reset</button>\n</div>\n`));
         feedbackForm.on("submit", handleSubmitFeedback(feedbackForm, answerId, ownerId, isDeleted));
         popOverInnerContainer.append(feedbackForm);
         $(`#${getFeedbackPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
