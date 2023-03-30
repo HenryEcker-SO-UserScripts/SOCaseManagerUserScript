@@ -32,7 +32,7 @@ const defObj = {
         seAPIBase: 'https://api.stackexchange.com/2.3',
         apiKey: 'BkvRpNB*IzKMdjAcikc4jA(('
     },
-    Feedback: {
+    FeedbackIds: {
         LooksOK: 1,
         Plagiarised: 3,
         Suspicious: 5,

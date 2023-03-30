@@ -1,20 +1,20 @@
 import {fetchFromAWS, type PostActionType} from '../../API/AWSAPI';
 import {
     getActionsButtonId,
-    getActionsPopoverId,
+    getFeedbackPopoverId,
     getTimelineButtonId,
     popoverMountPointClass
 } from './ElementIdGenerators';
 import {activateTimelineButton} from './PostTimeline';
 
 
-export function buildActionsComponent(answerId: number, ownerId: number, isDeleted: boolean) {
+export function buildFeedbackComponent(answerId: number, ownerId: number, isDeleted: boolean) {
     const controlButton = $(
-        `<button id="${getActionsButtonId(answerId)}" title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`
+        `<button id="${getActionsButtonId(answerId)}" title="Click to record your feedback on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getFeedbackPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Feedback</button>`
     );
 
     const popOver = $(
-        `<div class="s-popover" style="width: 250px;" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
+        `<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`
     );
 
     controlButton.on('click', (ev) => {
@@ -36,48 +36,48 @@ export function buildActionsComponent(answerId: number, ownerId: number, isDelet
 }
 
 function buildActionsComponentFromActions(answerId: number, ownerId: number, isDeleted: boolean, actions: PostActionType[]) {
-    const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
-    const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
+    const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Feedback Panel</h3></div>');
+    const feedbackForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
     const radioGroupName = `radio-action-${answerId}`;
-    let hasAnyAction = false;
+    let userHasAnyFeedback = false;
     for (const action of actions) {
         const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
         // Build Radio Box
-        const radioId = getActionRadioButtonId(answerId, action['action_id']);
+        const radioId = getFeedbackRadioId(answerId, action['action_id']);
         const radioButton = $(`<div class="flex--item s-check-control"><input class="s-radio" type="radio" name="${radioGroupName}" value="${action['action_description']}" data-action-id="${action['action_id']}" id="${radioId}"${action['user_acted'] ? ' checked' : ''}/><label class="flex--item s-label fw-normal" for="${radioId}">${action['action_description']}</label></div>`);
         actionRow.append(radioButton);
         // Conditionally Build Clear Button
         if (action['user_acted']) {
-            hasAnyAction = true;
+            userHasAnyFeedback = true;
             const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
             clearButton.on('click', clearMyActionHandler(action, answerId));
             actionRow.append(clearButton);
         }
         // Add to Form
-        actionsForm.append(actionRow);
+        feedbackForm.append(actionRow);
     }
-    if (hasAnyAction) {
+    if (userHasAnyFeedback) {
         // Disable all radio buttons
-        actionsForm.find(`input[name="${radioGroupName}"]`).prop('disabled', true);
+        feedbackForm.find(`input[name="${radioGroupName}"]`).prop('disabled', true);
     }
 
-    actionsForm.append($(`
+    feedbackForm.append($(`
 <div class="d-flex fd-row jc-start">
     <button class="s-btn s-btn__primary" type="submit">Save</button>
     <button class="s-btn" type="reset">Reset</button>
 </div>
 `));
 
-    actionsForm.on('submit', handleFormAction(actionsForm, answerId, ownerId, isDeleted));
+    feedbackForm.on('submit', handleFormAction(feedbackForm, answerId, ownerId, isDeleted));
 
-    popOverInnerContainer.append(actionsForm);
+    popOverInnerContainer.append(feedbackForm);
 
-    $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`)
+    $(`#${getFeedbackPopoverId(answerId)} > .${popoverMountPointClass}`)
         .empty()
         .append(popOverInnerContainer);
 }
 
-function getActionRadioButtonId(answerId: number, action_id: number): string {
+function getFeedbackRadioId(answerId: number, action_id: number): string {
     return `radio-button-${answerId}-${action_id}`;
 }
 
@@ -90,9 +90,9 @@ function clearMyActionHandler(
         ev.preventDefault();
         void StackExchange.helpers.showConfirmModal(
             {
-                title: 'Remove your action',
-                bodyHtml: `<span>Are you sure you want to remove your "${action['action_description']}" action from this post?</span>`,
-                buttonLabel: 'Remove Action',
+                title: 'Remove your feedback',
+                bodyHtml: `<span>Are you sure you want to remove your "${action['action_description']}" feedback from this post?</span>`,
+                buttonLabel: 'Remove Feedback',
             }
         ).then((confirm: boolean) => {
             if (confirm) {
@@ -139,7 +139,7 @@ function handleFormAction(form: JQuery, answerId: number, ownerId: number, isDel
         }).toArray();
         // When providing feedback on deleted posts, automatically include Deleted feedback
         if (isDeleted) {
-            parsedActions.push(Feedback.Deleted);
+            parsedActions.push(FeedbackIds.Deleted);
         }
         body['actionIds'] = parsedActions;
 

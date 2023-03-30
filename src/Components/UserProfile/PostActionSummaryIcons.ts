@@ -2,9 +2,9 @@ import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../.
 import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 
 const iconAttrMap: Record<number, { desc: string; colourVar: string; svg: string; }> = {
-    [Feedback.LooksOK]: {desc: 'Looks OK', colourVar: '--green-600', svg: buildCheckmarkSvg(16)},
-    [Feedback.Plagiarised]: {desc: 'plagiarised', colourVar: '--red-600', svg: buildCaseSvg(16)},
-    [Feedback.Suspicious]: {desc: 'suspicious', colourVar: '--yellow-700', svg: buildAlertSvg(16)},
+    [FeedbackIds.LooksOK]: {desc: 'Looks OK', colourVar: '--green-600', svg: buildCheckmarkSvg(16)},
+    [FeedbackIds.Plagiarised]: {desc: 'plagiarised', colourVar: '--red-600', svg: buildCaseSvg(16)},
+    [FeedbackIds.Suspicious]: {desc: 'suspicious', colourVar: '--yellow-700', svg: buildAlertSvg(16)},
 } as const;
 
 function buildSymbolBar(postId: string, eventValues: number[]) {
