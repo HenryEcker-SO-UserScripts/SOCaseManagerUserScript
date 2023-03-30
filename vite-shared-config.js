@@ -37,7 +37,8 @@ const defObj = {
         Edited: 2,
         Plagiarised: 3,
         Deleted: 4,
-        Suspicious: 5
+        Suspicious: 5,
+        Flagged: 6
     },
     HANDLE_POST: handlePostFormComponents,
     SAVE_NUKE_CONFIG: nukePostSaveComponents
