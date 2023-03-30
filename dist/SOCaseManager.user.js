@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.4.6
+// @version     0.5.0
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -376,9 +376,6 @@
                 body.postOwnerId = ownerId;
             }
             const actions = [ 3 ];
-            if (shouldFlagPost) {
-                actions.push(6);
-            }
             if (shouldDeletePost) {
                 actions.push(4);
             }
@@ -400,6 +397,9 @@
     function getTimelinePopoverId(answerId) {
         return `case-manager-timeline-popover-${answerId}`;
     }
+    function getActionsButtonId(answerId) {
+        return `${answerId}-post-actions-button`;
+    }
     function getActionsPopoverId(answerId) {
         return `case-manager-answer-popover-${answerId}`;
     }
@@ -411,12 +411,6 @@
     }
     function buildCheckmarkSvg(dim = 18, viewBox = 18) {
         return `<svg aria-hidden="true" class="svg-icon iconCheckmark" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M16 4.41 14.59 3 6 11.59 2.41 8 1 9.41l5 5 10-10Z"></path></svg>`;
-    }
-    function buildEditPenSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="svg-icon iconPencil" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m13.68 2.15 2.17 2.17c.2.2.2.51 0 .71L14.5 6.39l-2.88-2.88 1.35-1.36c.2-.2.51-.2.71 0ZM2 13.13l8.5-8.5 2.88 2.88-8.5 8.5H2v-2.88Z"></path></svg>`;
-    }
-    function buildFlagSvg(dim = 18, viewBox = 18) {
-        return `<svg aria-hidden="true" class="svg-icon iconFlag" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="M3 2v14h2v-6h3.6l.4 1h6V3H9.5L9 2H3Z"></path></svg>`;
     }
     function buildSearchSvg(dim = 18, viewBox = 18) {
         return `<svg aria-hidden="true" class="s-input-icon s-input-icon__search svg-icon iconSearch" width="${dim}" height="${dim}" viewBox="0 0 ${viewBox} ${viewBox}"><path d="m18 16.5-5.14-5.18h-.35a7 7 0 1 0-1.19 1.19v.35L16.5 18l1.5-1.5ZM12 7A5 5 0 1 1 2 7a5 5 0 0 1 10 0Z"></path></svg>`;
@@ -465,44 +459,50 @@
         }));
         return timelineButton;
     }
-    function buildActionsComponent(answerId, ownerId) {
-        const controlButton = $(`<button title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`);
-        const popOver = $(`<div class="s-popover" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
+    function buildActionsComponent(answerId, ownerId, isDeleted) {
+        const controlButton = $(`<button id="${getActionsButtonId(answerId)}" title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`);
+        const popOver = $(`<div class="s-popover" style="width: 250px;" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
         controlButton.on("click", (ev => {
             ev.preventDefault();
             if ("true" !== controlButton.attr("options-loaded")) {
                 fetchFromAWS(`/handle/post/${answerId}`).then((res => res.json())).then((actions => {
-                    buildActionsComponentFromActions(answerId, ownerId, actions);
+                    buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions);
                     controlButton.attr("options-loaded", "true");
                 }));
             }
         }));
         return $(document.createDocumentFragment()).append(controlButton).append(popOver);
     }
-    function buildActionsComponentFromActions(answerId, ownerId, actions) {
+    function buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions) {
         const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
         const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
+        const radioGroupName = `radio-action-${answerId}`;
+        let hasAnyAction = false;
         for (const action of actions) {
             const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
-            const checkboxId = getActionCheckboxId(answerId, action.action_id);
-            const checkbox = $(`<div class="d-flex g8"><div class="flex--item"><input class="s-checkbox" type="checkbox" name="${action.action_description}" data-action-id="${action.action_id}" id="${checkboxId}" ${action.user_acted ? "checked disabled" : ""}/></div><label class="flex--item s-label fw-normal" for="${checkboxId}">${action.action_description}</label></div>`);
-            actionRow.append(checkbox);
+            const radioId = getActionRadioButtonId(answerId, action.action_id);
+            const radioButton = $(`<div class="flex--item s-check-control"><input class="s-radio" type="radio" name="${radioGroupName}" value="${action.action_description}" data-action-id="${action.action_id}" id="${radioId}"${action.user_acted ? " checked" : ""}/><label class="flex--item s-label fw-normal" for="${radioId}">${action.action_description}</label></div>`);
+            actionRow.append(radioButton);
             if (action.user_acted) {
+                hasAnyAction = true;
                 const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
-                clearButton.on("click", clearMyActionHandler(action, answerId, checkboxId, clearButton));
+                clearButton.on("click", clearMyActionHandler(action, answerId));
                 actionRow.append(clearButton);
             }
             actionsForm.append(actionRow);
         }
+        if (hasAnyAction) {
+            actionsForm.find(`input[name="${radioGroupName}"]`).prop("disabled", true);
+        }
         actionsForm.append($('\n<div class="d-flex fd-row jc-start">\n<button class="s-btn s-btn__primary" type="submit">Save</button>\n<button class="s-btn" type="reset">Reset</button>\n</div>\n'));
-        actionsForm.on("submit", handleFormAction(actionsForm, answerId, ownerId));
+        actionsForm.on("submit", handleFormAction(actionsForm, answerId, ownerId, isDeleted));
         popOverInnerContainer.append(actionsForm);
         $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
     }
-    function getActionCheckboxId(answerId, action_id) {
-        return `checkbox-${answerId}-${action_id}`;
+    function getActionRadioButtonId(answerId, action_id) {
+        return `radio-button-${answerId}-${action_id}`;
     }
-    function clearMyActionHandler(action, answerId, checkboxId, clearButton) {
+    function clearMyActionHandler(action, answerId) {
         return ev => {
             ev.preventDefault();
             StackExchange.helpers.showConfirmModal({
@@ -515,8 +515,7 @@
                         method: "DELETE"
                     }).then((res => {
                         if (200 === res.status) {
-                            $(`#${checkboxId}`).prop("checked", false).prop("disabled", false);
-                            clearButton.remove();
+                            $(`#${getActionsButtonId(answerId)}`).attr("options-loaded", "false");
                             $(`#${getTimelineButtonId(answerId)}`).attr("timeline-loaded", "false");
                         }
                     }));
@@ -524,12 +523,12 @@
             }));
         };
     }
-    function handleFormAction(form, answerId, ownerId) {
+    function handleFormAction(form, answerId, ownerId, isDeleted) {
         return ev => {
             ev.preventDefault();
             const submitButton = form.find('button[type="submit"]');
             submitButton.prop("disabled", true);
-            const actions = form.find('input[type="checkbox"]:checked:not(:disabled)');
+            const actions = form.find('input[type="radio"]:checked:not(:disabled)');
             if (0 === actions.length) {
                 submitButton.prop("disabled", false);
                 return;
@@ -538,7 +537,7 @@
             if (-1 !== ownerId) {
                 body.postOwnerId = ownerId;
             }
-            body.actionIds = actions.map(((i, e) => {
+            const parsedActions = actions.map(((i, e) => {
                 const id = $(e).attr("data-action-id");
                 if (void 0 === id) {
                     return;
@@ -546,6 +545,10 @@
                     return Number(id);
                 }
             })).toArray();
+            if (isDeleted) {
+                parsedActions.push(4);
+            }
+            body.actionIds = parsedActions;
             fetchFromAWS(`/handle/post/${answerId}`, {
                 method: "POST",
                 headers: {
@@ -554,7 +557,7 @@
                 body: JSON.stringify(body)
             }).then((res => res.json())).then((actions2 => {
                 activateTimelineButton(answerId);
-                buildActionsComponentFromActions(answerId, ownerId, actions2);
+                buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions2);
             })).catch((() => {
                 submitButton.prop("disabled", false);
             }));
@@ -568,7 +571,7 @@
             const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
             controlPanel.append(buildBaseTimelineButtons(answerId));
             controlPanel.append(buildHandlePostButton(isModerator, isDeleted, answerId, postOwnerId));
-            controlPanel.append(buildActionsComponent(answerId, postOwnerId));
+            controlPanel.append(buildActionsComponent(answerId, postOwnerId, isDeleted));
             jAnswer.append(controlPanel);
         }
         if (isModerator) {
@@ -1094,11 +1097,6 @@
             colourVar: "--green-600",
             svg: buildCheckmarkSvg(16)
         },
-        2: {
-            desc: "edited",
-            colourVar: "--green-800",
-            svg: buildEditPenSvg(16)
-        },
         3: {
             desc: "plagiarised",
             colourVar: "--red-600",
@@ -1108,11 +1106,6 @@
             desc: "suspicious",
             colourVar: "--yellow-700",
             svg: buildAlertSvg(16)
-        },
-        6: {
-            desc: "flagged",
-            colourVar: "--orange-600",
-            svg: buildFlagSvg(16)
         }
     };
     function buildSymbolBar(postId, eventValues) {
