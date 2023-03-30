@@ -62,7 +62,7 @@ action.
 Any posts which have any feedback logged in the system, will also have an indicator on the user's answers
 tab /user?tab=answers.
 
-There can be up to 4 different indicators on a post indicating actions taken.
+There can be up to 3 different indicators on a post indicating actions taken.
 
 1. A checkmark indicates the post received feedback "Look OK"
 2. A red suitcase indicates the post is plagiarised and has been flagged ("Plagiarised" feedback)
@@ -70,7 +70,7 @@ There can be up to 4 different indicators on a post indicating actions taken.
 
 Here is what a post with all 3 indicators would look like:
 
-[![][5]][5]
+<a href="./readme-images/PostSummary/answer-page-indicator.png"><img src="./readme-images/PostSummary/answer-page-indicator.png" width="650px"></a>
 
 ---
 
@@ -80,17 +80,18 @@ You are able to open investigations into users by going to their profile.
 
 At the top of all profiles (except your own) there is a "Case Manager" button
 
-[![][6]][6]
+<a href="./readme-images/UserSummary/user-case-manager-button.png"><img src="./readme-images/UserSummary/user-case-manager-button.png" width="800px"></a>
 
 The button will gain an alert indicator if the user has ever had a post recorded in the system (for any reason).
 
-[![][16]][16]
+<a href="./readme-images/UserSummary/user-case-manager-button-with-alert.png"><img src="./readme-images/UserSummary/user-case-manager-button-with-alert.png" width="450px"></a>
+
 
 ### Profile Stats and Managing Cases
 
 Clicking the button will take you to their summary stats page
 
-[![][7]][7]
+<a href="./readme-images/UserSummary/user-summary-stats.png"><img src="./readme-images/UserSummary/user-summary-stats.png" width="800px"></a>
 
 This will show the number of posts with each action, as well as allow you to open an investigation into the user.
 
@@ -106,7 +107,7 @@ The remaining columns represent the available actions. A checkmark indicates whi
 **Note**: Every row will have at least one checkmark as only posts which have an action on them will be logged in this
 table.
 
-[![][8]][8]
+<a href="./readme-images/UserSummary/user-detail-stats.png"><img src="./readme-images/UserSummary/user-detail-stats.png" width="650px"></a>
 
 #### Filtering Posts
 
@@ -119,12 +120,10 @@ For each column there are three options:
 - **Checked** (The value in the specified column _must_ be a checkmark.)
 - **Unchecked** (The value in the specified column _must_ be empty (without a checkmark).)
 
-[![][17]][17]
+<a href="./readme-images/UserSummary/user-detail-stats-filtered.png"><img src="./readme-images/UserSummary/user-detail-stats-filtered.png" width="650px"></a>
 
 Multiple action filters can be selected to limit the display to only posts with a specific combination of actions (
 _e.g._ Flagged but not Deleted).
-
-[![][18]][18]
 
 At any time the "Clear Filters" button in the first column can be used to clear all filters (reset all columns to "
 Any").
@@ -253,14 +252,6 @@ posts.
 
 [settings page]: https://stackoverflow.com/users/current?tab=case-manager-settings
 
-[5]: ./readme-images/PostSummary/answer-page-indicator.png
-
-[6]: ./readme-images/UserSummary/user-case-manager-button.png
-
-[7]: ./readme-images/UserSummary/user-summary-stats.png
-
-[8]: ./readme-images/UserSummary/user-detail-stats.png
-
 [9]: ./readme-images/Search/users-plagiarist-tab.png
 
 [10]: ./readme-images/Search/plagiarist-page.png
@@ -274,9 +265,3 @@ posts.
 [14]: ./readme-images/Settings/User%20Profile%20Settings%20button.png
 
 [15]: ./readme-images/Settings/Case%20Manager%20Auth%20Settings.png
-
-[16]: ./readme-images/UserSummary/user-case-manager-button-with-alert.png
-
-[17]: ./readme-images/UserSummary/user-detail-stats-filtered.png
-
-[18]: ./readme-images/UserSummary/user-detail-stats-filtered-multiple.png
