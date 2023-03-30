@@ -8,45 +8,68 @@ Requires `GM_getValue`, `GM_setValue`, and `GM_deleteValue` to store access_toke
 
 On all posts (excepting those you authored) there is a control panel.
 
+<a href="./readme-images/PostSummary/blank-post-indicator.png"><img src="./readme-images/PostSummary/blank-post-indicator.png" width="650px"></a>
+
 There are two options "Record Post Action" and "Post Timeline".
 
 ### Recording Post Actions
 
-You can use "Record Post Action" to indicate you've performed an action on the post. This will let others know that this
-post has been already been handled in some way.
+You can use "Record Post Action" to provide feedback to Case Manager. This will let others know that this
+post has been already been evaluated/handled in some way.
+
+Feedback types are broken into two categories "Status" and "Action". "Status" review types indicate the content of the
+post and "Action" review types are about how the post was handled.
+
+If the post is plagiarised, feedback should almost always consist of _both_ a "Status" and an "Action" review type. For
+example, "Plagiarised" + "Edited" (to include attribution), or "Plagiarised" + "Flagged", or "Plagiarised" + "Deleted".
 
 #### How to know which action to select
 
-| Feedback    | Reason                                                                                                                                                                                      |
-|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Looks OK    | Indicates that the post is likely not plagiarised.                                                                                                                                          |
-| Edited      | Indicates the post was edited to include appropriate attribution rather than being removed.                                                                                                 |
-| Plagiarised | Indicates the post is plagiarised and that it has been flagged for removal.                                                                                                                 |
-| Deleted     | Indicates the post was deleted.                                                                                                                                                             |
-| Suspicious  | "Looks OK" but it... doesn't. Indicates the post is likely plagiarised even though a source could not be found or the discovered source is not definitive enough to merit flagging/removal. |
+| Action      | Review Type | Reason                                                                                                                                                                                      |
+|-------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Looks OK    | Status      | Indicates that the post is likely not plagiarised.                                                                                                                                          |
+| Edited      | Action      | Indicates the post was edited to include appropriate attribution rather than being removed.                                                                                                 |
+| Plagiarised | Status      | Indicates the post is plagiarised.                                                                                                                                                          |
+| Flagged     | Action      | Indicates the post has been flagged.                                                                                                                                                        |
+| Deleted     | Action      | Indicates the post was deleted.                                                                                                                                                             |
+| Suspicious  | Status      | "Looks OK" but it... doesn't. Indicates the post is likely plagiarised even though a source could not be found or the discovered source is not definitive enough to merit flagging/removal. |
 
-[![][1]][1]
+<a href="./readme-images/PostSummary/post-action-panel.png"><img src="./readme-images/PostSummary/post-action-panel.png" width="450px"></a>
 
 You can remove your action at any point by pressing the clear button in the "Record Post Action" popup.
 
-[![][4]][4]
+<a href="./readme-images/PostSummary/clear-post-action-button.png"><img src="./readme-images/PostSummary/clear-post-action-button.png" width="450px"></a>
+
+### Flagging Posts
+
+You can both flag and provide feedback in a single step with the flag as plagiarism form which can be accessed via the "Flag as plagiarism" button in the post control panel at the bottom of every answer.
+
+
+This form will allow you to fill out the relevant information to raise a "PlagiarizedContent" flag and choose to log feedback via a toggle.
+
+The modal is draggable and will preserve data even if the modal is closed (but will not preserve through page reloads).
+
+<a href="./readme-images/PostSummary/flag-post-modal.png"><img src="./readme-images/PostSummary/flag-post-modal.png" width="550px"></a>
+
 
 ### Viewing Post Timeline
 
 If the post has already been actioned on (this is any action including "Looks OK"), the "Post Timeline" button will
 become enabled and have an indicator
 
-[![][2]][2]
+
+<a href="./readme-images/PostSummary/timeline-event-indicator.png"><img src="./readme-images/PostSummary/timeline-event-indicator.png" width="650px"></a>
+
 
 Clicking on the "Post Timeline" button will let you view the timeline of actions on the post and who performed the
 action.
 
-[![][3]][3]
+<a href="./readme-images/PostSummary/timeline-view.png"><img src="./readme-images/PostSummary/timeline-view.png" width="450px"></a>
 
 ### Summary Profile Indicator
 
 Any posts which have any feedback logged in the system, will also have an indicator on the user's answers
-tab /user?tab=answers. 
+tab /user?tab=answers.
 
 There can be up to 4 different indicators on a post indicating actions taken.
 
@@ -195,9 +218,11 @@ Clicking on the tab will bring you to the [UserScript Settings page][settings pa
 ## Moderator Tools
 
 ### Nuke Post
+
 #### Post-specific options
 
-Moderators gain access to an additional button on each post, which allows the post to easily be removed and feedback provided to the Case Manager.
+Moderators gain access to an additional button on each post, which allows the post to easily be removed and feedback
+provided to the Case Manager.
 
 <a href="./readme-images/ModOnly/nuke-plagiarism-button.png"><img src="./readme-images/ModOnly/nuke-plagiarism-button.png" width="450px"></a>
 
@@ -205,20 +230,25 @@ Clicking this button opens a modal with options:
 
 <a href="./readme-images/ModOnly/nuke-plagiarism-console.png"><img src="./readme-images/ModOnly/nuke-plagiarism-console.png" width="450px"></a>
 
-
-There are three options available and up to 4 actions will be taken. The post **will always be deleted** even if all options are unchecked.
+There are three options available and up to 4 actions will be taken. The post **will always be deleted** even if all
+options are unchecked.
 
 When the Nuke button is pressed:
-1. The character count is validated depending on which options are selected. Comments, Flag Source, and Flag details have different length requirements, all limits are validated based on the selected options.
-2. If the Flag option is selected, the post is flagged using the text in the flag source and flag detail textareas. If the flag operation fails no further actions are taken (an error is displayed).
-3. A "Delete as plagiarism" vote is added to the post which will mark the plagiarism flag helpful and apply plagiarism penalties. If the delete operation fails, no further action is taken.
-4. If the Comment option is selected, a comment is added to the post.
-5. If the Log option is selected, feedback is logged in the Case Manager. The post is marked as "Plagiarised" and "Deleted".
 
+1. The character count is validated depending on which options are selected. Comments, Flag Source, and Flag details
+   have different length requirements, all limits are validated based on the selected options.
+2. If the Flag option is selected, the post is flagged using the text in the flag source and flag detail textareas. If
+   the flag operation fails no further actions are taken (an error is displayed).
+3. A "Delete as plagiarism" vote is added to the post which will mark the plagiarism flag helpful and apply plagiarism
+   penalties. If the delete operation fails, no further action is taken.
+4. If the Comment option is selected, a comment is added to the post.
+5. If the Log option is selected, feedback is logged in the Case Manager. The post is marked as "Plagiarised" and "
+   Deleted".
 
 #### Detail Text manager
 
-Moderators also have an additional option in their [settings page] to specify what the default form values for nuking posts.
+Moderators also have an additional option in their [settings page] to specify what the default form values for nuking
+posts.
 
 | Field                 | Default      | Description                                                                                                                                                                           |
 |-----------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -228,19 +258,10 @@ Moderators also have an additional option in their [settings page] to specify wh
 | Should Comment        | Unchecked    | Leave a comment on the post by default. This is false by default since "Delete as plagiarism" now causes the UI to show the reason for deletion.                                      |
 | Should Log            | Checked      | Log feedback with Case Manager. This is true by default to help to record patterns of behaviour.                                                                                      |
 
-
 <a href="./readme-images/ModOnly/edit-nuke-post-default-settings.png"><img src="./readme-images/ModOnly/edit-nuke-post-default-settings.png" width="450px"></a>
 
 
 [settings page]: https://stackoverflow.com/users/current?tab=case-manager-settings
-
-[1]: ./readme-images/PostSummary/post-action-panel.png
-
-[2]: ./readme-images/PostSummary/timeline-event-indicator.png
-
-[3]: ./readme-images/PostSummary/timeline-view.png
-
-[4]: ./readme-images/PostSummary/clear-post-action-button.png
 
 [5]: ./readme-images/PostSummary/answer-page-indicator.png
 
