@@ -8,7 +8,7 @@ import {
 import {activateTimelineButton} from './PostTimeline';
 
 
-export function buildActionsComponent(answerId: number, ownerId: number) {
+export function buildActionsComponent(answerId: number, ownerId: number, isDeleted: boolean) {
     const controlButton = $(
         `<button id="${getActionsButtonId(answerId)}" title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`
     );
@@ -23,7 +23,7 @@ export function buildActionsComponent(answerId: number, ownerId: number) {
             void fetchFromAWS(`/handle/post/${answerId}`)
                 .then(res => res.json() as Promise<PostActionType[]>)
                 .then(actions => {
-                    buildActionsComponentFromActions(answerId, ownerId, actions);
+                    buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions);
                     // Prevent multiple loads
                     controlButton.attr('options-loaded', 'true');
                 });
@@ -35,7 +35,7 @@ export function buildActionsComponent(answerId: number, ownerId: number) {
         .append(popOver);
 }
 
-function buildActionsComponentFromActions(answerId: number, ownerId: number, actions: PostActionType[]) {
+function buildActionsComponentFromActions(answerId: number, ownerId: number, isDeleted: boolean, actions: PostActionType[]) {
     const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
     const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
     const radioGroupName = `radio-action-${answerId}`;
@@ -68,7 +68,7 @@ function buildActionsComponentFromActions(answerId: number, ownerId: number, act
 </div>
 `));
 
-    actionsForm.on('submit', handleFormAction(actionsForm, answerId, ownerId));
+    actionsForm.on('submit', handleFormAction(actionsForm, answerId, ownerId, isDeleted));
 
     popOverInnerContainer.append(actionsForm);
 
@@ -112,7 +112,7 @@ function clearMyActionHandler(
     };
 }
 
-function handleFormAction(form: JQuery, answerId: number, ownerId: number) {
+function handleFormAction(form: JQuery, answerId: number, ownerId: number, isDeleted: boolean) {
     return (ev: JQuery.Event) => {
         ev.preventDefault();
         const submitButton = form.find('button[type="submit"]');
@@ -129,7 +129,7 @@ function handleFormAction(form: JQuery, answerId: number, ownerId: number) {
         if (ownerId !== -1) {
             body['postOwnerId'] = ownerId;
         }
-        body['actionIds'] = actions.map((i, e) => {
+        const parsedActions = actions.map((i, e) => {
             const id = $(e).attr('data-action-id');
             if (id === undefined) {
                 return undefined;
@@ -137,6 +137,11 @@ function handleFormAction(form: JQuery, answerId: number, ownerId: number) {
                 return Number(id);
             }
         }).toArray();
+        // When providing feedback on deleted posts, automatically include Deleted feedback
+        if (isDeleted) {
+            parsedActions.push(Feedback.Deleted);
+        }
+        body['actionIds'] = parsedActions;
 
         fetchFromAWS(`/handle/post/${answerId}`, {
             'method': 'POST',
@@ -150,7 +155,7 @@ function handleFormAction(form: JQuery, answerId: number, ownerId: number) {
                 // Rebuild timeline button (will enable button if it is disabled; will reset pull down state if already exists)
                 activateTimelineButton(answerId);
                 // Rebuild component from new actions (returned from server)
-                buildActionsComponentFromActions(answerId, ownerId, actions);
+                buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions);
             })
             .catch(() => {
                 // Attach listener again if errors
