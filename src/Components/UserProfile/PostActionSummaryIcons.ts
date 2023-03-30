@@ -1,11 +1,12 @@
 import {getSummaryPostActionsFromIds, type SummaryPostActionResponse} from '../../API/AWSAPI';
-import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg} from '../../Utils/SVGBuilders';
+import {buildAlertSvg, buildCaseSvg, buildCheckmarkSvg, buildEditPenSvg, buildFlagSvg} from '../../Utils/SVGBuilders';
 
 const iconAttrMap: Record<number, { desc: string; colourVar: string; svg: string; }> = {
     [Feedback.LooksOK]: {desc: 'Looks OK', colourVar: '--green-600', svg: buildCheckmarkSvg(16)},
     [Feedback.Edited]: {desc: 'edited', colourVar: '--green-800', svg: buildEditPenSvg(16)},
     [Feedback.Plagiarised]: {desc: 'plagiarised', colourVar: '--red-600', svg: buildCaseSvg(16)},
     [Feedback.Suspicious]: {desc: 'suspicious', colourVar: '--yellow-700', svg: buildAlertSvg(16)},
+    [Feedback.Flagged]: {desc: 'flagged', colourVar: '--orange-600', svg: buildFlagSvg(16)},
 } as const;
 
 function buildSymbolBar(postId: string, eventValues: number[]) {
