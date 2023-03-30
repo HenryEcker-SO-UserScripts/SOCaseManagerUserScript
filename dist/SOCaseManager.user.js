@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.0
+// @version     0.5.1
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -400,7 +400,7 @@
     function getActionsButtonId(answerId) {
         return `${answerId}-post-actions-button`;
     }
-    function getActionsPopoverId(answerId) {
+    function getFeedbackPopoverId(answerId) {
         return `case-manager-answer-popover-${answerId}`;
     }
     function buildAlertSvg(dim = 18, viewBox = 18) {
@@ -459,9 +459,9 @@
         }));
         return timelineButton;
     }
-    function buildActionsComponent(answerId, ownerId, isDeleted) {
-        const controlButton = $(`<button id="${getActionsButtonId(answerId)}" title="Click to record an action you have taken on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getActionsPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Action</button>`);
-        const popOver = $(`<div class="s-popover" style="width: 250px;" id="${getActionsPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
+    function buildFeedbackComponent(answerId, ownerId, isDeleted) {
+        const controlButton = $(`<button id="${getActionsButtonId(answerId)}" title="Click to record your feedback on this post." class="s-btn s-btn__dropdown" role="button" aria-controls="${getFeedbackPopoverId(answerId)}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-end" data-s-popover-toggle-class="is-selected">Record Post Feedback</button>`);
+        const popOver = $(`<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"><div class="is-loading">Loading…</div></div></div>`);
         controlButton.on("click", (ev => {
             ev.preventDefault();
             if ("true" !== controlButton.attr("options-loaded")) {
@@ -474,41 +474,41 @@
         return $(document.createDocumentFragment()).append(controlButton).append(popOver);
     }
     function buildActionsComponentFromActions(answerId, ownerId, isDeleted, actions) {
-        const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Action Panel</h3></div>');
-        const actionsForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
+        const popOverInnerContainer = $('<div class="case-manager-post-action-container"><h3>Case Manager Post Feedback Panel</h3></div>');
+        const feedbackForm = $('<form class="d-grid grid__1 g6" style="grid-auto-rows: 1fr"></form>');
         const radioGroupName = `radio-action-${answerId}`;
-        let hasAnyAction = false;
+        let userHasAnyFeedback = false;
         for (const action of actions) {
             const actionRow = $('<div class="grid--item d-flex fd-row jc-space-between ai-center"></div>');
-            const radioId = getActionRadioButtonId(answerId, action.action_id);
+            const radioId = getFeedbackRadioId(answerId, action.action_id);
             const radioButton = $(`<div class="flex--item s-check-control"><input class="s-radio" type="radio" name="${radioGroupName}" value="${action.action_description}" data-action-id="${action.action_id}" id="${radioId}"${action.user_acted ? " checked" : ""}/><label class="flex--item s-label fw-normal" for="${radioId}">${action.action_description}</label></div>`);
             actionRow.append(radioButton);
             if (action.user_acted) {
-                hasAnyAction = true;
+                userHasAnyFeedback = true;
                 const clearButton = $('<button class="s-btn s-btn__danger" type="button">Clear</button>');
                 clearButton.on("click", clearMyActionHandler(action, answerId));
                 actionRow.append(clearButton);
             }
-            actionsForm.append(actionRow);
+            feedbackForm.append(actionRow);
         }
-        if (hasAnyAction) {
-            actionsForm.find(`input[name="${radioGroupName}"]`).prop("disabled", true);
+        if (userHasAnyFeedback) {
+            feedbackForm.find(`input[name="${radioGroupName}"]`).prop("disabled", true);
         }
-        actionsForm.append($('\n<div class="d-flex fd-row jc-start">\n<button class="s-btn s-btn__primary" type="submit">Save</button>\n<button class="s-btn" type="reset">Reset</button>\n</div>\n'));
-        actionsForm.on("submit", handleFormAction(actionsForm, answerId, ownerId, isDeleted));
-        popOverInnerContainer.append(actionsForm);
-        $(`#${getActionsPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
+        feedbackForm.append($('\n<div class="d-flex fd-row jc-start">\n<button class="s-btn s-btn__primary" type="submit">Save</button>\n<button class="s-btn" type="reset">Reset</button>\n</div>\n'));
+        feedbackForm.on("submit", handleFormAction(feedbackForm, answerId, ownerId, isDeleted));
+        popOverInnerContainer.append(feedbackForm);
+        $(`#${getFeedbackPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append(popOverInnerContainer);
     }
-    function getActionRadioButtonId(answerId, action_id) {
+    function getFeedbackRadioId(answerId, action_id) {
         return `radio-button-${answerId}-${action_id}`;
     }
     function clearMyActionHandler(action, answerId) {
         return ev => {
             ev.preventDefault();
             StackExchange.helpers.showConfirmModal({
-                title: "Remove your action",
-                bodyHtml: `<span>Are you sure you want to remove your "${action.action_description}" action from this post?</span>`,
-                buttonLabel: "Remove Action"
+                title: "Remove your feedback",
+                bodyHtml: `<span>Are you sure you want to remove your "${action.action_description}" feedback from this post?</span>`,
+                buttonLabel: "Remove Feedback"
             }).then((confirm => {
                 if (confirm) {
                     fetchFromAWS(`/handle/post/${answerId}/${action.action_id}`, {
@@ -571,7 +571,7 @@
             const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
             controlPanel.append(buildBaseTimelineButtons(answerId));
             controlPanel.append(buildHandlePostButton(isModerator, isDeleted, answerId, postOwnerId));
-            controlPanel.append(buildActionsComponent(answerId, postOwnerId, isDeleted));
+            controlPanel.append(buildFeedbackComponent(answerId, postOwnerId, isDeleted));
             jAnswer.append(controlPanel);
         }
         if (isModerator) {
