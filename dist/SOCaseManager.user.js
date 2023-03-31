@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.2
+// @version     0.5.3
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -32,6 +32,7 @@
     "use strict";
     const accessToken = "access_token";
     const seApiToken = "se_api_token";
+    const roleIdToken = "cm_role_id";
     const nukePostDefaultConfigString = JSON.stringify({
         flagDetailText: "",
         commentText: "",
@@ -51,9 +52,14 @@
             })
         }, false).then((res => res.json())).then((resData => {
             GM_setValue(accessToken, resData.cm_access_token);
-        })).catch((err => {
+        })).then(requestMyRoleId).catch((err => {
             GM_deleteValue(accessToken);
             console.error(err);
+        }));
+    }
+    function requestMyRoleId() {
+        return fetchFromAWS("/auth/credentials/my-role").then((res => res.json())).then((resData => {
+            GM_setValue(roleIdToken, resData.role_id);
         }));
     }
     function fetchFromAWS(path, options, withCredentials = true) {
@@ -565,6 +571,9 @@
         };
     }
     function buildAnswerControlPanel() {
+        if (GM_getValue(roleIdToken) > 3) {
+            return;
+        }
         const answers = $("div.answer");
         const answerIds = answers.map(((i, e) => getAnswerIdFromAnswerDiv(e))).toArray();
         const isModerator = true === StackExchange.options.user.isModerator;
@@ -626,146 +635,6 @@
         }
         return Number(match[1]);
     }
-    function buildExistingTokensControls() {
-        return $("<div></div>").append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>').append(buildTokenList()).append(buildDeAuthoriseButton());
-    }
-    function buildTokenList() {
-        const tokenList = $('<div><div class="is-loading">Loading...</div></div>');
-        fetchFromAWS("/auth/credentials").then((res => res.json())).then((tokens => {
-            tokenList.empty();
-            tokens.forEach((token => {
-                tokenList.append(buildTokenRow(token));
-            }));
-        }));
-        return tokenList;
-    }
-    function buildTokenRow(token) {
-        const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
-        const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
-        invalidateButton.on("click", (ev => {
-            ev.preventDefault();
-            fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
-                if (200 === res.status) {
-                    tokenRow.remove();
-                    if (GM_getValue(seApiToken) === token) {
-                        GM_deleteValue(seApiToken);
-                        GM_deleteValue(accessToken);
-                        window.location.reload();
-                    }
-                }
-            }));
-        }));
-        return tokenRow.append(`<span>${token}</span>`).append(invalidateButton);
-    }
-    function buildDeAuthoriseButton() {
-        const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
-        deAuthoriseButton.on("click", (ev => {
-            ev.preventDefault();
-            StackExchange.helpers.showConfirmModal({
-                title: "De-authenticate this Application",
-                bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
-                buttonLabel: "De-authenticate"
-            }).then((confirm => {
-                if (confirm) {
-                    fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
-                        if (200 === res.status) {
-                            GM_deleteValue(seApiToken);
-                            GM_deleteValue(accessToken);
-                            window.location.reload();
-                        }
-                    }));
-                }
-            }));
-        }));
-        return deAuthoriseButton;
-    }
-    function buildTokenIssuer() {
-        return $("<div></div>").append('<h3 class="fs-title mb12">Issue new token</h3>').append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>").append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
-    }
-    function buildNukeConfigControls() {
-        registerNukeConfigSettingsController();
-        return $("<div></div>").append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>').append('<form class="d-flex fd-column g12" data-controller="socm-nuke-config-settings" data-action="submit->socm-nuke-config-settings#handleSaveConfig reset->socm-nuke-config-settings#handleResetConfig"><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-flag" data-socm-nuke-config-settings-target="nuke-config-should-flag" /><label class="s-label" for="socm-nuke-config-should-flag">Should Flag</label></div><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-comment" data-socm-nuke-config-settings-target="nuke-config-should-comment" /><label class="s-label" for="socm-nuke-config-should-comment">Should Comment</label></div><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-log" data-socm-nuke-config-settings-target="nuke-config-should-log" /><label class="s-label" for="socm-nuke-config-should-log">Should Log</label></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-config-flag-template">Flag Detail Text Template:</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-config-flag-template" name="flag detail template" rows="5" data-socm-nuke-config-settings-target="nuke-config-flag-template"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="15" data-se-char-counter-max="600"><label class="s-label flex--item" for="socm-nuke-config-comment-template">Comment Text Template:</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-config-comment-template" name="comment template" rows="5" data-socm-nuke-config-settings-target="nuke-config-comment-template"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex fd-row g8"><button class="s-btn s-btn__primary" type="submit">Save Config</button><button class="s-btn s-btn__muted" type="reset">Reset To Default</button></div></form>');
-    }
-    function registerNukeConfigSettingsController() {
-        Stacks.addController("socm-nuke-config-settings", {
-            targets: [ "nuke-config-should-flag", "nuke-config-should-comment", "nuke-config-should-log", "nuke-config-flag-template", "nuke-config-comment-template" ],
-            get shouldFlag() {
-                return this["nuke-config-should-flagTarget"].checked;
-            },
-            get shouldComment() {
-                return this["nuke-config-should-commentTarget"].checked;
-            },
-            get shouldLog() {
-                return this["nuke-config-should-logTarget"].checked;
-            },
-            get commentTemplate() {
-                return this["nuke-config-comment-templateTarget"].value ?? "";
-            },
-            get flagTemplate() {
-                return this["nuke-config-flag-templateTarget"].value ?? "";
-            },
-            setValues(config) {
-                this["nuke-config-should-flagTarget"].checked = config.flag;
-                this["nuke-config-should-commentTarget"].checked = config.comment;
-                this["nuke-config-should-logTarget"].checked = config.log;
-                this["nuke-config-flag-templateTarget"].value = config.flagDetailText ?? "";
-                this["nuke-config-comment-templateTarget"].value = config.commentText ?? "";
-            },
-            connect() {
-                const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
-                this.setValues(nukePostConfig);
-            },
-            handleSaveConfig(ev) {
-                ev.preventDefault();
-                try {
-                    const newConfig = {
-                        flagDetailText: this.flagTemplate,
-                        commentText: this.commentTemplate,
-                        flag: this.shouldFlag,
-                        comment: this.shouldComment,
-                        log: this.shouldLog
-                    };
-                    GM_setValue(nukePostOptions, JSON.stringify(newConfig));
-                    StackExchange.helpers.showToast("Config updated successfully!", {
-                        type: "success",
-                        transientTimeout: 3e3
-                    });
-                } catch (e) {
-                    StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
-                        type: "danger",
-                        transientTimeout: 5e3
-                    });
-                }
-            },
-            handleResetConfig(ev) {
-                ev.preventDefault();
-                const defaultConfig = JSON.parse(nukePostDefaultConfigString);
-                this.setValues(defaultConfig);
-            }
-        });
-    }
-    function buildUserScriptSettingsPanel() {
-        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
-        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
-        toolGrid.append(buildExistingTokensControls());
-        toolGrid.append(buildTokenIssuer());
-        if (StackExchange.options.user.isModerator) {
-            toolGrid.append(buildNukeConfigControls());
-        }
-        return $(document.createDocumentFragment()).append(container).append(toolGrid);
-    }
-    function buildUserScriptSettingsNav() {
-        addSettingsNavLink();
-        if (window.location.search.startsWith("?tab=case-manager-settings")) {
-            buildAndAttachSettingsPanel();
-        }
-    }
-    function addSettingsNavLink() {
-        $(".user-show-new .s-navigation:eq(0)").append($('<a href="/users/current?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>'));
-    }
-    function buildAndAttachSettingsPanel() {
-        $("#mainbar-full").empty().append(buildUserScriptSettingsPanel());
-    }
     function fetchFromSEAPI(path, search) {
         const usp = new URLSearchParams(search);
         usp.set("site", "stackoverflow");
@@ -782,10 +651,12 @@
     class CaseManagerControlPanel {
         container;
         userId;
+        systemUserRoleId;
         currentPage;
         pageLoadMap;
         postSummaryColumnFilter;
         constructor(userId) {
+            this.systemUserRoleId = GM_getValue(roleIdToken);
             this.userId = userId;
             this.container = $('<div class="d-flex mb48"></div>');
             this.currentPage = "summary";
@@ -864,9 +735,11 @@
             const section = $('<section class="flex--item fl-grow1 wmx100"><div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Summary</h1></section>');
             const summaryPageData = await this.getSummaryPageData();
             const summaryPane = $('<div class="d-grid grid__2 md:grid__1 g8"></div>');
-            summaryPane.append(buildCaseManagerPane(this.userId, summaryPageData.hasOpenCase));
+            if (this.systemUserRoleId <= 2) {
+                summaryPane.append(buildCaseManagerPane(this.userId, summaryPageData.hasOpenCase));
+            }
             summaryPane.append(buildActionsSummaryPane(summaryPageData.postSummary));
-            if (summaryPageData.caseTimeline.length > 0) {
+            if (this.systemUserRoleId <= 2 && summaryPageData.caseTimeline.length > 0) {
                 summaryPane.append(buildCaseHistoryPane(summaryPageData.caseTimeline));
             }
             section.append(summaryPane);
@@ -1164,6 +1037,9 @@
         addSummaryActionIndicatorsOnFlagPage();
     }
     function buildProfilePage() {
+        if (GM_getValue(roleIdToken) > 3) {
+            return;
+        }
         if (null !== window.location.pathname.match(/^\/users\/flagged-posts\/.*/) || null !== window.location.pathname.match(/^\/users\/flag-summary\/.*/)) {
             buildFlagSummaryIndicator();
             return;
@@ -1202,6 +1078,159 @@
             tabContainer: tabContainer,
             navButton: navButton
         };
+    }
+    function buildAuthRoleDetails() {
+        return $("<div></div>").append('<h3 class="fs-title mb12">Your Privilege Info</h3>').append(buildRoleDetails());
+    }
+    function buildRoleDetails() {
+        const roleDetails = $('<div><div class="is-loading">Loading...</div></div>');
+        fetchFromAWS("/auth/credentials/my-role/details").then((res => res.json())).then((({role_id: role_id, role_description: role_description}) => {
+            roleDetails.empty();
+            GM_setValue(roleIdToken, role_id);
+            roleDetails.append(`<div><span>You are currently have <span class="td-underline">${role_description}</span> level privileges.</span></div>`);
+        }));
+        return roleDetails;
+    }
+    function buildTokenIssuer() {
+        return $("<div></div>").append('<h3 class="fs-title mb12">Issue new token</h3>').append("<p>You can issue a new auth token for use on another device or to manually replace an existing token. Please invalidate any existing tokens, so they can no longer be used to access your information.</p>").append(`<a class="s-link s-link__underlined" href="${seTokenAuthRoute}" target="_blank" rel="noopener noreferrer">Issue new auth token</a>`);
+    }
+    function buildExistingTokensControls() {
+        return $("<div></div>").append('<h3 class="fs-title mb12">Existing Auth Tokens</h3>').append(buildTokenList()).append(buildDeAuthoriseButton());
+    }
+    function buildTokenList() {
+        const tokenList = $('<div><div class="is-loading">Loading...</div></div>');
+        fetchFromAWS("/auth/credentials").then((res => res.json())).then((tokens => {
+            tokenList.empty();
+            tokens.forEach((token => {
+                tokenList.append(buildTokenRow(token));
+            }));
+        }));
+        return tokenList;
+    }
+    function buildTokenRow(token) {
+        const tokenRow = $('<div class="d-flex fd-row ai-center"></div>');
+        const invalidateButton = $('<button class="s-btn s-btn__danger">Invalidate</button>');
+        invalidateButton.on("click", (ev => {
+            ev.preventDefault();
+            fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
+                if (200 === res.status) {
+                    tokenRow.remove();
+                    if (GM_getValue(seApiToken) === token) {
+                        GM_deleteValue(seApiToken);
+                        GM_deleteValue(accessToken);
+                        window.location.reload();
+                    }
+                }
+            }));
+        }));
+        return tokenRow.append(`<span>${token}</span>`).append(invalidateButton);
+    }
+    function buildDeAuthoriseButton() {
+        const deAuthoriseButton = $('<button class="s-btn s-btn__outlined s-btn__danger mt16" id="app-24380">De-authenticate Application</button>');
+        deAuthoriseButton.on("click", (ev => {
+            ev.preventDefault();
+            StackExchange.helpers.showConfirmModal({
+                title: "De-authenticate this Application",
+                bodyHtml: "<p>Are you sure you want to de-authenticate this application? All existing access tokens will be invalidated and removed from storage. This app will no longer appear in your authorized applications list. You will no longer be able to use any existing access tokens and will need to reauthenticate to continue use.</p><p><b>Note:</b> All of your actions will be retained and associated to your user id even after de-authenticating. You may resume access at any time by authorising the application again.</p>",
+                buttonLabel: "De-authenticate"
+            }).then((confirm => {
+                if (confirm) {
+                    fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
+                        if (200 === res.status) {
+                            GM_deleteValue(seApiToken);
+                            GM_deleteValue(accessToken);
+                            window.location.reload();
+                        }
+                    }));
+                }
+            }));
+        }));
+        return deAuthoriseButton;
+    }
+    function buildNukeConfigControls() {
+        registerNukeConfigSettingsController();
+        return $("<div></div>").append('<h3 class="fs-title mb12">Edit base options for nuking posts</h3>').append('<form class="d-flex fd-column g12" data-controller="socm-nuke-config-settings" data-action="submit->socm-nuke-config-settings#handleSaveConfig reset->socm-nuke-config-settings#handleResetConfig"><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-flag" data-socm-nuke-config-settings-target="nuke-config-should-flag" /><label class="s-label" for="socm-nuke-config-should-flag">Should Flag</label></div><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-comment" data-socm-nuke-config-settings-target="nuke-config-should-comment" /><label class="s-label" for="socm-nuke-config-should-comment">Should Comment</label></div><div class="s-check-control"><input class="s-checkbox" type="checkbox" id="socm-nuke-config-should-log" data-socm-nuke-config-settings-target="nuke-config-should-log" /><label class="s-label" for="socm-nuke-config-should-log">Should Log</label></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="10" data-se-char-counter-max="500"><label class="s-label flex--item" for="socm-nuke-config-flag-template">Flag Detail Text Template:</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-config-flag-template" name="flag detail template" rows="5" data-socm-nuke-config-settings-target="nuke-config-flag-template"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex ff-column-nowrap gs4 gsy" data-controller="se-char-counter" data-se-char-counter-min="15" data-se-char-counter-max="600"><label class="s-label flex--item" for="socm-nuke-config-comment-template">Comment Text Template:</label><textarea class="flex--item s-textarea" data-se-char-counter-target="field" data-is-valid-length="false" id="socm-nuke-config-comment-template" name="comment template" rows="5" data-socm-nuke-config-settings-target="nuke-config-comment-template"></textarea><div data-se-char-counter-target="output"></div></div><div class="d-flex fd-row g8"><button class="s-btn s-btn__primary" type="submit">Save Config</button><button class="s-btn s-btn__muted" type="reset">Reset To Default</button></div></form>');
+    }
+    function registerNukeConfigSettingsController() {
+        Stacks.addController("socm-nuke-config-settings", {
+            targets: [ "nuke-config-should-flag", "nuke-config-should-comment", "nuke-config-should-log", "nuke-config-flag-template", "nuke-config-comment-template" ],
+            get shouldFlag() {
+                return this["nuke-config-should-flagTarget"].checked;
+            },
+            get shouldComment() {
+                return this["nuke-config-should-commentTarget"].checked;
+            },
+            get shouldLog() {
+                return this["nuke-config-should-logTarget"].checked;
+            },
+            get commentTemplate() {
+                return this["nuke-config-comment-templateTarget"].value ?? "";
+            },
+            get flagTemplate() {
+                return this["nuke-config-flag-templateTarget"].value ?? "";
+            },
+            setValues(config) {
+                this["nuke-config-should-flagTarget"].checked = config.flag;
+                this["nuke-config-should-commentTarget"].checked = config.comment;
+                this["nuke-config-should-logTarget"].checked = config.log;
+                this["nuke-config-flag-templateTarget"].value = config.flagDetailText ?? "";
+                this["nuke-config-comment-templateTarget"].value = config.commentText ?? "";
+            },
+            connect() {
+                const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
+                this.setValues(nukePostConfig);
+            },
+            handleSaveConfig(ev) {
+                ev.preventDefault();
+                try {
+                    const newConfig = {
+                        flagDetailText: this.flagTemplate,
+                        commentText: this.commentTemplate,
+                        flag: this.shouldFlag,
+                        comment: this.shouldComment,
+                        log: this.shouldLog
+                    };
+                    GM_setValue(nukePostOptions, JSON.stringify(newConfig));
+                    StackExchange.helpers.showToast("Config updated successfully!", {
+                        type: "success",
+                        transientTimeout: 3e3
+                    });
+                } catch (e) {
+                    StackExchange.helpers.showToast(getMessageFromCaughtElement(e), {
+                        type: "danger",
+                        transientTimeout: 5e3
+                    });
+                }
+            },
+            handleResetConfig(ev) {
+                ev.preventDefault();
+                const defaultConfig = JSON.parse(nukePostDefaultConfigString);
+                this.setValues(defaultConfig);
+            }
+        });
+    }
+    function buildUserScriptSettingsPanel() {
+        const container = $('<div class="s-page-title mb24"><h1 class="s-page-title--header m0 baw0 p0">Case Manager UserScript Settings</h1></div>');
+        const toolGrid = $('<div class="d-grid grid__2 md:grid__1 g32"></div>');
+        toolGrid.append(buildExistingTokensControls());
+        toolGrid.append(buildTokenIssuer());
+        if (GM_getValue(roleIdToken) <= 3 && StackExchange.options.user.isModerator) {
+            toolGrid.append(buildNukeConfigControls());
+        }
+        toolGrid.append(buildAuthRoleDetails());
+        return $(document.createDocumentFragment()).append(container).append(toolGrid);
+    }
+    function buildUserScriptSettingsNav() {
+        addSettingsNavLink();
+        if (window.location.search.startsWith("?tab=case-manager-settings")) {
+            buildAndAttachSettingsPanel();
+        }
+    }
+    function addSettingsNavLink() {
+        $(".user-show-new .s-navigation:eq(0)").append($('<a href="/users/current?tab=case-manager-settings" class="s-navigation--item">Case Manager Settings</a>'));
+    }
+    function buildAndAttachSettingsPanel() {
+        $("#mainbar-full").empty().append(buildUserScriptSettingsPanel());
     }
     function buildUserTile(account_id, profile_image, display_name, number_of_plagiarised_posts, current_state, event_date) {
         const link = `/users/${account_id}?tab=case-manager`;
@@ -1398,12 +1427,15 @@
         }
     }
     function buildPlagiaristTab() {
+        if (GM_getValue(roleIdToken) > 2) {
+            return;
+        }
         $(".js-filter-btn").append($('<a class="js-sort-preference-change flex--item s-btn s-btn__muted s-btn__outlined" href="/users?tab=case" data-nav-xhref="" title="Users who have been or are currently under investigation" data-value="plagiarist" data-shortcut="">Plagiarists</a>'));
         if (window.location.search.startsWith("?tab=case")) {
             (new CasesUserList).init();
         }
     }
-    function UserScript() {
+    async function UserScript() {
         if (null === GM_getValue(accessToken, null)) {
             buildClientSideAuthModal();
             return;
