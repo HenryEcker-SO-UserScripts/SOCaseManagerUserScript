@@ -1,3 +1,5 @@
+import reducerControllerSpecs from './TextareaSizeReducerController';
+
 export function buildTextInput(labelText: string, inputId: string, name: string, dataController: string, dataTarget: string) {
     return `
 <div class="d-flex ff-column-nowrap gs4 gsy">
@@ -34,7 +36,8 @@ export function buildTextarea(
     textareaId: string | number, textareaName: string, rows: string | number,
     dataController: string, dataTarget: string,
     labelText: string,
-    vB: { min: number; max: number; }
+    vB: { min: number; max: number; },
+    shouldAddReducer = true
 ) {
     return `
 <div class="d-flex ff-column-nowrap gs4 gsy" 
@@ -48,7 +51,11 @@ export function buildTextarea(
                id="${textareaId}" 
                name="${textareaName}" 
                rows="${rows}" 
-               data-${dataController}-target="${dataTarget}"></textarea>
+               data-${dataController}-target="${dataTarget}"
+               ${shouldAddReducer ?
+        `data-${reducerControllerSpecs.CONTROLLER}-target="${reducerControllerSpecs.TARGET}"
+         data-action="${reducerControllerSpecs.CONTROLLER}#${reducerControllerSpecs.ACTION}"` :
+        ''}></textarea>
      <div data-se-char-counter-target="output"></div>
 </div>`;
 }
