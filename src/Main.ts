@@ -5,7 +5,7 @@ import {buildProfilePage} from './Components/UserProfile/UserProfileMain';
 import {buildUserScriptSettingsNav} from './Components/UserScriptControls/UserScriptControlsMain';
 import {buildPlagiaristTab} from './Components/UserSearch/UserSearchMain';
 
-async function UserScript() {
+function UserScript() {
     // API TOKEN IS REQUIRED
     if (GM_getValue(accessToken, null) === null) {
         buildClientSideAuthModal();
@@ -24,5 +24,5 @@ async function UserScript() {
 }
 
 StackExchange.ready(() => {
-    void UserScript();
+    UserScript();
 });

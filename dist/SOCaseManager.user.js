@@ -1436,7 +1436,7 @@
             (new CasesUserList).init();
         }
     }
-    async function UserScript() {
+    function UserScript() {
         if (null === GM_getValue(accessToken, null)) {
             buildClientSideAuthModal();
             return;
