@@ -231,17 +231,17 @@ async function handlePlagiarisedPost(
     if (shouldLogWithAws) {
         const body: {
             postOwnerId?: number;
-            actionIds?: number[];
+            feedbackIds?: number[];
         } = {};
         if (ownerId !== -1) {
             body['postOwnerId'] = ownerId;
         }
 
-        const actions = [FeedbackIds.Plagiarised];
+        const feedbacks = [FeedbackIds.Plagiarised];
         if (shouldDeletePost) {
-            actions.push(FeedbackIds.Deleted);
+            feedbacks.push(FeedbackIds.Deleted);
         }
-        body['actionIds'] = actions;
+        body['feedbackIds'] = feedbacks;
         await void fetchFromAWS(`/handle/post/${answerId}`, {
             'method': 'POST',
             headers: {
