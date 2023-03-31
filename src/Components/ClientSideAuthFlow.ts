@@ -31,7 +31,7 @@ function buildModal(authModalId: string) {
         );
 }
 
-function getAccessTokenInputId(authModalId: string){
+function getAccessTokenInputId(authModalId: string) {
     return `${authModalId}-input`;
 }
 
@@ -49,9 +49,10 @@ function buildFormControlButtons(authModalId: string) {
         const inputValue = $(`#${getAccessTokenInputId(authModalId)}`).val() as string | undefined;
         if (inputValue !== undefined && inputValue.length > 0) {
             GM_setValue(seApiToken, inputValue);
-            void requestNewJwt().then(() => {
-                window.location.reload(); // refresh page to enable
-            });
+            void requestNewJwt()
+                .then(() => {
+                    window.location.reload(); // refresh page to enable
+                });
         }
     });
     return $('<div class="d-flex g8 gsx s-modal--footer"></div>')

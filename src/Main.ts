@@ -1,11 +1,11 @@
-import {buildClientSideAuthModal} from './Components/ClientSideAuthFlow';
 import {accessToken} from './API/gmAPI';
+import {buildClientSideAuthModal} from './Components/ClientSideAuthFlow';
 import {buildAnswerControlPanel} from './Components/PostControlPanel/PostControlPanelMain';
-import {buildUserScriptSettingsNav} from './Components/UserScriptControls/UserScriptControlsMain';
 import {buildProfilePage} from './Components/UserProfile/UserProfileMain';
+import {buildUserScriptSettingsNav} from './Components/UserScriptControls/UserScriptControlsMain';
 import {buildPlagiaristTab} from './Components/UserSearch/UserSearchMain';
 
-function UserScript() {
+async function UserScript() {
     // API TOKEN IS REQUIRED
     if (GM_getValue(accessToken, null) === null) {
         buildClientSideAuthModal();
@@ -24,5 +24,5 @@ function UserScript() {
 }
 
 StackExchange.ready(() => {
-    UserScript();
+    void UserScript();
 });

@@ -1,5 +1,7 @@
-import {buildExistingTokensControls} from './SettingControls/ExistingAuthTokenManager';
+import {roleIdToken} from '../../API/gmAPI';
+import {buildAuthRoleDetails} from './SettingControls/AuthRoleInformation';
 import {buildTokenIssuer} from './SettingControls/AuthTokenIssuer';
+import {buildExistingTokensControls} from './SettingControls/ExistingAuthTokenManager';
 import {buildNukeConfigControls} from './SettingControls/NukeDefaultConfigControls';
 
 
@@ -9,9 +11,10 @@ export function buildUserScriptSettingsPanel() {
 
     toolGrid.append(buildExistingTokensControls());
     toolGrid.append(buildTokenIssuer());
-    if (StackExchange.options.user.isModerator) {
+    if (GM_getValue<number>(roleIdToken) <= RoleIds.Investigator && StackExchange.options.user.isModerator) {
         toolGrid.append(buildNukeConfigControls());
     }
+    toolGrid.append(buildAuthRoleDetails());
 
     return $(document.createDocumentFragment())
         .append(container)

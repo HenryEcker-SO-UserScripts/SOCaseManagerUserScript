@@ -32,6 +32,12 @@ declare const FeedbackIds: {
     Deleted: number;
 };
 
+declare const RoleIds: {
+    Admin: number;
+    CaseManager: number;
+    Investigator: number;
+};
+
 // Pre Built HTML Components
 declare const HANDLE_POST: {
     MOD_FORM: string;

@@ -1,10 +1,14 @@
 import {fetchFromAWS} from '../../API/AWSAPI';
+import {roleIdToken} from '../../API/gmAPI';
 import {buildAlertSvg} from '../../Utils/SVGBuilders';
 import {buildAndAttachCaseManagerControlPanel} from './CaseManager';
 import {buildAnswerSummaryIndicator, buildFlagSummaryIndicator} from './PostActionSummaryIcons';
 
 
 export function buildProfilePage() {
+    if (GM_getValue<number>(roleIdToken) > RoleIds.Investigator) {
+        return;
+    }
     if (
         window.location.pathname.match(/^\/users\/flagged-posts\/.*/) !== null ||
         window.location.pathname.match(/^\/users\/flag-summary\/.*/) !== null

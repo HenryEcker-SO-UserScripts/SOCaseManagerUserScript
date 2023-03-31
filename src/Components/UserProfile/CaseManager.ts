@@ -6,9 +6,10 @@ import {
     type CaseSummaryPostSummary,
     fetchFromAWS
 } from '../../API/AWSAPI';
+import {roleIdToken} from '../../API/gmAPI';
 import {fetchFromSEAPI, type SEAPIResponse} from '../../API/SEAPI';
-import {buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 import {toStackExchangeDateFormat} from '../../Utils/DateFormatter';
+import {buildCheckmarkSvg} from '../../Utils/SVGBuilders';
 
 
 export function buildAndAttachCaseManagerControlPanel(userId: number) {
@@ -34,6 +35,7 @@ function buildSummaryTableFilterOption(text: string, value: FilterType, activeVa
 export class CaseManagerControlPanel {
     private readonly container: JQuery;
     private readonly userId: number;
+    private readonly systemUserRoleId: number;
     private currentPage: Page;
     private readonly pageLoadMap: {
         summary: { isLoaded: boolean; pageData?: CaseSummaryPageResponse; };
@@ -42,6 +44,7 @@ export class CaseManagerControlPanel {
     private postSummaryColumnFilter: ColumnFilterConfig;
 
     constructor(userId: number) {
+        this.systemUserRoleId = GM_getValue<number>(roleIdToken);
         this.userId = userId;
         this.container = $('<div class="d-flex mb48"></div>');
         this.currentPage = 'summary';
@@ -124,9 +127,14 @@ export class CaseManagerControlPanel {
         const summaryPageData: CaseSummaryPageResponse = await this.getSummaryPageData();
         const summaryPane = $('<div class="d-grid grid__2 md:grid__1 g8"></div>');
 
-        summaryPane.append(buildCaseManagerPane(this.userId, summaryPageData['hasOpenCase']));
+        if (this.systemUserRoleId <= RoleIds.CaseManager) {
+            summaryPane.append(buildCaseManagerPane(this.userId, summaryPageData['hasOpenCase']));
+        }
         summaryPane.append(buildActionsSummaryPane(summaryPageData['postSummary']));
-        if (summaryPageData['caseTimeline'].length > 0) {
+        if (
+            this.systemUserRoleId <= RoleIds.CaseManager &&
+            summaryPageData['caseTimeline'].length > 0
+        ) {
             summaryPane.append(buildCaseHistoryPane(summaryPageData['caseTimeline']));
         }
 

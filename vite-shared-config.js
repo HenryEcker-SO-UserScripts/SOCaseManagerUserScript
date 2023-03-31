@@ -38,6 +38,11 @@ const defObj = {
         Suspicious: 5,
         Deleted: 4
     },
+    RoleIds: {
+        Admin: 1,
+        CaseManager: 2,
+        Investigator: 3
+    },
     HANDLE_POST: handlePostFormComponents,
     SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
