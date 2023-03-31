@@ -61,7 +61,7 @@ function buildHandleForm(modalText: string, fields: string[], submitHandleAction
        data-s-modal-target="modal">
     <div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" 
          role="document" 
-         data-controller="${data.controller} se-draggable">
+         data-controller="${data.controller} se-draggable socm-absolute-link-reducer">
         <h1 class="s-modal--header c-move" data-se-draggable-target="handle">${modalText}</h1>
         <div class="s-modal--body" style="margin-bottom: 0;">
             <div class="d-flex fd-column g8">${fields.join(modalDivider)}</div>
