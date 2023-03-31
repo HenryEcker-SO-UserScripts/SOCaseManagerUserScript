@@ -1,4 +1,4 @@
-import {accessToken, seApiToken} from './gmAPI';
+import {accessToken, roleIdToken, seApiToken} from './gmAPI';
 
 export type CaseSummaryPostSummary = {
     action_taken: string;
@@ -74,10 +74,19 @@ export function requestNewJwt() {
         .then(resData => {
             GM_setValue(accessToken, resData['cm_access_token']);
         })
+        .then(requestMyRoleId)
         .catch(err => {
             // Remove current access token on error (maybe not great)
             GM_deleteValue(accessToken);
             console.error(err);
+        });
+}
+
+export function requestMyRoleId(): Promise<void> {
+    return fetchFromAWS('/auth/credentials/my-role')
+        .then(res => res.json())
+        .then(resData => {
+            GM_setValue(roleIdToken, resData['role_id']);
         });
 }
 

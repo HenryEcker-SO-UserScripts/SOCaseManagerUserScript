@@ -1,6 +1,10 @@
+import {roleIdToken} from '../../API/gmAPI';
 import {CasesUserList} from './CaseSearchResults';
 
 export function buildPlagiaristTab() {
+    if (GM_getValue<number>(roleIdToken) > RoleIds.CaseManager) {
+        return;
+    }
     // User Filter Buttons
     $('.js-filter-btn')
         .append(

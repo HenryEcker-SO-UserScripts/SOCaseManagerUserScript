@@ -1,4 +1,5 @@
 import {getSummaryPostInfoFromIds} from '../../API/AWSAPI';
+import {roleIdToken} from '../../API/gmAPI';
 import {
     buildHandlePostButton,
     registerModHandlePostStacksController,
@@ -9,6 +10,9 @@ import {activateTimelineButton, buildBaseTimelineButtons} from './PostTimeline';
 
 
 export function buildAnswerControlPanel() {
+    if (GM_getValue<number>(roleIdToken) > RoleIds.Investigator) {
+        return;
+    }
     const answers = $('div.answer');
     const answerIds = answers.map((i, e) => getAnswerIdFromAnswerDiv(e)).toArray();
     const isModerator = StackExchange.options.user.isModerator === true;
@@ -33,7 +37,12 @@ function getAnswerIdFromAnswerDiv(answerDiv: HTMLElement): number {
 }
 
 
-function* extractFromAnswerDivs(answers: JQuery, answerIds: number[]): Generator<{ jAnswer: JQuery; isDeleted: boolean; answerId: number; postOwnerId: number; }> {
+function* extractFromAnswerDivs(answers: JQuery, answerIds: number[]): Generator<{
+    jAnswer: JQuery;
+    isDeleted: boolean;
+    answerId: number;
+    postOwnerId: number;
+}> {
     for (let i = 0; i < answers.length; i++) {
         const jAnswer = $(answers[i]);
         const isDeleted = jAnswer.hasClass('deleted-answer');
