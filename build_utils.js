@@ -1,4 +1,4 @@
-const userscriptInfo = require('./package.json');
+import userscriptInfo from './package.json';
 
 
 module.exports = {
@@ -29,7 +29,8 @@ module.exports = {
                 '*://stackoverflow.com/users/mylogins/*',
                 '*://stackoverflow.com/users/apps/*',
                 '*://stackoverflow.com/users/message/*',
-                '*://stackoverflow.com/users/saves/*'
+                '*://stackoverflow.com/users/saves/*',
+                '*://stackoverflow.com/questions/ask*',
             ],
             'grant': ['GM_getValue', 'GM_setValue', 'GM_deleteValue']
         };
