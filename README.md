@@ -4,6 +4,8 @@ A UserScript to help organise and coordinate plagiarism investigations on Stack 
 
 Requires `GM_getValue`, `GM_setValue`, and `GM_deleteValue` to store access_tokens.
 
+[![Click to install UserScript](https://img.shields.io/badge/install-UserScript-brightgreen)](https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js)
+
 ## Review Posts
 
 On all posts (excepting those you authored) there is a control panel.
