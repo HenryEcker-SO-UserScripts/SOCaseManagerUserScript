@@ -49,7 +49,6 @@ export function registerAbsoluteLinkReducer() {
     Stacks.addController(
         TEXTAREA_SIZE_REDUCER.CONTROLLER,
         {
-            target: [TEXTAREA_SIZE_REDUCER.TARGET],
             [TEXTAREA_SIZE_REDUCER.ACTION](ev: ActionEvent) {
                 const textarea = <HTMLTextAreaElement>ev.target;
                 const [reducedText, selectionStart] = patternReducer(shortestRelativeLinkReducer, textarea.value, textarea.selectionStart);
