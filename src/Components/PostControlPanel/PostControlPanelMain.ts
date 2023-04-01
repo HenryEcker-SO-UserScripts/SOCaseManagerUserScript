@@ -1,6 +1,5 @@
 import {getSummaryPostInfoFromIds} from '../../API/AWSAPI';
 import {roleIdToken} from '../../API/gmAPI';
-import {registerAbsoluteLinkReducer} from '../../Utils/TextareaReducer';
 import {
     buildHandlePostButton,
     registerModHandlePostStacksController,
@@ -30,7 +29,6 @@ export function buildAnswerControlPanel() {
     } else {
         registerNonModHandlePostStacksController();
     }
-    registerAbsoluteLinkReducer();
     delayPullSummaryPostInfo(answerIds);
 }
 

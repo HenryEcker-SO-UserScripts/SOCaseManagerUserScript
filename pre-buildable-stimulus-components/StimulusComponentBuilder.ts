@@ -1,5 +1,3 @@
-import reducerControllerSpecs from './TextareaSizeReducerController';
-
 export function buildTextInput(labelText: string, inputId: string, name: string, dataController: string, dataTarget: string) {
     return `
 <div class="d-flex ff-column-nowrap gs4 gsy">
@@ -37,7 +35,7 @@ export function buildTextarea(
     dataController: string, dataTarget: string,
     labelText: string,
     vB: { min: number; max: number; },
-    shouldAddReducer = true
+    shouldAddReducer = true // controller registered supported through external script
 ) {
     return `
 <div class="d-flex ff-column-nowrap gs4 gsy" 
@@ -52,7 +50,7 @@ export function buildTextarea(
                name="${textareaName}" 
                rows="${rows}" 
                data-${dataController}-target="${dataTarget}"
-               ${shouldAddReducer ? `data-action="${reducerControllerSpecs.CONTROLLER}#${reducerControllerSpecs.ACTION}"` : ''}
+               ${shouldAddReducer ? 'data-action="uhtr-size-reducer#handleReduceAction"' : ''}
                ></textarea>
      <div data-se-char-counter-target="output"></div>
 </div>`;
