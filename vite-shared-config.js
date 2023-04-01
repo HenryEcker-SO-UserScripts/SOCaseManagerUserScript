@@ -4,7 +4,6 @@ import path from 'path';
 import filterReplace from 'vite-plugin-filter-replace';
 import handlePostFormComponents from './pre-buildable-stimulus-components/HandlePostFormComponents';
 import nukePostSaveComponents from './pre-buildable-stimulus-components/NukePostSaveConfigComponents';
-import reducerControllerSpecs from './pre-buildable-stimulus-components/TextareaSizeReducerController';
 
 // Defined variables
 export const awsApiRoute = 'https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod';
@@ -45,8 +44,7 @@ const defObj = {
         Investigator: 3
     },
     HANDLE_POST: handlePostFormComponents,
-    SAVE_NUKE_CONFIG: nukePostSaveComponents,
-    TEXTAREA_SIZE_REDUCER: reducerControllerSpecs
+    SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
 
 export default (fileName) => {
