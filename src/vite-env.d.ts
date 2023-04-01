@@ -77,7 +77,6 @@ declare const SAVE_NUKE_CONFIG: {
 
 declare const TEXTAREA_SIZE_REDUCER: {
     CONTROLLER: string;
-    TARGET: string;
     ACTION: string;
 };
 

@@ -52,10 +52,8 @@ export function buildTextarea(
                name="${textareaName}" 
                rows="${rows}" 
                data-${dataController}-target="${dataTarget}"
-               ${shouldAddReducer ?
-        `data-${reducerControllerSpecs.CONTROLLER}-target="${reducerControllerSpecs.TARGET}"
-         data-action="${reducerControllerSpecs.CONTROLLER}#${reducerControllerSpecs.ACTION}"` :
-        ''}></textarea>
+               ${shouldAddReducer ? `data-action="${reducerControllerSpecs.CONTROLLER}#${reducerControllerSpecs.ACTION}"` : ''}
+               ></textarea>
      <div data-se-char-counter-target="output"></div>
 </div>`;
 }
