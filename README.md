@@ -227,6 +227,14 @@ posts.
 
 <a href="./readme-images/ModOnly/edit-nuke-post-default-settings.png"><img src="./readme-images/ModOnly/edit-nuke-post-default-settings.png" width="450px"></a>
 
+---
+
+## Compatible Extras
+
+This UserScript is compatible with [Textarea Reducer Stacks Controller](https://github.com/HenryEcker/SO-UserScripts/blob/main/RegisterTextareaReducer.user.js) ([install](https://github.com/HenryEcker/SO-UserScripts/raw/main/RegisterTextareaReducer.user.js)). This is an optional add-on which will
+replace text as you type to minimise the number of characters in the textarea. Some examples of supported 
+reductions are converting the
+full answer URL to `/a/{answerId}` and converting comment URLs to `/posts/comments/{commentId}`.
 
 [settings page]: https://stackoverflow.com/users/current?tab=case-manager-settings
 
