@@ -1,7 +1,3 @@
-import {
-    commentTextLengthBounds,
-    plagiarismFlagLengthBounds
-} from 'se-ts-userscript-utilities/cjs/Validators/TextLengthValidators';
 import {buildCheckbox, buildTextarea} from './StimulusComponentBuilder';
 import {cleanWhitespace} from './StimulusPackageUtils';
 
@@ -39,16 +35,14 @@ const nukeConfigSaveForm = `
     ${buildTextarea(
     ids.flagDetailTemplateTextarea, 'flag detail template', 5,
     data.controller, data.target.flagDetailTemplateTextarea,
-    'Flag Detail Text Template:',
-    plagiarismFlagLengthBounds.explanation
+    'Flag Detail Text Template:'
 )}
     ${buildTextarea(
     ids.commentTemplateTextarea,
     'comment template',
     5,
     data.controller, data.target.commentTemplateTextarea,
-    'Comment Text Template:',
-    commentTextLengthBounds
+    'Comment Text Template:'
 )}
     <div class="d-flex fd-row g8">
         <button class="s-btn s-btn__primary" type="submit">Save Config</button>
