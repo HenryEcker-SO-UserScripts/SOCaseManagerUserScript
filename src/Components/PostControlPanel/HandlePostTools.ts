@@ -5,7 +5,9 @@ import {deleteAsPlagiarism} from 'se-ts-userscript-utilities/Moderators/HandleFl
 import {removeModalFromDOM} from 'se-ts-userscript-utilities/StacksHelpers/StacksModal';
 import {
     assertValidCommentTextLength,
-    assertValidPlagiarismFlagTextLengths
+    assertValidPlagiarismFlagTextLengths,
+    plagiarismFlagLengthBounds,
+    commentTextLengthBounds
 } from 'se-ts-userscript-utilities/Validators/TextLengthValidators';
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
@@ -82,8 +84,21 @@ export function registerModHandlePostStacksController() {
                     $(this[HANDLE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
                 }
 
-                this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value = nukePostConfig.flagDetailText ?? '';
-                this[HANDLE_POST.COMMENT_TEXT_TARGET].value = nukePostConfig.commentText ?? '';
+                const flagTa = $(this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET]);
+                flagTa
+                    .val(nukePostConfig.flagDetailText ?? '')
+                    .charCounter({
+                        ...plagiarismFlagLengthBounds.explanation,
+                        target: flagTa.parent().find('span.text-counter')
+                    });
+
+                const commentTa = $(this[HANDLE_POST.COMMENT_TEXT_TARGET]);
+                commentTa
+                    .val(nukePostConfig.commentText ?? '')
+                    .charCounter({
+                        ...commentTextLengthBounds,
+                        target: commentTa.parent().find('span.text-counter')
+                    });
             },
             async [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
                 await submitHandlerTemplate(
@@ -136,6 +151,11 @@ export function registerNonModHandlePostStacksController() {
                 return this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
             },
             connect() {
+                const flagTa = $(this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET]);
+                flagTa.charCounter({
+                    ...plagiarismFlagLengthBounds.explanation,
+                    target: flagTa.parent().find('span.text-counter')
+                });
                 this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             },
             async [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {

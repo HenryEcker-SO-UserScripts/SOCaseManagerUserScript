@@ -31,20 +31,16 @@ export function buildToggle(labelText: string, inputId: string, dataController: 
 }
 
 export function buildTextarea(
-    textareaId: string | number, textareaName: string, rows: string | number,
+    textareaId: string | number,
+    textareaName: string, rows: string | number,
     dataController: string, dataTarget: string,
     labelText: string,
-    vB: { min: number; max: number; },
     shouldAddReducer = true // controller registered supported through external script
 ) {
     return `
-<div class="d-flex ff-column-nowrap gs4 gsy" 
-     data-controller="se-char-counter"
-     data-se-char-counter-min="${vB.min}"
-     data-se-char-counter-max="${vB.max}">
+<div class="d-flex ff-column-nowrap gs4 gsy">
      <label class="s-label flex--item" for="${textareaId}">${labelText}</label>
      <textarea class="flex--item s-textarea" 
-               data-se-char-counter-target="field" 
                data-is-valid-length="false" 
                id="${textareaId}" 
                name="${textareaName}" 
@@ -52,6 +48,6 @@ export function buildTextarea(
                data-${dataController}-target="${dataTarget}"
                ${shouldAddReducer ? 'data-action="uhtr-size-reducer#handleReduceAction"' : ''}
                ></textarea>
-     <div data-se-char-counter-target="output"></div>
+     <span class="text-counter"></span>
 </div>`;
 }
