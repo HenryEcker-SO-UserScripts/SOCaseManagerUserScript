@@ -5,6 +5,7 @@ import {
 } from 'se-ts-userscript-utilities/Validators/TextLengthValidators';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
 import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
+import {configureCharCounter} from '../../../Utils/StacksCharCounter';
 
 export function buildNukeConfigControls(): JQuery {
     registerNukeConfigSettingsController();
@@ -36,21 +37,17 @@ function registerNukeConfigSettingsController() {
             this[SAVE_NUKE_CONFIG.SHOULD_COMMENT_TARGET].checked = config.comment;
             this[SAVE_NUKE_CONFIG.SHOULD_LOG_TARGET].checked = config.log;
 
-            const flagTa = $(this[SAVE_NUKE_CONFIG.FLAG_DETAIL_TARGET]);
-            flagTa
-                .val(config.flagDetailText ?? '')
-                .charCounter({
-                    ...plagiarismFlagLengthBounds.explanation,
-                    target: flagTa.parent().find('span.text-counter')
-                });
+            configureCharCounter(
+                $(this[SAVE_NUKE_CONFIG.FLAG_DETAIL_TARGET]),
+                config.flagDetailText ?? '',
+                plagiarismFlagLengthBounds.explanation
+            );
 
-            const commentTa = $(this[SAVE_NUKE_CONFIG.COMMENT_TARGET]);
-            commentTa
-                .val(config.commentText ?? '')
-                .charCounter({
-                    ...commentTextLengthBounds,
-                    target: commentTa.parent().find('span.text-counter')
-                });
+            configureCharCounter(
+                $(this[SAVE_NUKE_CONFIG.COMMENT_TARGET]),
+                config.commentText ?? '',
+                commentTextLengthBounds
+            );
         },
         connect() {
             const nukePostConfig: CmNukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));

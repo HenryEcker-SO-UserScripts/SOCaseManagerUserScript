@@ -12,6 +12,7 @@ import {
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {getMessageFromCaughtElement} from '../../Utils/ErrorHandlingHelpers';
+import {configureCharCounter} from '../../Utils/StacksCharCounter';
 
 function getModalId(postId: number) {
     return HANDLE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
@@ -83,22 +84,17 @@ export function registerModHandlePostStacksController() {
                 if (!nukePostConfig.comment) {
                     $(this[HANDLE_POST.COMMENT_CONTROL_FIELDS_TARGET]).addClass('d-none');
                 }
+                configureCharCounter(
+                    $(this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET]),
+                    nukePostConfig.flagDetailText ?? '',
+                    plagiarismFlagLengthBounds.explanation
+                );
 
-                const flagTa = $(this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET]);
-                flagTa
-                    .val(nukePostConfig.flagDetailText ?? '')
-                    .charCounter({
-                        ...plagiarismFlagLengthBounds.explanation,
-                        target: flagTa.parent().find('span.text-counter')
-                    });
-
-                const commentTa = $(this[HANDLE_POST.COMMENT_TEXT_TARGET]);
-                commentTa
-                    .val(nukePostConfig.commentText ?? '')
-                    .charCounter({
-                        ...commentTextLengthBounds,
-                        target: commentTa.parent().find('span.text-counter')
-                    });
+                configureCharCounter(
+                    $(this[HANDLE_POST.COMMENT_TEXT_TARGET]),
+                    nukePostConfig.commentText ?? '',
+                    commentTextLengthBounds
+                );
             },
             async [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
                 await submitHandlerTemplate(
@@ -151,11 +147,11 @@ export function registerNonModHandlePostStacksController() {
                 return this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET].value ?? '';
             },
             connect() {
-                const flagTa = $(this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET]);
-                flagTa.charCounter({
-                    ...plagiarismFlagLengthBounds.explanation,
-                    target: flagTa.parent().find('span.text-counter')
-                });
+                configureCharCounter(
+                    $(this[HANDLE_POST.FLAG_DETAIL_TEXT_TARGET]),
+                    '',
+                    plagiarismFlagLengthBounds.explanation
+                );
                 this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             },
             async [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
