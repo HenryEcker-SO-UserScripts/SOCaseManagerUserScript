@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.8
+// @version     0.5.9
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -223,6 +223,12 @@
             return "Something went wrong!";
         }
     }
+    function configureCharCounter(jTextarea, populateText, bounds) {
+        jTextarea.val(populateText).charCounter({
+            ...bounds,
+            target: jTextarea.parent().find("span.text-counter")
+        }).trigger("charCounterUpdate");
+    }
     function getModalId(postId) {
         return "socm-handle-post-form-{postId}".formatUnicorn({
             postId: postId
@@ -283,16 +289,8 @@
                 if (!nukePostConfig.comment) {
                     $(this["comment-info-areaTarget"]).addClass("d-none");
                 }
-                const flagTa = $(this["flag-detail-areaTarget"]);
-                flagTa.val(nukePostConfig.flagDetailText ?? "").charCounter({
-                    ...plagiarismFlagLengthBounds.explanation,
-                    target: flagTa.parent().find("span.text-counter")
-                });
-                const commentTa = $(this["comment-areaTarget"]);
-                commentTa.val(nukePostConfig.commentText ?? "").charCounter({
-                    ...commentTextLengthBounds,
-                    target: commentTa.parent().find("span.text-counter")
-                });
+                configureCharCounter($(this["flag-detail-areaTarget"]), nukePostConfig.flagDetailText ?? "", plagiarismFlagLengthBounds.explanation);
+                configureCharCounter($(this["comment-areaTarget"]), nukePostConfig.commentText ?? "", commentTextLengthBounds);
             },
             async handleNukeSubmitActions(ev) {
                 await submitHandlerTemplate(ev, $(this["submit-buttonTarget"]), (async (postOwner, postId) => {
@@ -328,11 +326,7 @@
                 return this["flag-detail-areaTarget"].value ?? "";
             },
             connect() {
-                const flagTa = $(this["flag-detail-areaTarget"]);
-                flagTa.charCounter({
-                    ...plagiarismFlagLengthBounds.explanation,
-                    target: flagTa.parent().find("span.text-counter")
-                });
+                configureCharCounter($(this["flag-detail-areaTarget"]), "", plagiarismFlagLengthBounds.explanation);
                 this["log-enable-toggleTarget"].checked = true;
             },
             async handleFlagSubmitActions(ev) {
@@ -1187,16 +1181,8 @@
                 this["nuke-config-should-flagTarget"].checked = config.flag;
                 this["nuke-config-should-commentTarget"].checked = config.comment;
                 this["nuke-config-should-logTarget"].checked = config.log;
-                const flagTa = $(this["nuke-config-flag-templateTarget"]);
-                flagTa.val(config.flagDetailText ?? "").charCounter({
-                    ...plagiarismFlagLengthBounds.explanation,
-                    target: flagTa.parent().find("span.text-counter")
-                });
-                const commentTa = $(this["nuke-config-comment-templateTarget"]);
-                commentTa.val(config.commentText ?? "").charCounter({
-                    ...commentTextLengthBounds,
-                    target: commentTa.parent().find("span.text-counter")
-                });
+                configureCharCounter($(this["nuke-config-flag-templateTarget"]), config.flagDetailText ?? "", plagiarismFlagLengthBounds.explanation);
+                configureCharCounter($(this["nuke-config-comment-templateTarget"]), config.commentText ?? "", commentTextLengthBounds);
             },
             connect() {
                 const nukePostConfig = JSON.parse(GM_getValue(nukePostOptions, nukePostDefaultConfigString));
