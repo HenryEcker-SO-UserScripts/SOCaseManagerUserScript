@@ -1,16 +1,3 @@
-// Add StackExchange's Jquery Extension
-interface CharCounterOptions {
-    min: number;
-    max: number;
-    setIsValid?: (b: boolean) => void;
-    target?: JQuery | HTMLElement;
-    startAt?: number;
-}
-
-interface JQuery {
-    charCounter: (options: CharCounterOptions) => JQuery;
-}
-
 // Should match the "define:" section of vite-shared-config.js
 
 declare const tabIdentifiers: {

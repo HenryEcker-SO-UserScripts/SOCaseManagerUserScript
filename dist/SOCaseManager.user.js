@@ -223,11 +223,11 @@
             return "Something went wrong!";
         }
     }
-    function configureCharCounter(jTextarea, populateText, bounds) {
-        jTextarea.val(populateText).charCounter({
-            ...bounds,
-            target: jTextarea.parent().find("span.text-counter")
-        }).trigger("charCounterUpdate");
+    function configureCharCounter(jTextarea, populateText, charCounterOptions) {
+        if (void 0 === charCounterOptions.target) {
+            charCounterOptions.target = jTextarea.parent().find("span.text-counter");
+        }
+        jTextarea.val(populateText).charCounter(charCounterOptions).trigger("charCounterUpdate");
     }
     function getModalId(postId) {
         return "socm-handle-post-form-{postId}".formatUnicorn({

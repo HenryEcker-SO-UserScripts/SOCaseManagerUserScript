@@ -12,7 +12,7 @@ import {
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
 import {getMessageFromCaughtElement} from '../../Utils/ErrorHandlingHelpers';
-import {configureCharCounter} from '../../Utils/StacksCharCounter';
+import {configureCharCounter} from 'se-ts-userscript-utilities/StacksHelpers/StacksCharCounter';
 
 function getModalId(postId: number) {
     return HANDLE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
