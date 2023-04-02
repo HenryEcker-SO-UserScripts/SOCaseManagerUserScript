@@ -5,7 +5,7 @@ import {
 } from 'se-ts-userscript-utilities/Validators/TextLengthValidators';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
 import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
-import {configureCharCounter} from '../../../Utils/StacksCharCounter';
+import {configureCharCounter} from 'se-ts-userscript-utilities/StacksHelpers/StacksCharCounter';
 
 export function buildNukeConfigControls(): JQuery {
     registerNukeConfigSettingsController();
