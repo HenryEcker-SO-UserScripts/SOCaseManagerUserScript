@@ -2,17 +2,19 @@ import {type ActionEvent} from '@hotwired/stimulus';
 import {addComment} from 'se-ts-userscript-utilities/Comments/Comments';
 import {flagPlagiarizedContent} from 'se-ts-userscript-utilities/FlaggingAndVoting/PostFlags';
 import {deleteAsPlagiarism} from 'se-ts-userscript-utilities/Moderators/HandleFlags';
-import {removeModalFromDOM} from 'se-ts-userscript-utilities/StacksHelpers/StacksModal';
+import {configureCharCounter} from 'se-ts-userscript-utilities/StacksHelpers/StacksCharCounter';
+import {
+    disableSubmitButtonAndToastErrors,
+    removeModalFromDOM
+} from 'se-ts-userscript-utilities/StacksHelpers/StacksModal';
 import {
     assertValidCommentTextLength,
     assertValidPlagiarismFlagTextLengths,
-    plagiarismFlagLengthBounds,
-    commentTextLengthBounds
+    commentTextLengthBounds,
+    plagiarismFlagLengthBounds
 } from 'se-ts-userscript-utilities/Validators/TextLengthValidators';
 import {fetchFromAWS} from '../../API/AWSAPI';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../API/gmAPI';
-import {getMessageFromCaughtElement} from '../../Utils/ErrorHandlingHelpers';
-import {configureCharCounter} from 'se-ts-userscript-utilities/StacksHelpers/StacksCharCounter';
 
 function getModalId(postId: number) {
     return HANDLE_POST.FORM_MODAL_ID.formatUnicorn({postId: postId});
@@ -97,10 +99,11 @@ export function registerModHandlePostStacksController() {
                 );
             },
             async [HANDLE_POST.HANDLE_NUKE_SUBMIT](ev: ActionEvent) {
-                await submitHandlerTemplate(
-                    ev,
+                await disableSubmitButtonAndToastErrors(
                     $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]),
-                    async (postOwner: number, postId: number) => {
+                    async () => {
+                        ev.preventDefault();
+                        const {postOwner, postId} = ev.params;
                         await handlePlagiarisedPost(
                             postId,
                             postOwner,
@@ -155,10 +158,12 @@ export function registerNonModHandlePostStacksController() {
                 this[HANDLE_POST.ENABLE_LOG_TOGGLE_TARGET].checked = true;
             },
             async [HANDLE_POST.HANDLE_FLAG_SUBMIT](ev: ActionEvent) {
-                await submitHandlerTemplate(
-                    ev,
+                await disableSubmitButtonAndToastErrors(
                     $(this[HANDLE_POST.SUBMIT_BUTTON_TARGET]),
-                    async (postOwner: number, postId: number) => {
+                    async () => {
+                        ev.preventDefault();
+                        const {postOwner, postId} = ev.params;
+
                         const resolveMessage = await handlePlagiarisedPost(
                             postId,
                             postOwner,
@@ -186,24 +191,6 @@ export function registerNonModHandlePostStacksController() {
         }
     );
 }
-
-
-async function submitHandlerTemplate(ev: ActionEvent, jSubmitButton: JQuery, uniqueHandleActions: (postOwner: number, postId: number) => Promise<void>) {
-    ev.preventDefault();
-    jSubmitButton
-        .prop('disabled', true)
-        .addClass('is-loading');
-    const {postOwner, postId} = ev.params;
-    try {
-        await uniqueHandleActions(postOwner, postId);
-    } catch (error) {
-        StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {type: 'danger'});
-        jSubmitButton
-            .prop('disabled', false)
-            .removeClass('is-loading');
-    }
-}
-
 
 async function handlePlagiarisedPost(
     answerId: number, ownerId: number,

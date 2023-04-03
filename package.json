@@ -1,6 +1,6 @@
 {
   "name": "so-case-manager-userscript",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "author": "Henry Ecker (https://github.com/HenryEcker)",
   "description": "Help facilitate and track collaborative plagiarism cleanup efforts",
   "repository": {
@@ -28,7 +28,7 @@
     "@userscripters/stackexchange-global-types": "^2.6.1",
     "eslint": "^8.37.0",
     "js-beautify": "^1.14.7",
-    "se-ts-userscript-utilities": "github:HenryEcker/SE-TS-UserScript-Utilities#semver:1.1.5",
+    "se-ts-userscript-utilities": "github:HenryEcker/SE-TS-UserScript-Utilities#semver:1.1.6",
     "terser": "^5.16.8",
     "typescript": "^5.0.3",
     "vite": "^4.2.1",

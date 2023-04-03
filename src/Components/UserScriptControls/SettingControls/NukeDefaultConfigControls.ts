@@ -4,7 +4,7 @@ import {
     plagiarismFlagLengthBounds
 } from 'se-ts-userscript-utilities/Validators/TextLengthValidators';
 import {type CmNukePostConfig, nukePostDefaultConfigString, nukePostOptions} from '../../../API/gmAPI';
-import {getMessageFromCaughtElement} from '../../../Utils/ErrorHandlingHelpers';
+import {getMessageFromCaughtElement} from 'se-ts-userscript-utilities/Utilities/ErrorHandling';
 import {configureCharCounter} from 'se-ts-userscript-utilities/StacksHelpers/StacksCharCounter';
 
 export function buildNukeConfigControls(): JQuery {

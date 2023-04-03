@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.9
+// @version     0.5.10
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -169,6 +169,22 @@
             fkey: StackExchange.options.user.fkey
         });
     }
+    function configureCharCounter(jTextarea, populateText, charCounterOptions) {
+        if (void 0 === charCounterOptions.target) {
+            charCounterOptions.target = jTextarea.parent().find("span.text-counter");
+        }
+        jTextarea.val(populateText).charCounter(charCounterOptions).trigger("charCounterUpdate");
+    }
+    function getMessageFromCaughtElement(e) {
+        if (e instanceof Error) {
+            return e.message;
+        } else if ("string" === typeof e) {
+            return e;
+        } else {
+            console.error(e);
+            return e.toString();
+        }
+    }
     function removeModalFromDOM(modalId) {
         const existingModal = document.getElementById(modalId);
         if (null !== existingModal) {
@@ -176,6 +192,18 @@
             setTimeout((() => {
                 existingModal.remove();
             }), 125);
+        }
+    }
+    async function disableSubmitButtonAndToastErrors(jSubmitButton, handleActions) {
+        jSubmitButton.prop("disabled", true).addClass("is-loading");
+        try {
+            await handleActions();
+        } catch (error) {
+            StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
+                type: "danger"
+            });
+        } finally {
+            jSubmitButton.prop("disabled", false).removeClass("is-loading");
         }
     }
     function isInValidationBounds(textLength, bounds) {
@@ -212,22 +240,6 @@
             throw new Error(`Comment text must be between ${commentTextLengthBounds.min} and ${commentTextLengthBounds.max} characters.`);
         }
         return true;
-    }
-    function getMessageFromCaughtElement(e) {
-        if (e instanceof Error) {
-            return e.message;
-        } else if ("string" === typeof e) {
-            return e;
-        } else {
-            console.error(e);
-            return "Something went wrong!";
-        }
-    }
-    function configureCharCounter(jTextarea, populateText, charCounterOptions) {
-        if (void 0 === charCounterOptions.target) {
-            charCounterOptions.target = jTextarea.parent().find("span.text-counter");
-        }
-        jTextarea.val(populateText).charCounter(charCounterOptions).trigger("charCounterUpdate");
     }
     function getModalId(postId) {
         return "socm-handle-post-form-{postId}".formatUnicorn({
@@ -293,7 +305,9 @@
                 configureCharCounter($(this["comment-areaTarget"]), nukePostConfig.commentText ?? "", commentTextLengthBounds);
             },
             async handleNukeSubmitActions(ev) {
-                await submitHandlerTemplate(ev, $(this["submit-buttonTarget"]), (async (postOwner, postId) => {
+                await disableSubmitButtonAndToastErrors($(this["submit-buttonTarget"]), (async () => {
+                    ev.preventDefault();
+                    const {postOwner: postOwner, postId: postId} = ev.params;
                     await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, this.commentText, this.shouldFlag, true, this.shouldComment, this.shouldLog);
                     window.location.reload();
                 }));
@@ -330,7 +344,9 @@
                 this["log-enable-toggleTarget"].checked = true;
             },
             async handleFlagSubmitActions(ev) {
-                await submitHandlerTemplate(ev, $(this["submit-buttonTarget"]), (async (postOwner, postId) => {
+                await disableSubmitButtonAndToastErrors($(this["submit-buttonTarget"]), (async () => {
+                    ev.preventDefault();
+                    const {postOwner: postOwner, postId: postId} = ev.params;
                     const resolveMessage = await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog);
                     removeModalFromDOM(getModalId(postId));
                     if (void 0 !== resolveMessage) {
@@ -344,19 +360,6 @@
                 removeModalFromDOM(getModalId(postId));
             }
         });
-    }
-    async function submitHandlerTemplate(ev, jSubmitButton, uniqueHandleActions) {
-        ev.preventDefault();
-        jSubmitButton.prop("disabled", true).addClass("is-loading");
-        const {postOwner: postOwner, postId: postId} = ev.params;
-        try {
-            await uniqueHandleActions(postOwner, postId);
-        } catch (error) {
-            StackExchange.helpers.showToast(getMessageFromCaughtElement(error), {
-                type: "danger"
-            });
-            jSubmitButton.prop("disabled", false).removeClass("is-loading");
-        }
     }
     async function handlePlagiarisedPost(answerId, ownerId, flagOriginalSourceText, flagDetailText, commentText, shouldFlagPost, shouldDeletePost, shouldCommentPost, shouldLogWithAws) {
         if (shouldFlagPost) {
