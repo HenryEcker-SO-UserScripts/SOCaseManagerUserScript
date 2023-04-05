@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.10
+// @version     0.5.11
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -165,9 +165,21 @@
         });
     }
     function deleteAsPlagiarism(postId) {
-        return fetchPostFormData(`/admin/posts/${postId}/delete-as-plagiarism`, {
-            fkey: StackExchange.options.user.fkey
-        });
+        return new Promise(((resolve, reject) => {
+            $.ajax({
+                type: "POST",
+                url: `/admin/posts/${postId}/delete-as-plagiarism`,
+                data: {
+                    fkey: StackExchange.options.user.fkey
+                },
+                success: json => {
+                    resolve(json);
+                },
+                error: res => {
+                    reject(res);
+                }
+            });
+        }));
     }
     function configureCharCounter(jTextarea, populateText, charCounterOptions) {
         if (void 0 === charCounterOptions.target) {
@@ -380,8 +392,8 @@
         }
         if (shouldDeletePost) {
             const deleteFetch = await deleteAsPlagiarism(answerId);
-            if (200 !== deleteFetch.status) {
-                throw new Error('Something went wrong when deleting "as plagiarism"!');
+            if (!deleteFetch.success) {
+                throw new Error(deleteFetch.message);
             }
         }
         if (shouldCommentPost) {
