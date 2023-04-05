@@ -222,8 +222,8 @@ async function handlePlagiarisedPost(
 
     if (shouldDeletePost) {
         const deleteFetch = await deleteAsPlagiarism(answerId);
-        if (deleteFetch.status !== 200) {
-            throw new Error('Something went wrong when deleting "as plagiarism"!'); // Deletion failed don't continue
+        if (!deleteFetch.success) {
+            throw new Error(deleteFetch.message); // Deletion failed don't continue
         }
     }
 
