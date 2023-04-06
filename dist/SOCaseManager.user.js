@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.11
+// @version     0.5.12
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @match       *://stackoverflow.com/questions/*
@@ -125,23 +125,24 @@
         }));
         return $('<div class="d-flex g8 gsx s-modal--footer"></div>').append(submitButton).append('<button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>');
     }
-    function getFormDataFromObject(obj) {
-        return Object.entries(obj).reduce(((acc, [key, value]) => {
-            acc.set(key, value);
-            return acc;
-        }), new FormData);
-    }
-    function fetchPostFormData(endPoint, data) {
-        return fetch(endPoint, {
-            method: "POST",
-            body: getFormDataFromObject(data)
-        });
-    }
-    function fetchPostFormDataBodyJsonResponse(endPoint, data) {
-        return fetchPostFormData(endPoint, data).then((res => res.json()));
+    function ajaxPostWithData(endPoint, data, shouldReturnData = true) {
+        return new Promise(((resolve, reject) => {
+            $.ajax({
+                type: "POST",
+                url: endPoint,
+                data: data
+            }).done(((resData, textStatus, xhr) => {
+                resolve(shouldReturnData ? resData : {
+                    status: xhr.status,
+                    statusText: textStatus
+                });
+            })).fail((res => {
+                reject(res.responseText ?? "An unknown error occurred");
+            }));
+        }));
     }
     function addComment(postId, commentText) {
-        return fetchPostFormData(`/posts/${postId}/comments`, {
+        return ajaxPostWithData(`/posts/${postId}/comments`, {
             fkey: StackExchange.options.user.fkey,
             comment: commentText
         });
@@ -157,7 +158,7 @@
         if (void 0 !== customData) {
             data.customData = JSON.stringify(customData);
         }
-        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/${flagType}`, data);
+        return ajaxPostWithData(`/flags/posts/${postId}/add/${flagType}`, data);
     }
     function flagPlagiarizedContent(postId, originalSource, detailText) {
         return flagPost("PlagiarizedContent", postId, detailText, false, {
@@ -165,21 +166,9 @@
         });
     }
     function deleteAsPlagiarism(postId) {
-        return new Promise(((resolve, reject) => {
-            $.ajax({
-                type: "POST",
-                url: `/admin/posts/${postId}/delete-as-plagiarism`,
-                data: {
-                    fkey: StackExchange.options.user.fkey
-                },
-                success: json => {
-                    resolve(json);
-                },
-                error: res => {
-                    reject(res);
-                }
-            });
-        }));
+        return ajaxPostWithData(`/admin/posts/${postId}/delete-as-plagiarism`, {
+            fkey: StackExchange.options.user.fkey
+        });
     }
     function configureCharCounter(jTextarea, populateText, charCounterOptions) {
         if (void 0 === charCounterOptions.target) {
