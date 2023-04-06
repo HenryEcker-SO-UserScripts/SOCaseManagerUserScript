@@ -1,6 +1,7 @@
 import banner from 'vite-plugin-banner';
 import {buildTamperMonkeyPreamble} from './build_utils';
 import path from 'path';
+import fs from 'fs';
 import filterReplace from 'vite-plugin-filter-replace';
 import handlePostFormComponents from './pre-buildable-stimulus-components/HandlePostFormComponents';
 import nukePostSaveComponents from './pre-buildable-stimulus-components/NukePostSaveConfigComponents';
@@ -47,10 +48,11 @@ const defObj = {
     SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
 
-export default (fileName) => {
+export default (codeFileName, metaFileName) => {
+    const preamble = buildTamperMonkeyPreamble(codeFileName, metaFileName).replace(/^\s+/mg, '');
     return {
         plugins: [
-            banner(buildTamperMonkeyPreamble(fileName).replace(/^\s+/mg, '')),
+            banner(preamble),
             filterReplace(
                 [
                     {
@@ -62,7 +64,19 @@ export default (fileName) => {
                     }
                 ],
                 {enforce: 'post'}
-            )
+            ),
+            {
+                closeBundle() {
+                    const metaDir = path.resolve(__dirname, 'dist', 'meta');
+                    if (!fs.existsSync(metaDir)) {
+                        fs.mkdirSync(metaDir);
+                    }
+                    fs.writeFileSync(
+                        path.resolve(metaDir, metaFileName),
+                        preamble
+                    );
+                }
+            }
         ],
         define: defObj,
         build: {
@@ -73,7 +87,7 @@ export default (fileName) => {
                 output: {
                     format: 'iife',
                     manualChunks: undefined,
-                    entryFileNames: fileName
+                    entryFileNames: codeFileName
                 }
             },
             outDir: './dist',
