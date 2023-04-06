@@ -1,7 +1,7 @@
 import buildConfig from './vite-shared-config';
 
 
-const fullConfig = buildConfig('SOCaseManager.user.js');
+const fullConfig = buildConfig('SOCaseManager.user.js', 'SOCaseManager.meta.js');
 // Runs first so make a clean directory
 fullConfig['build']['emptyOutDir'] = true;
 

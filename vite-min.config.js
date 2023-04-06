@@ -1,6 +1,6 @@
 import buildConfig from './vite-shared-config';
 
-const minifiedConfig = buildConfig('SOCaseManager.min.user.js');
+const minifiedConfig = buildConfig('SOCaseManager.min.user.js', 'SOCaseManager.min.meta.js');
 
 // Don't delete full build in same folder
 minifiedConfig['build']['emptyOutDir'] = false;

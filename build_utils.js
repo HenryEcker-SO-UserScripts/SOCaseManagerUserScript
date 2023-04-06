@@ -2,15 +2,15 @@ import userscriptInfo from './package.json';
 
 
 module.exports = {
-    buildTamperMonkeyPreamble: (fileName) => {
+    buildTamperMonkeyPreamble: (codeFileName, metaFileName) => {
         const userscriptConfig = {
             'name': 'SO Plagiarism Case Manager',
             'description': userscriptInfo.description,
             'homepage': userscriptInfo.repository.homepage,
             'author': userscriptInfo.author,
             'version': userscriptInfo.version,
-            'downloadURL': `${userscriptInfo.repository.dist_url}${fileName}`,
-            'updateURL': `${userscriptInfo.repository.dist_url}${fileName}`,
+            'downloadURL': `${userscriptInfo.repository.dist_url}${codeFileName}`,
+            'updateURL': `${userscriptInfo.repository.dist_meta_url}${metaFileName}`,
             'match': [
                 '*://stackoverflow.com/questions/*',
                 '*://stackoverflow.com/users/*',
