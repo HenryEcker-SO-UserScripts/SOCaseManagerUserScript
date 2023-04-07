@@ -88,6 +88,9 @@
         "trailingUnderscore": "forbid"
       }
     ],
+    "no-inner-declarations": "off",
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/prefer-namespace-keyword": "error",
     "@typescript-eslint/no-confusing-void-expression": "error",
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/no-extra-non-null-assertion": "error",
