@@ -59,40 +59,41 @@ export interface PostFeedbackType {
 }
 
 
-export function requestNewJwt() {
-    return fetchFromAWS('/auth/cm/jwt',
-        {
-            'method': 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({'se_api_token': GM_getValue(seApiToken)})
-        },
-        false
-    )
-        .then(res => res.json())
-        .then(resData => {
+export const requestNewJwt = (function () {
+    let isRenewing = false;
+
+    return async function () {
+        if (isRenewing) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            return;
+        }
+        isRenewing = true;
+        try {
+            const res = await fetch(...buildFetchArguments(
+                '/auth/cm/jwt',
+                {
+                    'method': 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({'se_api_token': GM_getValue(seApiToken)})
+                },
+                false
+            ));
+            const resData = await res.json();
             GM_setValue(accessToken, resData['cm_access_token']);
-        })
-        .then(requestMyRoleId)
-        .catch(err => {
+            GM_setValue(roleIdToken, resData['role_id']);
+        } catch (err) {
             // Remove current access token on error (maybe not great)
             GM_deleteValue(accessToken);
             console.error(err);
-        });
-}
+        } finally {
+            isRenewing = false;
+        }
+    };
+}());
 
-export function requestMyRoleId(): Promise<void> {
-    return fetchFromAWS('/auth/credentials/my-role')
-        .then(res => res.json())
-        .then(resData => {
-            GM_setValue(roleIdToken, resData['role_id']);
-        });
-}
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function fetchFromAWS(path: string, options?: RequestInit, withCredentials = true): Promise<Response> {
-    // Always send access_token along
+function buildFetchArguments(path: string, options?: RequestInit, withCredentials = true): [string, RequestInit] {
     let newOptions: RequestInit = withCredentials ? {
         'headers': {
             'access_token': GM_getValue(accessToken)
@@ -107,12 +108,21 @@ export function fetchFromAWS(path: string, options?: RequestInit, withCredential
             }
         };
     }
-    return fetch(`${awsApiDefs.awsApiBase}${path}`, newOptions).then(res => {
-        if (res.status === 401) { // jwt is expired so attempt to automatically retrieve a new one
-            return requestNewJwt().then(() => fetchFromAWS(path, options));
-        }
-        return res;
-    });
+    return [
+        `${awsApiDefs.awsApiBase}${path}`,
+        newOptions
+    ];
+}
+
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export async function fetchFromAWS(path: string, options?: RequestInit, withCredentials = true): Promise<Response> {
+    const res = await fetch(...buildFetchArguments(path, options, withCredentials));
+    if (res.status === 401) {
+        await requestNewJwt();
+        return fetchFromAWS(path, options);
+    }
+    return res;
 }
 
 
