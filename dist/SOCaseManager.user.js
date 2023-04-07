@@ -3,7 +3,7 @@
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
 // @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.12
+// @version     0.5.13
 // @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js
 // @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/meta/SOCaseManager.meta.js
 // @match       *://stackoverflow.com/questions/*
@@ -42,28 +42,36 @@
         log: true
     });
     const nukePostOptions = "cm_nuke_post_config";
-    function requestNewJwt() {
-        return fetchFromAWS("/auth/cm/jwt", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                se_api_token: GM_getValue(seApiToken)
-            })
-        }, false).then((res => res.json())).then((resData => {
-            GM_setValue(accessToken, resData.cm_access_token);
-        })).then(requestMyRoleId).catch((err => {
-            GM_deleteValue(accessToken);
-            console.error(err);
-        }));
-    }
-    function requestMyRoleId() {
-        return fetchFromAWS("/auth/credentials/my-role").then((res => res.json())).then((resData => {
-            GM_setValue(roleIdToken, resData.role_id);
-        }));
-    }
-    function fetchFromAWS(path, options, withCredentials = true) {
+    const requestNewJwt = function() {
+        let isRenewing = false;
+        return async function() {
+            if (isRenewing) {
+                await new Promise((resolve => setTimeout(resolve, 500)));
+                return;
+            }
+            isRenewing = true;
+            try {
+                const res = await fetch(...buildFetchArguments("/auth/cm/jwt", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        se_api_token: GM_getValue(seApiToken)
+                    })
+                }, false));
+                const resData = await res.json();
+                GM_setValue(accessToken, resData.cm_access_token);
+                GM_setValue(roleIdToken, resData.role_id);
+            } catch (err) {
+                GM_deleteValue(accessToken);
+                console.error(err);
+            } finally {
+                isRenewing = false;
+            }
+        };
+    }();
+    function buildFetchArguments(path, options, withCredentials = true) {
         let newOptions = withCredentials ? {
             headers: {
                 access_token: GM_getValue(accessToken)
@@ -78,12 +86,15 @@
                 }
             };
         }
-        return fetch(`https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions).then((res => {
-            if (401 === res.status) {
-                return requestNewJwt().then((() => fetchFromAWS(path, options)));
-            }
-            return res;
-        }));
+        return [ `https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions ];
+    }
+    async function fetchFromAWS(path, options, withCredentials = true) {
+        const res = await fetch(...buildFetchArguments(path, options, withCredentials));
+        if (401 === res.status) {
+            await requestNewJwt();
+            return fetchFromAWS(path, options);
+        }
+        return res;
     }
     function getSummaryPostInfoFromIds(ids) {
         if (ids.length <= 0) {
@@ -125,23 +136,24 @@
         }));
         return $('<div class="d-flex g8 gsx s-modal--footer"></div>').append(submitButton).append('<button class="flex--item s-btn" type="button" data-action="s-modal#hide">Cancel</button>');
     }
-    function getFormDataFromObject(obj) {
-        return Object.entries(obj).reduce(((acc, [key, value]) => {
-            acc.set(key, value);
-            return acc;
-        }), new FormData);
-    }
-    function fetchPostFormData(endPoint, data) {
-        return fetch(endPoint, {
-            method: "POST",
-            body: getFormDataFromObject(data)
-        });
-    }
-    function fetchPostFormDataBodyJsonResponse(endPoint, data) {
-        return fetchPostFormData(endPoint, data).then((res => res.json()));
+    function ajaxPostWithData(endPoint, data, shouldReturnData = true) {
+        return new Promise(((resolve, reject) => {
+            $.ajax({
+                type: "POST",
+                url: endPoint,
+                data: data
+            }).done(((resData, textStatus, xhr) => {
+                resolve(shouldReturnData ? resData : {
+                    status: xhr.status,
+                    statusText: textStatus
+                });
+            })).fail((res => {
+                reject(res.responseText ?? "An unknown error occurred");
+            }));
+        }));
     }
     function addComment(postId, commentText) {
-        return fetchPostFormData(`/posts/${postId}/comments`, {
+        return ajaxPostWithData(`/posts/${postId}/comments`, {
             fkey: StackExchange.options.user.fkey,
             comment: commentText
         });
@@ -157,7 +169,7 @@
         if (void 0 !== customData) {
             data.customData = JSON.stringify(customData);
         }
-        return fetchPostFormDataBodyJsonResponse(`/flags/posts/${postId}/add/${flagType}`, data);
+        return ajaxPostWithData(`/flags/posts/${postId}/add/${flagType}`, data);
     }
     function flagPlagiarizedContent(postId, originalSource, detailText) {
         return flagPost("PlagiarizedContent", postId, detailText, false, {
@@ -165,21 +177,9 @@
         });
     }
     function deleteAsPlagiarism(postId) {
-        return new Promise(((resolve, reject) => {
-            $.ajax({
-                type: "POST",
-                url: `/admin/posts/${postId}/delete-as-plagiarism`,
-                data: {
-                    fkey: StackExchange.options.user.fkey
-                },
-                success: json => {
-                    resolve(json);
-                },
-                error: res => {
-                    reject(res);
-                }
-            });
-        }));
+        return ajaxPostWithData(`/admin/posts/${postId}/delete-as-plagiarism`, {
+            fkey: StackExchange.options.user.fkey
+        });
     }
     function configureCharCounter(jTextarea, populateText, charCounterOptions) {
         if (void 0 === charCounterOptions.target) {
