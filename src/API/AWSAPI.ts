@@ -58,6 +58,26 @@ export interface PostFeedbackType {
     has_given_feedback: boolean;
 }
 
+function buildFetchArguments(path: string, options?: RequestInit, withCredentials = true): [string, RequestInit] {
+    let newOptions: RequestInit = withCredentials ? {
+        'headers': {
+            'access_token': GM_getValue(accessToken)
+        }
+    } : {};
+    if (options !== undefined) {
+        newOptions = {
+            ...options,
+            'headers': {
+                ...options['headers'],
+                ...newOptions['headers']
+            }
+        };
+    }
+    return [
+        `${awsApiDefs.awsApiBase}${path}`,
+        newOptions
+    ];
+}
 
 export const requestNewJwt = (function () {
     let isRenewing = false;
@@ -92,28 +112,6 @@ export const requestNewJwt = (function () {
         }
     };
 }());
-
-function buildFetchArguments(path: string, options?: RequestInit, withCredentials = true): [string, RequestInit] {
-    let newOptions: RequestInit = withCredentials ? {
-        'headers': {
-            'access_token': GM_getValue(accessToken)
-        }
-    } : {};
-    if (options !== undefined) {
-        newOptions = {
-            ...options,
-            'headers': {
-                ...options['headers'],
-                ...newOptions['headers']
-            }
-        };
-    }
-    return [
-        `${awsApiDefs.awsApiBase}${path}`,
-        newOptions
-    ];
-}
-
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export async function fetchFromAWS(path: string, options?: RequestInit, withCredentials = true): Promise<Response> {
