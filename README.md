@@ -6,6 +6,8 @@ Requires `GM_getValue`, `GM_setValue`, and `GM_deleteValue` to store access_toke
 
 [![Click to install UserScript](https://img.shields.io/badge/install-UserScript-brightgreen)](https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js)
 
+[![Click to install minified UserScript](https://img.shields.io/badge/install-UserScript.min-blue)](https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js)
+
 ## Review Posts
 
 On all posts (excepting those you authored) there is a control panel.
