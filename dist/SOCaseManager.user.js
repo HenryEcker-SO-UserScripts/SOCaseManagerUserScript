@@ -42,6 +42,23 @@
         log: true
     });
     const nukePostOptions = "cm_nuke_post_config";
+    function buildFetchArguments(path, options, withCredentials = true) {
+        let newOptions = withCredentials ? {
+            headers: {
+                access_token: GM_getValue(accessToken)
+            }
+        } : {};
+        if (options !== void 0) {
+            newOptions = {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    ...newOptions.headers
+                }
+            };
+        }
+        return [ `https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions ];
+    }
     const requestNewJwt = function() {
         let isRenewing = false;
         return async function() {
@@ -71,26 +88,9 @@
             }
         };
     }();
-    function buildFetchArguments(path, options, withCredentials = true) {
-        let newOptions = withCredentials ? {
-            headers: {
-                access_token: GM_getValue(accessToken)
-            }
-        } : {};
-        if (void 0 !== options) {
-            newOptions = {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    ...newOptions.headers
-                }
-            };
-        }
-        return [ `https://4shuk8vsp8.execute-api.us-east-1.amazonaws.com/prod${path}`, newOptions ];
-    }
     async function fetchFromAWS(path, options, withCredentials = true) {
         const res = await fetch(...buildFetchArguments(path, options, withCredentials));
-        if (401 === res.status) {
+        if (res.status === 401) {
             await requestNewJwt();
             return fetchFromAWS(path, options);
         }
@@ -127,7 +127,7 @@
         submitButton.on("click", (ev => {
             ev.preventDefault();
             const inputValue = $(`#${getAccessTokenInputId(authModalId)}`).val();
-            if (void 0 !== inputValue && inputValue.length > 0) {
+            if (inputValue !== void 0 && inputValue.length > 0) {
                 GM_setValue(seApiToken, inputValue);
                 requestNewJwt().then((() => {
                     window.location.reload();
@@ -163,10 +163,10 @@
             fkey: StackExchange.options.user.fkey,
             otherText: otherText ?? ""
         };
-        if (void 0 !== overrideWarning) {
+        if (overrideWarning !== void 0) {
             data.overrideWarning = overrideWarning;
         }
-        if (void 0 !== customData) {
+        if (customData !== void 0) {
             data.customData = JSON.stringify(customData);
         }
         return ajaxPostWithData(`/flags/posts/${postId}/add/${flagType}`, data);
@@ -182,7 +182,7 @@
         });
     }
     function configureCharCounter(jTextarea, populateText, charCounterOptions) {
-        if (void 0 === charCounterOptions.target) {
+        if (charCounterOptions.target === void 0) {
             charCounterOptions.target = jTextarea.parent().find("span.text-counter");
         }
         jTextarea.val(populateText).charCounter(charCounterOptions).trigger("charCounterUpdate");
@@ -190,7 +190,7 @@
     function getMessageFromCaughtElement(e) {
         if (e instanceof Error) {
             return e.message;
-        } else if ("string" === typeof e) {
+        } else if (typeof e === "string") {
             return e;
         } else {
             console.error(e);
@@ -199,7 +199,7 @@
     }
     function removeModalFromDOM(modalId) {
         const existingModal = document.getElementById(modalId);
-        if (null !== existingModal) {
+        if (existingModal !== null) {
             Stacks.hideModal(existingModal);
             setTimeout((() => {
                 existingModal.remove();
@@ -220,7 +220,7 @@
     }
     function isInValidationBounds(textLength, bounds) {
         const min = bounds.min ?? 0;
-        if (void 0 === bounds.max) {
+        if (bounds.max === void 0) {
             return min <= textLength;
         }
         return min <= textLength && textLength <= bounds.max;
@@ -261,7 +261,7 @@
     function handleHandlePostButtonClick(isModerator, postId, postOwnerId) {
         const modalId = getModalId(postId);
         const modal = document.getElementById(modalId);
-        if (null !== modal) {
+        if (modal !== null) {
             Stacks.showModal(modal);
         } else {
             $("body").append((isModerator ? '<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="true" data-controller="s-modal" data-s-modal-target="modal"><div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" role="document" data-controller="socm-handle-post-form se-draggable uhtr-size-reducer"><h1 class="s-modal--header c-move" data-se-draggable-target="handle">Nuke Plagiarism</h1><div class="s-modal--body" style="margin-bottom: 0;"><div class="d-flex fd-column g8"><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-flag-enable-toggle-{postId}">Flag before deletion</label><input class="s-toggle-switch" id="socm-flag-enable-toggle-{postId}" data-socm-handle-post-form-target="flag-enable-toggle" data-socm-handle-post-form-controls-param="flag-info-area" data-action="change->socm-handle-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-handle-post-form-target="flag-info-area"><div class="d-flex ff-column-nowrap gs4 gsy"><div class="flex--item"><label class="d-block s-label" for="socm-flag-original-source-area-{postId}">Link(s) to original content</label></div><div class="d-flex ps-relative"><input type="text" id="socm-flag-original-source-area-{postId}" class="s-input" name="flag source link" data-socm-handle-post-form-target="flag-original-source-area"></div></div><div class="d-flex ff-column-nowrap gs4 gsy"><label class="s-label flex--item" for="socm-flag-detail-area-{postId}">Why do you consider this answer to be plagiarized?</label><textarea class="flex--item s-textarea" data-is-valid-length="false" id="socm-flag-detail-area-{postId}" name="flag detail text" rows="5" data-socm-handle-post-form-target="flag-detail-area" data-action="uhtr-size-reducer#handleReduceAction"></textarea><span class="text-counter"></span></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-comment-enable-toggle-{postId}">Comment after deletion</label><input class="s-toggle-switch" id="socm-comment-enable-toggle-{postId}" data-socm-handle-post-form-target="comment-enable-toggle" data-socm-handle-post-form-controls-param="comment-info-area" data-action="change->socm-handle-post-form#handleUpdateControlledField" type="checkbox"></div><div class="d-flex fd-column g8" data-socm-handle-post-form-target="comment-info-area"><div class="d-flex ff-column-nowrap gs4 gsy"><label class="s-label flex--item" for="socm-comment-area-{postId}">Comment Text</label><textarea class="flex--item s-textarea" data-is-valid-length="false" id="socm-comment-area-{postId}" name="comment text" rows="5" data-socm-handle-post-form-target="comment-area" data-action="uhtr-size-reducer#handleReduceAction"></textarea><span class="text-counter"></span></div></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-log-post-toggle-{postId}">Log post in Case Manager</label><input class="s-toggle-switch" id="socm-log-post-toggle-{postId}" data-socm-handle-post-form-target="log-enable-toggle" type="checkbox"></div></div></div><div class="d-flex gx8 s-modal--footer ai-center"><button class="s-btn flex--item s-btn__filled s-btn__danger" type="button" data-socm-handle-post-form-target="submit-button" data-action="click->socm-handle-post-form#handleNukeSubmitActions" data-socm-handle-post-form-post-id-param="{postId}" data-socm-handle-post-form-post-owner-param="{postOwnerId}">Nuke Post</button><button class="s-btn flex--item s-btn__muted" type="button" data-action="click->socm-handle-post-form#cancelHandleForm" data-socm-handle-post-form-post-id-param="{postId}">Cancel</button><a class="fs-fine ml-auto" href="/users/current?tab=case-manager-settings" target="_blank">Configure default options</a></div><button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div></aside>' : '<aside class="s-modal s-modal__danger" id="{modalId}" tabindex="-1" role="dialog" aria-hidden="true" data-controller="s-modal" data-s-modal-target="modal"><div class="s-modal--dialog" style="min-width:550px; width: max-content; max-width: 65vw;" role="document" data-controller="socm-handle-post-form se-draggable uhtr-size-reducer"><h1 class="s-modal--header c-move" data-se-draggable-target="handle">Flag Plagiarism</h1><div class="s-modal--body" style="margin-bottom: 0;"><div class="d-flex fd-column g8"><div class="d-flex ff-column-nowrap gs4 gsy"><div class="flex--item"><label class="d-block s-label" for="socm-flag-original-source-area-{postId}">Link(s) to original content</label></div><div class="d-flex ps-relative"><input type="text" id="socm-flag-original-source-area-{postId}" class="s-input" name="flag source link" data-socm-handle-post-form-target="flag-original-source-area"></div></div><div class="d-flex ff-column-nowrap gs4 gsy"><label class="s-label flex--item" for="socm-flag-detail-area-{postId}">Why do you consider this answer to be plagiarized?</label><textarea class="flex--item s-textarea" data-is-valid-length="false" id="socm-flag-detail-area-{postId}" name="flag detail text" rows="5" data-socm-handle-post-form-target="flag-detail-area" data-action="uhtr-size-reducer#handleReduceAction"></textarea><span class="text-counter"></span></div><div class="my6 bb bc-black-400"></div><div class="d-flex ai-center g8 jc-space-between"><label class="s-label" for="socm-log-post-toggle-{postId}">Log post in Case Manager</label><input class="s-toggle-switch" id="socm-log-post-toggle-{postId}" data-socm-handle-post-form-target="log-enable-toggle" type="checkbox"></div></div></div><div class="d-flex gx8 s-modal--footer ai-center"><button class="s-btn flex--item s-btn__filled s-btn__danger" type="button" data-socm-handle-post-form-target="submit-button" data-action="click->socm-handle-post-form#handleFlagSubmitActions" data-socm-handle-post-form-post-id-param="{postId}" data-socm-handle-post-form-post-owner-param="{postOwnerId}">Flag Post</button><button class="s-btn flex--item s-btn__muted" type="button" data-action="click->socm-handle-post-form#cancelHandleForm" data-socm-handle-post-form-post-id-param="{postId}">Cancel</button></div><button class="s-modal--close s-btn s-btn__muted" type="button" aria-label="Close" data-action="s-modal#hide"><svg aria-hidden="true" class="svg-icon iconClearSm" width="14" height="14" viewBox="0 0 14 14"><path d="M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41Z"></path></svg></button></div></aside>').formatUnicorn({
@@ -361,7 +361,7 @@
                     const {postOwner: postOwner, postId: postId} = ev.params;
                     const resolveMessage = await handlePlagiarisedPost(postId, postOwner, this.flagOriginalSourceText, this.flagDetailText, "", true, false, false, this.shouldLog);
                     removeModalFromDOM(getModalId(postId));
-                    if (void 0 !== resolveMessage) {
+                    if (resolveMessage !== void 0) {
                         StackExchange.helpers.showToast(resolveMessage);
                     }
                 }));
@@ -401,7 +401,7 @@
         }
         if (shouldLogWithAws) {
             const body = {};
-            if (-1 !== ownerId) {
+            if (ownerId !== -1) {
                 body.postOwnerId = ownerId;
             }
             const feedbacks = [ 3 ];
@@ -472,7 +472,7 @@
         const timelineButton = $(`<button title="Click to view a record of actions taken on this post." id="${buttonId}" class="flex--item s-btn s-btn__danger s-btn__icon ws-nowrap s-btn__dropdown"  role="button" aria-controls="${timelinePopoverId}" aria-expanded="false" data-controller="s-popover" data-action="s-popover#toggle" data-s-popover-placement="top-start" data-s-popover-toggle-class="is-selected">${buildAlertSvg()}<span class="px8">Post Timeline</span></button>`);
         timelineButton.on("click", (ev => {
             ev.preventDefault();
-            if ("true" !== timelineButton.attr("timeline-loaded")) {
+            if (timelineButton.attr("timeline-loaded") !== "true") {
                 fetchFromAWS(`/timeline/post/${answerId}`).then((res => res.json())).then((timelineEvents => {
                     const eventPane = $('<div class="case-manager-post-timeline-container"></div>');
                     eventPane.append($("<h3>Case Manager Post Timeline</h3>"));
@@ -493,7 +493,7 @@
         const popOver = $(`<div class="s-popover" style="width: 275px;" id="${getFeedbackPopoverId(answerId)}" role="menu"><div class="s-popover--arrow"/><div class="${popoverMountPointClass}"></div></div>`);
         controlButton.on("click", (ev => {
             ev.preventDefault();
-            if ("true" !== controlButton.attr("options-loaded")) {
+            if (controlButton.attr("options-loaded") !== "true") {
                 $(`#${getFeedbackPopoverId(answerId)} > .${popoverMountPointClass}`).empty().append('<div class="is-loading">Loading…</div>');
                 fetchFromAWS(`/handle/post/${answerId}`).then((res => res.json())).then((feedbacks => {
                     buildFeedbackComponentFromFeedback(answerId, ownerId, isDeleted, feedbacks);
@@ -544,7 +544,7 @@
                     fetchFromAWS(`/handle/post/${answerId}/${feedback.feedback_id}`, {
                         method: "DELETE"
                     }).then((res => {
-                        if (200 === res.status) {
+                        if (res.status === 200) {
                             $(`#${getFeedbackButtonId(answerId)}`).attr("options-loaded", "false");
                             $(`#${getTimelineButtonId(answerId)}`).attr("timeline-loaded", "false");
                         }
@@ -559,17 +559,17 @@
             const submitButton = form.find('button[type="submit"]');
             submitButton.prop("disabled", true);
             const feedbacks = form.find('input[type="radio"]:checked:not(:disabled)');
-            if (0 === feedbacks.length) {
+            if (feedbacks.length === 0) {
                 submitButton.prop("disabled", false);
                 return;
             }
             const body = {};
-            if (-1 !== ownerId) {
+            if (ownerId !== -1) {
                 body.postOwnerId = ownerId;
             }
             const parsedFeedbacks = feedbacks.map(((i, e) => {
                 const id = $(e).attr("data-action-id");
-                if (void 0 === id) {
+                if (id === void 0) {
                     return;
                 } else {
                     return Number(id);
@@ -599,7 +599,7 @@
         }
         const answers = $("div.answer");
         const answerIds = answers.map(((i, e) => getAnswerIdFromAnswerDiv(e))).toArray();
-        const isModerator = true === StackExchange.options.user.isModerator;
+        const isModerator = StackExchange.options.user.isModerator === true;
         for (const {jAnswer: jAnswer, isDeleted: isDeleted, answerId: answerId, postOwnerId: postOwnerId} of extractFromAnswerDivs(answers, answerIds)) {
             const controlPanel = $('<div class="p8 g8 d-flex fd-row jc-space-between ai-center"></div>');
             controlPanel.append(buildBaseTimelineButtons(answerId));
@@ -623,7 +623,7 @@
             const isDeleted = jAnswer.hasClass("deleted-answer");
             const answerId = answerIds[i];
             const postOwnerId = getPostOwnerIdFromAuthorDiv(jAnswer.find('div[itemprop="author"]'));
-            if (void 0 === answerId || postOwnerId === StackExchange.options.user.userId) {
+            if (answerId === void 0 || postOwnerId === StackExchange.options.user.userId) {
                 continue;
             }
             yield {
@@ -645,15 +645,15 @@
     }
     function getPostOwnerIdFromAuthorDiv(authorDiv) {
         const e = $(authorDiv).find("a");
-        if (0 === e.length) {
+        if (e.length === 0) {
             return -1;
         }
         const href = e.attr("href");
-        if (void 0 === href) {
+        if (href === void 0) {
             return -1;
         }
         const match = href.match(/\/users\/(\d+)\/.*/);
-        if (null === match) {
+        if (match === null) {
             return -1;
         }
         return Number(match[1]);
@@ -695,9 +695,9 @@
         }
         getConfigFromUrl() {
             const usp = new URLSearchParams(window.location.search);
-            if (!usp.has("page") || "summary" === usp.get("page")) {
+            if (!usp.has("page") || usp.get("page") === "summary") {
                 this.currentPage = "summary";
-            } else if ("posts" === usp.get("page")) {
+            } else if (usp.get("page") === "posts") {
                 this.currentPage = "posts";
             }
             if (usp.has("table-filter")) {
@@ -769,7 +769,7 @@
             return section;
         }
         cleanInitPostColumnFilters() {
-            if (this.pageLoadMap.posts.isLoaded && void 0 !== this.pageLoadMap.posts.pageData) {
+            if (this.pageLoadMap.posts.isLoaded && this.pageLoadMap.posts.pageData !== void 0) {
                 this.pageLoadMap.posts.pageData.header.forEach(((_, index) => {
                     this.postSummaryColumnFilter[index] = "any";
                 }));
@@ -787,7 +787,7 @@
                     isLoaded: true,
                     pageData: summaryPageData
                 };
-                if (0 === Object.keys(this.postSummaryColumnFilter).length) {
+                if (Object.keys(this.postSummaryColumnFilter).length === 0) {
                     this.cleanInitPostColumnFilters();
                 }
                 return summaryPageData;
@@ -849,21 +849,21 @@
                 detailData.body.forEach((row => {
                     if (row.some(((elem, index) => {
                         const value = this.postSummaryColumnFilter[index];
-                        if ("any" === value) {
+                        if (value === "any") {
                             return false;
-                        } else if ("checked" === value) {
-                            return null === row[index];
+                        } else if (value === "checked") {
+                            return row[index] === null;
                         } else {
-                            return null !== row[index];
+                            return row[index] !== null;
                         }
                     }))) {
                         return;
                     }
                     const detailTableBodyTr = $("<tr></tr>");
                     row.forEach(((elem, idx) => {
-                        if (0 === idx) {
+                        if (idx === 0) {
                             detailTableBodyTr.append(`<td><a class="flex--item" href="/a/${elem}" target="_blank" rel="noreferrer noopener">${elem}</a></td>`);
-                        } else if (null !== elem) {
+                        } else if (elem !== null) {
                             detailTableBodyTr.append(`<td>${buildCheckmarkSvg()}</td>`);
                         } else {
                             detailTableBodyTr.append("<td></td>");
@@ -883,11 +883,11 @@
             this.container.append(section);
         }
         render() {
-            if ("summary" === this.currentPage) {
+            if (this.currentPage === "summary") {
                 this.buildCaseSummaryPage().then((section => {
                     this.rebuildContainer(section);
                 }));
-            } else if ("posts" === this.currentPage) {
+            } else if (this.currentPage === "posts") {
                 this.buildPostsBreakdownPage().then((section => {
                     this.rebuildContainer(section);
                 }));
@@ -933,7 +933,7 @@
                             userId: userId
                         })
                     }) : fetchFromSEAPI(`/users/${userId}`, "filter=!LnNkvqQOuAK0z-T)oydzPI").then((res => res.json())).then((resData => {
-                        if (0 === resData.items.length) {
+                        if (resData.items.length === 0) {
                             throw Error("User not found!");
                         }
                         const user = resData.items[0];
@@ -949,9 +949,9 @@
                             })
                         });
                     }))).then((res => {
-                        if (200 === res.status) {
+                        if (res.status === 200) {
                             return res.json().then((resData => container.replaceWith(buildCaseManagerPane(userId, resData.hasOpenCase))));
-                        } else if (409 === res.status) {
+                        } else if (res.status === 409) {
                             return res.json().then((resData => {
                                 StackExchange.helpers.showToast(resData.message, {
                                     transientTimeout: 1e4,
@@ -1039,7 +1039,7 @@
     function getAnswerIdsOnFlagPage() {
         return new Set($(".flagged-post .answer-link a").map(((i, e) => {
             const href = e.getAttribute("href");
-            if (null === href || !href.includes("#")) {
+            if (href === null || !href.includes("#")) {
                 return;
             }
             return href.split("#").at(-1);
@@ -1063,7 +1063,7 @@
         if (GM_getValue(roleIdToken) > 3) {
             return;
         }
-        if (null !== window.location.pathname.match(/^\/users\/flagged-posts\/.*/) || null !== window.location.pathname.match(/^\/users\/flag-summary\/.*/)) {
+        if (window.location.pathname.match(/^\/users\/flagged-posts\/.*/) !== null || window.location.pathname.match(/^\/users\/flag-summary\/.*/) !== null) {
             buildFlagSummaryIndicator();
             return;
         }
@@ -1078,7 +1078,7 @@
     }
     function getUserIdFromWindowLocation() {
         const patternMatcher = window.location.pathname.match(/^\/users\/(account-info\/)?\d+/g);
-        if (null === patternMatcher || 1 !== patternMatcher.length) {
+        if (patternMatcher === null || patternMatcher.length !== 1) {
             throw Error("Something changed in user path!");
         }
         return Number(patternMatcher[0].split("/").at(-1));
@@ -1136,7 +1136,7 @@
         invalidateButton.on("click", (ev => {
             ev.preventDefault();
             fetchFromAWS(`/auth/credentials/${token}/invalidate`).then((res => {
-                if (200 === res.status) {
+                if (res.status === 200) {
                     tokenRow.remove();
                     if (GM_getValue(seApiToken) === token) {
                         GM_deleteValue(seApiToken);
@@ -1159,7 +1159,7 @@
             }).then((confirm => {
                 if (confirm) {
                     fetchFromAWS(`/auth/credentials/${GM_getValue(seApiToken)}/de-authenticate`).then((res => {
-                        if (200 === res.status) {
+                        if (res.status === 200) {
                             GM_deleteValue(seApiToken);
                             GM_deleteValue(accessToken);
                             window.location.reload();
@@ -1257,7 +1257,7 @@
     }
     function buildUserTile(account_id, profile_image, display_name, number_of_plagiarised_posts, current_state, event_date) {
         const link = `/users/${account_id}?tab=case-manager`;
-        return $(`<div class="grid--item user-info">\n${null !== profile_image ? `<div class="user-gravatar48">\n<a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>\n</div>` : ""}\n<div class="user-details">\n<a href="${link}">${display_name}</a>\n<div class="-flair">\n<span title="the number of posts marked as plagiairsm for this user" dir="ltr">${number_of_plagiarised_posts} Plagiarised posts</span>\n</div>\n<div class="d-flex fd-column mt6">\n<span>Case ${current_state} on</span>\n<span title="${event_date}">${toStackExchangeDateFormat(event_date)}</span>\n</div>\n</div>\n</div>`);
+        return $(`<div class="grid--item user-info">\n${profile_image !== null ? `<div class="user-gravatar48">\n<a href="${link}"><div class="gravatar-wrapper-48"><img src="${profile_image}" alt="${display_name}'s user avatar" width="48" height="48" class="bar-sm"></div></a>\n</div>` : ""}\n<div class="user-details">\n<a href="${link}">${display_name}</a>\n<div class="-flair">\n<span title="the number of posts marked as plagiairsm for this user" dir="ltr">${number_of_plagiarised_posts} Plagiarised posts</span>\n</div>\n<div class="d-flex fd-column mt6">\n<span>Case ${current_state} on</span>\n<span title="${event_date}">${toStackExchangeDateFormat(event_date)}</span>\n</div>\n</div>\n</div>`);
     }
     class CasesUserList {
         needsTotalPages;
@@ -1294,7 +1294,7 @@
         buildUsersURLWithParams(p) {
             const usp = new URLSearchParams("?tab=case");
             usp.set("group", this.group);
-            usp.set("page", (void 0 === p ? this.currentPage : p).toString());
+            usp.set("page", (p === void 0 ? this.currentPage : p).toString());
             if (this.search.length > 0) {
                 usp.set("search", this.search);
             }
@@ -1386,7 +1386,7 @@
             }));
         }
         buildNavItem(pageNumber, linkLabel) {
-            if (void 0 === linkLabel) {
+            if (linkLabel === void 0) {
                 linkLabel = pageNumber;
             }
             const href = this.buildUsersURLWithParams(pageNumber);
@@ -1401,7 +1401,7 @@
         }
         buildPagination() {
             const mountPoint = $("#user-pagination").empty();
-            if (1 === this.totalPages) {
+            if (this.totalPages === 1) {
                 return;
             }
             const buildPagesFromRange = p => {
@@ -1412,7 +1412,7 @@
                     mountPoint.append(this.buildNavItem(pageNumber));
                 }
             };
-            if (1 !== this.currentPage) {
+            if (this.currentPage !== 1) {
                 mountPoint.append(this.buildNavItem(this.currentPage - 1, "Prev"));
             }
             const maxVisibleElements = 5;
@@ -1459,17 +1459,17 @@
         }
     }
     function UserScript() {
-        if (null === GM_getValue(accessToken, null)) {
+        if (GM_getValue(accessToken, null) === null) {
             buildClientSideAuthModal();
             return;
         }
-        if (null !== window.location.pathname.match(/^\/questions\/.*/)) {
+        if (window.location.pathname.match(/^\/questions\/.*/) !== null) {
             buildAnswerControlPanel();
-        } else if (null !== window.location.pathname.match(/^\/users$/)) {
+        } else if (window.location.pathname.match(/^\/users$/) !== null) {
             buildPlagiaristTab();
-        } else if (null !== window.location.pathname.match(new RegExp(`^/users/(account-info/)?${StackExchange.options.user.userId}.*`))) {
+        } else if (window.location.pathname.match(new RegExp(`^/users/(account-info/)?${StackExchange.options.user.userId}.*`)) !== null) {
             buildUserScriptSettingsNav();
-        } else if (null !== window.location.pathname.match(/^\/users\/.*/)) {
+        } else if (window.location.pathname.match(/^\/users\/.*/) !== null) {
             buildProfilePage();
         }
     }
