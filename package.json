@@ -34,6 +34,6 @@
     "typescript": "^5.0.4",
     "vite": "^4.3.9",
     "vite-plugin-banner": "^0.7.0",
-    "vite-plugin-filter-replace": "^0.1.11"
+    "vite-plugin-filter-replace": "^0.1.12"
   }
 }
