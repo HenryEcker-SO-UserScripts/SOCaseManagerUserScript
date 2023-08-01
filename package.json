@@ -22,7 +22,7 @@
     "@types/format-unicorn": "^1.1.2",
     "@types/jquery": "^3.5.16",
     "@types/js-beautify": "^1.14.0",
-    "@types/node": "^20.3.3",
+    "@types/node": "^20.4.5",
     "@types/tampermonkey": "^4.0.10",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^5.62.0",
