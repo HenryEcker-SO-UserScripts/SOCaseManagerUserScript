@@ -25,7 +25,7 @@
     "@types/node": "^20.4.5",
     "@types/tampermonkey": "^4.0.10",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
-    "@typescript-eslint/parser": "^5.62.0",
+    "@typescript-eslint/parser": "^6.5.0",
     "@userscripters/stackexchange-global-types": "^2.7.0",
     "eslint": "^8.48.0",
     "js-beautify": "^1.14.9",
