@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name        SO Plagiarism Case Manager
 // @description Help facilitate and track collaborative plagiarism cleanup efforts
-// @homepage    https://github.com/HenryEcker/SOCaseManagerUserScript
+// @homepage    https://github.com/HenryEcker-SO-UserScripts/SOCaseManagerUserScript
 // @author      Henry Ecker (https://github.com/HenryEcker)
-// @version     0.5.13
-// @downloadURL https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js
-// @updateURL   https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/meta/SOCaseManager.min.meta.js
+// @version     0.5.14
+// @downloadURL https://github.com/HenryEcker-SO-UserScripts/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js
+// @updateURL   https://github.com/HenryEcker-SO-UserScripts/SOCaseManagerUserScript/raw/master/dist/meta/SOCaseManager.min.meta.js
 // @match       *://stackoverflow.com/questions/*
 // @match       *://stackoverflow.com/users
 // @match       *://stackoverflow.com/users?*
