@@ -4,9 +4,9 @@ A UserScript to help organise and coordinate plagiarism investigations on Stack 
 
 Requires `GM_getValue`, `GM_setValue`, and `GM_deleteValue` to store access_tokens.
 
-[![Click to install UserScript](https://img.shields.io/badge/install-UserScript-brightgreen)](https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js)
+[![Click to install UserScript](https://img.shields.io/badge/install-UserScript-brightgreen)](https://github.com/HenryEcker-SO-UserScripts/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.user.js)
 
-[![Click to install minified UserScript](https://img.shields.io/badge/install-UserScript.min-blue)](https://github.com/HenryEcker/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js)
+[![Click to install minified UserScript](https://img.shields.io/badge/install-UserScript.min-blue)](https://github.com/HenryEcker-SO-UserScripts/SOCaseManagerUserScript/raw/master/dist/SOCaseManager.min.user.js)
 
 ## Review Posts
 
@@ -235,7 +235,7 @@ posts.
 
 ## Compatible Extras
 
-This UserScript is compatible with [Textarea Reducer Stacks Controller](https://github.com/HenryEcker/SO-UserScripts/blob/main/RegisterTextareaReducer.user.js) ([install](https://github.com/HenryEcker/SO-UserScripts/raw/main/RegisterTextareaReducer.user.js)). This is an optional add-on which will
+This UserScript is compatible with [Textarea Reducer Stacks Controller](https://github.com/HenryEcker-SO-UserScripts/SO-UserScripts/blob/main/RegisterTextareaReducer.user.js) ([install](https://github.com/HenryEcker-SO-UserScripts/SO-UserScripts/raw/main/RegisterTextareaReducer.user.js)). This is an optional add-on which will
 replace text as you type to minimise the number of characters in the textarea. Some examples of supported 
 reductions are converting the
 full answer URL to `/a/{answerId}` and converting comment URLs to `/posts/comments/{commentId}`.
