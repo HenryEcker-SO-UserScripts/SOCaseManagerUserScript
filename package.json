@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/format-unicorn": "^1.1.2",
-    "@types/jquery": "^3.5.17",
+    "@types/jquery": "^3.5.19",
     "@types/js-beautify": "^1.14.0",
     "@types/node": "^20.6.2",
     "@types/tampermonkey": "^4.20.1",
