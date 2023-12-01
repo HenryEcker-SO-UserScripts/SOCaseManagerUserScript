@@ -19,7 +19,7 @@
     "bump-major": "npm --no-git-tag-version version major && npm run build"
   },
   "devDependencies": {
-    "@types/format-unicorn": "^1.1.4",
+    "@types/format-unicorn": "^1.1.5",
     "@types/jquery": "^3.5.29",
     "@types/js-beautify": "^1.14.2",
     "@types/node": "^20.10.1",
