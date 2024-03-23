@@ -3,6 +3,7 @@ import {buildTamperMonkeyPreamble} from './build_utils';
 import path from 'path';
 import fs from 'fs';
 import filterReplace from 'vite-plugin-filter-replace';
+import replace from '@rollup/plugin-replace';
 import handlePostFormComponents from './pre-buildable-stimulus-components/HandlePostFormComponents';
 import nukePostSaveComponents from './pre-buildable-stimulus-components/NukePostSaveConfigComponents';
 
@@ -48,10 +49,19 @@ const defObj = {
     SAVE_NUKE_CONFIG: nukePostSaveComponents
 };
 
+
 export default (codeFileName, metaFileName) => {
     const preamble = buildTamperMonkeyPreamble(codeFileName, metaFileName).replace(/^\s+/mg, '');
     return {
         plugins: [
+            replace({
+                preventAssignment: false,
+                delimiters: ['\\b', '\\b'],
+                values: Object.entries(defObj).reduce((acc, [key, value]) => {
+                    acc[key] = JSON.stringify(value);
+                    return acc;
+                }, {})
+            }),
             banner(preamble),
             filterReplace(
                 [
@@ -78,7 +88,6 @@ export default (codeFileName, metaFileName) => {
                 }
             }
         ],
-        define: defObj,
         build: {
             rollupOptions: {
                 input: {
