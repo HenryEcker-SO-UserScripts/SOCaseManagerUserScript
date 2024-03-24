@@ -181,11 +181,11 @@
             fkey: StackExchange.options.user.fkey
         });
     }
-    function configureCharCounter(jTextarea, populateText, charCounterOptions) {
+    function configureCharCounter($jTextarea, populateText, charCounterOptions) {
         if (charCounterOptions.target === void 0) {
-            charCounterOptions.target = jTextarea.parent().find("span.text-counter");
+            charCounterOptions.target = $jTextarea.parent().find("span.text-counter");
         }
-        jTextarea.val(populateText).charCounter(charCounterOptions).trigger("charCounterUpdate");
+        $jTextarea.val(populateText).charCounter(charCounterOptions).trigger("charCounterUpdate");
     }
     function getMessageFromCaughtElement(e) {
         if (e instanceof Error) {
@@ -206,8 +206,8 @@
             }), 125);
         }
     }
-    async function disableSubmitButtonAndToastErrors(jSubmitButton, handleActions) {
-        jSubmitButton.prop("disabled", true).addClass("is-loading");
+    async function disableSubmitButtonAndToastErrors($jSubmitButton, handleActions) {
+        $jSubmitButton.prop("disabled", true).addClass("is-loading");
         try {
             await handleActions();
         } catch (error) {
@@ -215,7 +215,7 @@
                 type: "danger"
             });
         } finally {
-            jSubmitButton.prop("disabled", false).removeClass("is-loading");
+            $jSubmitButton.prop("disabled", false).removeClass("is-loading");
         }
     }
     function isInValidationBounds(textLength, bounds) {
